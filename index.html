@@ -301,6 +301,26 @@ async function createMarker(map, place) {
     marker.addListener("click", () => {
         infoWindow.open(map, marker);
     });
+
+    // Dohvat dodatnih detalja o lokaciji
+    const service = new google.maps.places.PlacesService(map);
+    service.getDetails(
+        { placeId: place.place_id, fields: ["formatted_phone_number", "website", "opening_hours"] },
+        (details, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK && details) {
+                const additionalInfo = `
+                    <p><strong>Phone:</strong> ${details.formatted_phone_number || "Not available"}</p>
+                    <p><strong>Website:</strong> <a href="${details.website || '#'}" target="_blank">${details.website || "Not available"}</a></p>
+                    <p><strong>Opening Hours:</strong> ${
+                        details.opening_hours ? details.opening_hours.weekday_text.join("<br>") : "Not available"
+                    }</p>
+                `;
+                infoWindow.setContent(infoWindowContent + additionalInfo);
+            } else {
+                console.error("Greška pri dohvaćanju dodatnih detalja:", status);
+            }
+        }
+    );
 }
 
 async function initMap() {
@@ -316,7 +336,7 @@ async function initMap() {
     service.findPlaceFromQuery(
         {
             query: placeName,
-            fields: ["geometry", "name", "formatted_address", "rating"],
+            fields: ["geometry", "name", "formatted_address", "rating", "place_id"], // Uključite place_id za dodatne upite
         },
         (results, status) => {
             if (status === google.maps.places.PlacesServiceStatus.OK && results) {
