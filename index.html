@@ -3,41 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kafić LERONE</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Caffe bar LERONE</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header>
-        <h1>Kafić LERONE</h1>
+    <header class="main-header">
         <nav>
-            <ul>
-                <li><a href="#about">O nama</a></li>
-                <li><a href="#menu">Jelovnik</a></li>
-                <li><a href="#contact">Kontakt</a></li>
+            <div class="logo">
+                <a href="#">LERONE</a>
+            </div>
+            <button class="menu-toggle" id="menu-toggle">☰</button>
+            <ul class="nav-links" id="nav-links">
+                <li><a href="#naslovna">Naslovna</a></li>
+                <li><a href="#o-nama">O nama</a></li>
+                <li><a href="#galerija">Galerija</a></li>
+                <li><a href="#usluge">Usluge</a></li>
+                <li><a href="#kontakt">Kontakt</a></li>
             </ul>
         </nav>
     </header>
-    <section id="about">
-        <h2>O nama</h2>
-        <p>Dobrodošli u kafić LERONE, mjesto gdje se opuštanje i uživanje u vrhunskoj kavi spajaju.</p>
+
+    <section id="galerija" class="gallery-section">
+        <div class="container">
+            <h2>Galerija</h2>
+            <div class="gallery-grid">
+                <img src="slika1.jpg" alt="Caffe bar unutrašnjost" class="gallery-item">
+                <img src="slika2.jpg" alt="Šalica kave" class="gallery-item">
+                <img src="slika3.jpg" alt="Gostoljubivo osoblje" class="gallery-item">
+                <img src="slika4.jpg" alt="Terasa kafića" class="gallery-item">
+            </div>
+        </div>
+        <div class="lightbox" id="lightbox">
+            <span class="lightbox-close" id="lightbox-close">&times;</span>
+            <img src="" alt="Pregled slike" id="lightbox-img">
+        </div>
     </section>
-    <section id="menu">
-        <h2>Jelovnik</h2>
-        <ul>
-            <li>Kava - 10 kn</li>
-            <li>Cappuccino - 12 kn</li>
-            <li>Latte - 14 kn</li>
-            <li>Sok od naranče - 15 kn</li>
-        </ul>
-    </section>
-    <section id="contact">
-        <h2>Kontakt</h2>
-        <p>Adresa: Ulica kafića 123, Grad</p>
-        <p>Telefon: 012 345 678</p>
-        <p>Email: info@lerone.hr</p>
-    </section>
+
     <footer>
-        <p>&copy; 2024 Kafić LERONE. Sva prava pridržana.</p>
+        <div class="container">
+            <p>&copy; 2025 Caffe bar LERONE. Sva prava pridržana.</p>
+        </div>
     </footer>
+
+    <script src="script.js"></script>
+
 </body>
 </html>
