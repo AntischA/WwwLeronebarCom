@@ -240,25 +240,24 @@
             lightbox.style.display = 'none';
         });
 
-        // Google mapa
 function initMap() {
     const location = { lat: 43.5081, lng: 16.4402 }; // Lokacija Split
-const map = new google.maps.Map(document.getElementById('map'), {
-    zoom: 15,
-    center: location,
-    mapId: "a4bce58eae79aebb", // Vaš validni Map ID
-});
-
+    const map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 15,
+        center: location,
+        mapId: "a4bce58eae79aebb", // Vaš validni Map ID
+    });
 
     // Dodavanje naprednog markera
-    if (if (google.maps.marker.AdvancedMarkerElement) {
-    new google.maps.marker.AdvancedMarkerElement({
-        position: location,
-        map: map,
-        title: "LERONE Bar",
-    });
-} else {
-    console.warn("AdvancedMarkerElement nije podržan u trenutnom okruženju.");
+    if (google.maps.marker.AdvancedMarkerElement) {
+        new google.maps.marker.AdvancedMarkerElement({
+            position: location,
+            map: map,
+            title: "LERONE Bar",
+        });
+    } else {
+        console.warn("AdvancedMarkerElement nije podržan u trenutnom okruženju.");
+    }
 }
 
 // Provjera za slučaj da se callback ne izvrši
@@ -269,6 +268,7 @@ window.onload = function () {
         console.error("Google Maps nije učitan. Provjerite API konfiguraciju.");
     }
 };
+
 
 
     </script>
