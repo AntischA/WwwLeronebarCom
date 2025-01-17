@@ -3,49 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caffe bar LERONE</title>
+    <title>LERONE Bar</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        .main-header {
+            background: #333;
+            color: #fff;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            text-align: center;
+            flex: 1 1 100%;
+        }
+
+        .logo img {
+            height: 50px;
+            width: auto;
+        }
+
+        .nav-icons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 200px;
+            margin: 10px auto;
+        }
+
+        .nav-icons a {
+            text-decoration: none;
+        }
+
+        .social-icon, .menu-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .hero {
+            background: url('slike/hero.jpeg') no-repeat center center/cover;
+            height: 60vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            text-align: center;
+        }
+
+        .hero-text h1 {
+            font-size: 3rem;
+            margin: 0;
+        }
+
+        .hero-text p {
+            font-size: 1.5rem;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .about, .gallery, .map {
+            padding: 40px 0;
+        }
+
+        .gallery-slider {
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .gallery-item {
+            min-width: 100%;
+            transition: transform 0.5s ease-in-out;
+        }
+
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 80%;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        #map {
+            width: 100%;
+            height: 400px;
+        }
+
+        footer {
+            background: #333;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+        }
+        @font-face {
+    font-family: 'Poppins';
+    src: url('poppins/Poppins-Regular.woff2') format('woff2');
+}
+
+    </style>
 </head>
 <body>
     <header class="main-header">
-        <nav>
-            <div class="logo">
-                <a href="#">LERONE</a>
-            </div>
-            <button class="menu-toggle" id="menu-toggle">☰</button>
-            <ul class="nav-links" id="nav-links">
-                <li><a href="#naslovna">Naslovna</a></li>
-                <li><a href="#o-nama">O nama</a></li>
-                <li><a href="#galerija">Galerija</a></li>
-                <li><a href="#usluge">Usluge</a></li>
-                <li><a href="#kontakt">Kontakt</a></li>
-            </ul>
-        </nav>
+        <div class="logo">
+            <a href="#">
+                <img src="slike/logo.png" alt="Logo LERONE Bar">
+            </a>
+        </div>
+        <div class="nav-icons">
+            <a href="cjenik.html">
+                <img src="slike/menu-icon.png" alt="Cjenik" class="menu-icon">
+            </a>
+            <a href="https://www.facebook.com/caffebarlerone" target="_blank">
+                <img src="slike/facebook-icon.png" alt="Facebook" class="social-icon">
+            </a>
+            <a href="https://www.instagram.com/caffebarlerone" target="_blank">
+                <img src="slike/Instagram-icon.png" alt="Instagram" class="social-icon">
+            </a>
+        </div>
     </header>
 
-    <section id="galerija" class="gallery-section">
+    <section class="hero">
+        <div class="hero-text">
+            <h1>Dobrodošli u LERONE Bar</h1>
+            <p>Uživajte u vrhunskoj kavi i opuštenoj atmosferi u srcu Splita.</p>
+        </div>
+    </section>
+
+    <section class="about">
+        <div class="container">
+            <h2>O nama</h2>
+            <p>LERONE Bar smješten je u Splitu i nudi širok izbor pića u ugodnom ambijentu. Posjetite nas i doživite jedinstveno iskustvo.</p>
+            <p><strong>Adresa:</strong> Poljička cesta 1, Split</p>
+            <p><strong>Radno vrijeme:</strong> Ponedjeljak – Nedjelja: 07:00 – 24:00</p>
+        </div>
+    </section>
+
+    <section class="gallery">
         <div class="container">
             <h2>Galerija</h2>
-            <div class="gallery-grid">
-                <img src="slika1.jpg" alt="Caffe bar unutrašnjost" class="gallery-item">
-                <img src="slika2.jpg" alt="Šalica kave" class="gallery-item">
-                <img src="slika3.jpg" alt="Gostoljubivo osoblje" class="gallery-item">
-                <img src="slika4.jpg" alt="Terasa kafića" class="gallery-item">
+            <div class="gallery-slider" id="gallery-slider">
+                <img src="slike/1.jpg" alt="Unutrašnjost LERONE Bara" class="gallery-item">
+                <img src="slike/2.jpg" alt="Šalica kave" class="gallery-item">
+                <img src="slike/3.jpg" alt="Gostoljubivo osoblje" class="gallery-item">
+                <img src="slike/4.jpg" alt="Terasa kafića" class="gallery-item">
             </div>
         </div>
-        <div class="lightbox" id="lightbox">
-            <span class="lightbox-close" id="lightbox-close">&times;</span>
-            <img src="" alt="Pregled slike" id="lightbox-img">
+    </section>
+
+    <section class="map">
+        <div class="container">
+            <h2>Lokacija</h2>
+            <div id="map"></div>
         </div>
     </section>
 
     <footer>
         <div class="container">
-            <p>&copy; 2025 Caffe bar LERONE. Sva prava pridržana.</p>
+            <p>&copy; 2025 LERONE Bar. Sva prava pridržana.</p>
         </div>
     </footer>
 
-    <script src="script.js"></script>
+    <script>
+        // Automatska galerija
+        let currentIndex = 0;
+        const slider = document.getElementById('gallery-slider');
+        const items = slider.querySelectorAll('.gallery-item');
+
+        function showNextImage() {
+            items.forEach((item, index) => {
+                item.style.transform = `translateX(${(index - currentIndex) * 100}%)`;
+            });
+            currentIndex = (currentIndex + 1) % items.length;
+        }
+
+        setInterval(showNextImage, 3000);
+
+        // Lightbox
+        const lightbox = document.createElement('div');
+        lightbox.className = 'lightbox';
+        document.body.appendChild(lightbox);
+
+        const lightboxImg = document.createElement('img');
+        lightbox.appendChild(lightboxImg);
+
+        const lightboxClose = document.createElement('span');
+        lightboxClose.className = 'lightbox-close';
+        lightboxClose.innerHTML = '&times;';
+        lightbox.appendChild(lightboxClose);
+
+        items.forEach(item => {
+            item.addEventListener('click', () => {
+                lightbox.style.display = 'flex';
+                lightboxImg.src = item.src;
+            });
+        });
+
+        lightboxClose.addEventListener('click', () => {
+            lightbox.style.display = 'none';
+        });
+
+        // Google mapa
+function initMap() {
+    const location = { lat: 43.5081, lng: 16.4402 }; // Lokacija Split
+const map = new google.maps.Map(document.getElementById('map'), {
+    zoom: 15,
+    center: location,
+    mapId: "a4bce58eae79aebb", // Vaš validni Map ID
+});
+
+
+    // Dodavanje naprednog markera
+    if (if (google.maps.marker.AdvancedMarkerElement) {
+    new google.maps.marker.AdvancedMarkerElement({
+        position: location,
+        map: map,
+        title: "LERONE Bar",
+    });
+} else {
+    console.warn("AdvancedMarkerElement nije podržan u trenutnom okruženju.");
+}
+
+// Provjera za slučaj da se callback ne izvrši
+window.onload = function () {
+    if (typeof google !== "undefined" && typeof google.maps !== "undefined") {
+        initMap();
+    } else {
+        console.error("Google Maps nije učitan. Provjerite API konfiguraciju.");
+    }
+};
+
+
+    </script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQxY9g9ua-uI7KzU3-dRujg2WZ_gbQ7Ts&callback=initMap&libraries=marker&map_ids=a4bce58eae79aebb" async defer></script>
+
 </body>
 </html>
