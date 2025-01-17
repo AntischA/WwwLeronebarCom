@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Poppins', Arial, sans-serif;
             margin: 0;
             padding: 0;
             color: #333;
@@ -81,44 +81,50 @@
             padding: 40px 0;
         }
 
-        .gallery-slider {
-            display: flex;
-            overflow: hidden;
+        .gallery-slider-wrapper {
             position: relative;
+            overflow: hidden;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
         }
 
-        .gallery-item {
-            min-width: 100%;
+        .gallery-slider {
+            display: flex;
             transition: transform 0.5s ease-in-out;
         }
 
-        .lightbox {
-            position: fixed;
-            top: 0;
-            left: 0;
+        .gallery-item {
+            flex-shrink: 0;
             width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
+            object-fit: cover;
         }
 
-        .lightbox img {
-            max-width: 90%;
-            max-height: 80%;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .lightbox-close {
+        .gallery-nav {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
             color: #fff;
+            border: none;
+            padding: 10px 20px;
             cursor: pointer;
+            z-index: 10;
+            font-size: 1.5rem;
+            border-radius: 5px;
+            user-select: none;
+        }
+
+        .gallery-nav.prev {
+            left: 10px;
+        }
+
+        .gallery-nav.next {
+            right: 10px;
+        }
+
+        .gallery-nav:hover {
+            background: rgba(0, 0, 0, 0.8);
         }
 
         #map {
@@ -133,11 +139,20 @@
             padding: 20px;
             font-size: 14px;
         }
-        @font-face {
-    font-family: 'Poppins';
-    src: url('poppins/Poppins-Regular.woff2') format('woff2');
-}
 
+        @media (max-width: 768px) {
+            .main-header {
+                flex-direction: column;
+            }
+
+            .hero-text h1 {
+                font-size: 2rem;
+            }
+
+            .gallery-slider {
+                flex-wrap: nowrap;
+            }
+        }
     </style>
 </head>
 <body>
@@ -179,11 +194,10 @@
     <section class="gallery">
         <div class="container">
             <h2>Galerija</h2>
-            <div class="gallery-slider" id="gallery-slider">
-                <img src="slike/1.jpg" alt="Unutrašnjost LERONE Bara" class="gallery-item">
-                <img src="slike/2.jpg" alt="Šalica kave" class="gallery-item">
-                <img src="slike/3.jpg" alt="Gostoljubivo osoblje" class="gallery-item">
-                <img src="slike/4.jpg" alt="Terasa kafića" class="gallery-item">
+            <div class="gallery-slider-wrapper">
+                <button class="gallery-nav prev">&lt;</button>
+                <div class="gallery-slider" id="gallery-slider"></div>
+                <button class="gallery-nav next">&gt;</button>
             </div>
         </div>
     </section>
@@ -202,77 +216,129 @@
     </footer>
 
     <script>
-        // Automatska galerija
-        let currentIndex = 0;
-        const slider = document.getElementById('gallery-slider');
-        const items = slider.querySelectorAll('.gallery-item');
+document.addEventListener('DOMContentLoaded', () => {
+    const slider = document.getElementById('gallery-slider');
+    const prevButton = document.querySelector('.gallery-nav.prev');
+    const nextButton = document.querySelector('.gallery-nav.next');
+    let currentIndex = 0;
 
-        function showNextImage() {
-            items.forEach((item, index) => {
-                item.style.transform = `translateX(${(index - currentIndex) * 100}%)`;
-            });
-            currentIndex = (currentIndex + 1) % items.length;
+    const images = [];
+    for (let i = 1; i <= 10; i++) {
+        const imgPath = `slike/${i}.jpg`;
+        const img = new Image();
+        img.src = imgPath;
+        img.alt = `Galerija slika ${i}`;
+        img.className = 'gallery-item';
+
+        img.onload = () => {
+            slider.appendChild(img);
+            images.push(img);
+            if (images.length === 1) {
+                updateSliderPosition();
+            }
+        };
+
+        img.onerror = () => {
+            console.warn(`Slika nije pronađena: ${imgPath}`);
+        };
+    }
+
+    function updateSliderPosition() {
+        if (images.length > 0) {
+            const offset = -currentIndex * 100;
+            slider.style.transform = `translateX(${offset}%)`;
         }
+    }
 
-        setInterval(showNextImage, 3000);
+    function showPrevSlide() {
+        if (images.length === 0) return;
+        currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1;
+        updateSliderPosition();
+    }
 
-        // Lightbox
-        const lightbox = document.createElement('div');
-        lightbox.className = 'lightbox';
-        document.body.appendChild(lightbox);
+    function showNextSlide() {
+        if (images.length === 0) return;
+        currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
+        updateSliderPosition();
+    }
 
-        const lightboxImg = document.createElement('img');
-        lightbox.appendChild(lightboxImg);
+    prevButton.addEventListener('click', showPrevSlide);
+    nextButton.addEventListener('click', showNextSlide);
 
-        const lightboxClose = document.createElement('span');
-        lightboxClose.className = 'lightbox-close';
-        lightboxClose.innerHTML = '&times;';
-        lightbox.appendChild(lightboxClose);
+    setInterval(() => {
+        if (images.length > 0) {
+            showNextSlide();
+        }
+    }, 5000);
+});
 
-        items.forEach(item => {
-            item.addEventListener('click', () => {
-                lightbox.style.display = 'flex';
-                lightboxImg.src = item.src;
-            });
-        });
 
-        lightboxClose.addEventListener('click', () => {
-            lightbox.style.display = 'none';
-        });
+async function createMarker(map, place) {
+    const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+    const location = place.geometry.location;
 
-function initMap() {
-    const location = { lat: 43.5081, lng: 16.4402 }; // Lokacija Split
-    const map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 15,
-        center: location,
-        mapId: "a4bce58eae79aebb", // Vaš validni Map ID
+    const marker = new AdvancedMarkerElement({
+        position: location,
+        map: map,
     });
 
-    // Dodavanje naprednog markera
-    if (google.maps.marker.AdvancedMarkerElement) {
-        new google.maps.marker.AdvancedMarkerElement({
-            position: location,
-            map: map,
-            title: "LERONE Bar",
-        });
-    } else {
-        console.warn("AdvancedMarkerElement nije podržan u trenutnom okruženju.");
-    }
+    const infoWindowContent = `
+        <div>
+            <h3>${place.name}</h3>
+            <p><strong>Address:</strong> ${place.formatted_address || "Not available"}</p>
+            <p><strong>Rating:</strong> ${place.rating || "Not available"}</p>
+        </div>
+    `;
+
+    const infoWindow = new google.maps.InfoWindow({
+        content: infoWindowContent,
+    });
+
+    // Otvori InfoWindow prema zadanim postavkama
+    infoWindow.open(map, marker);
+
+    // Dodavanje događaja za ponovno otvaranje InfoWindow-a na klik
+    marker.addListener("click", () => {
+        infoWindow.open(map, marker);
+    });
 }
 
-// Provjera za slučaj da se callback ne izvrši
-window.onload = function () {
-    if (typeof google !== "undefined" && typeof google.maps !== "undefined") {
-        initMap();
-    } else {
-        console.error("Google Maps nije učitan. Provjerite API konfiguraciju.");
-    }
-};
+async function initMap() {
+    const map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 15,
+        center: { lat: 43.505109, lng: 16.4547333 },
+        mapId: "a4bce58eae79aebb",
+    });
+
+    const service = new google.maps.places.PlacesService(map);
+    const placeName = "Caffe bar LERONE";
+
+    service.findPlaceFromQuery(
+        {
+            query: placeName,
+            fields: ["geometry", "name", "formatted_address", "rating"],
+        },
+        (results, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                createMarker(map, results[0]); // Poziva se asinhrona funkcija
+            } else {
+                console.error("Greška: Lokacija nije pronađena.");
+            }
+        }
+    );
+}
 
 
 
+        window.onload = function () {
+            if (typeof google === "undefined" || typeof google.maps === "undefined") {
+                alert("Google Maps API nije uspješno učitan. Provjerite internetsku vezu ili API ključ.");
+            } else {
+                initMap();
+            }
+        };
     </script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQxY9g9ua-uI7KzU3-dRujg2WZ_gbQ7Ts&callback=initMap&libraries=marker&map_ids=a4bce58eae79aebb" async defer></script>
 
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQxY9g9ua-uI7KzU3-dRujg2WZ_gbQ7Ts&callback=initMap&libraries=places&map_ids=a4bce58eae79aebb&loading=async" defer></script>
 </body>
 </html>
