@@ -221,6 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const prevButton = document.querySelector('.gallery-nav.prev');
     const nextButton = document.querySelector('.gallery-nav.next');
     let currentIndex = 0;
+    let autoSlideInterval;
 
     const images = [];
     for (let i = 1; i <= 10; i++) {
@@ -233,8 +234,10 @@ document.addEventListener('DOMContentLoaded', () => {
         img.onload = () => {
             slider.appendChild(img);
             images.push(img);
+            img.addEventListener('click', () => openFullScreen(i - 1));
             if (images.length === 1) {
                 updateSliderPosition();
+                startAutoSlide();
             }
         };
 
@@ -254,23 +257,105 @@ document.addEventListener('DOMContentLoaded', () => {
         if (images.length === 0) return;
         currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1;
         updateSliderPosition();
+        resetAutoSlide();
     }
 
     function showNextSlide() {
         if (images.length === 0) return;
         currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
         updateSliderPosition();
+        resetAutoSlide();
+    }
+
+    function startAutoSlide() {
+        autoSlideInterval = setInterval(() => {
+            if (images.length > 0) {
+                showNextSlide();
+            }
+        }, 5000);
+    }
+
+    function resetAutoSlide() {
+        clearInterval(autoSlideInterval);
+        startAutoSlide();
     }
 
     prevButton.addEventListener('click', showPrevSlide);
     nextButton.addEventListener('click', showNextSlide);
 
-    setInterval(() => {
-        if (images.length > 0) {
-            showNextSlide();
-        }
-    }, 5000);
+let startX;
+
+slider.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
 });
+
+slider.addEventListener('touchend', (e) => {
+    const endX = e.changedTouches[0].clientX;
+    const diffX = startX - endX;
+
+    if (diffX > 50) {
+        showNextSlide();
+    } else if (diffX < -50) {
+        showPrevSlide();
+    }
+    startX = null;
+});
+
+function openFullScreen(index) {
+    const modal = document.createElement('div');
+    modal.className = 'fullscreen-modal';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    modal.style.display = 'flex';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    modal.style.zIndex = '1000';
+
+    const fullscreenImage = new Image();
+    fullscreenImage.src = images[index].src;
+    fullscreenImage.style.maxWidth = '90%';
+    fullscreenImage.style.maxHeight = '90%';
+
+    modal.appendChild(fullscreenImage);
+
+    // Swipe u full-screen modu
+    let touchStartX;
+
+    modal.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+    });
+
+    modal.addEventListener('touchend', (e) => {
+        const touchEndX = e.changedTouches[0].clientX;
+        const diffX = touchStartX - touchEndX;
+
+        if (diffX > 50) {
+            index = (index + 1) % images.length;
+            fullscreenImage.src = images[index].src;
+        } else if (diffX < -50) {
+            index = (index - 1 + images.length) % images.length;
+            fullscreenImage.src = images[index].src;
+        }
+    });
+
+    modal.addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+
+    document.body.appendChild(modal);
+}
+
+});
+
+
+
+
+
+
 
 
 async function createMarker(map, place) {
