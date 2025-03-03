@@ -8,6 +8,7 @@ WORKDIR /app
 COPY requirements.txt requirements.txt
 COPY app.py app.py
 COPY static static
+COPY templates templates
 
 # Instaliraj Python pakete
 RUN pip install --no-cache-dir -r requirements.txt
