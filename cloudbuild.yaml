@@ -20,3 +20,6 @@ steps:
 
 images:
   - 'gcr.io/web-stranica-wwwleronebarcom/wwwleronebarcom'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
