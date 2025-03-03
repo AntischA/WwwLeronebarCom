@@ -17,6 +17,7 @@ def serve_static(filename):
 
 
 
+
 @app.route("/get-maps-api-key")
 def get_maps_api_key():
     return f'<script src="https://maps.googleapis.com/maps/api/js?key={GOOGLE_MAPS_API_KEY}&callback=initMap&libraries=places&map_ids=a4bce58eae79aebb&loading=async" defer></script>'
