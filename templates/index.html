@@ -54,8 +54,8 @@
         /* HEADER */
 .main-header {
     width: 100%;
-    background: #333;
-    color: #fff;
+    background: #191d22;
+    color: #191d22;
     padding: 10px 20px;
     display: flex;
     justify-content: center; /* Centriranje sadržaja */
@@ -102,7 +102,7 @@
     align-items: center;
     width: 100vw;
     height: 100vh; /* Popunjava celu visinu ekrana */
-    background: #333;
+    background: #191d22;
     color: white;
 }
         .gallery {
@@ -152,7 +152,7 @@
     align-items: center;
     width: 100vw;
     height: 100vh; /* Zauzima punu visinu ekrana */
-    background: #333;
+    background: #191d22;
     color: white;
     justify-content: flex-start; /* Postavlja sadržaj na vrh */
 }
@@ -164,7 +164,7 @@
 
         /* FOOTER */
 footer {
-    background: #333;
+    background: #191d22;
     color: white;
     text-align: center;
     padding: 20px;
@@ -179,7 +179,7 @@ footer {
     align-items: center;
     width: 100vw;
     height: 100vh; /* Popunjava celu visinu ekrana */
-    background: #333;
+    background: #191d22;
     color: white;
 }
 
@@ -228,47 +228,49 @@ footer {
 }
 
 .action-buttons a {
-    flex: 1; /* Svako dugme zauzima jednak deo ekrana */
+    flex: 1;
     text-align: center;
     text-decoration: none;
     font-weight: bold;
     font-size: 14px;
-    color: white;
-    padding: 10px 0;
-    border: none;
+    color: white; /* Crni tekst za dobar kontrast */
+    padding: 10px 0 10px 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 0; /* Smanjuje razmak između ikone i teksta */
+    gap: 2px;
+    background-color: #191d22; /* Svijetlo siva pozadina */
+    transition: 0.3s ease-in-out;
+}
+
+/* BOJE IKONA */
+.call-button span {
+    color: #E85D04; /* Narandžasta */
+}
+
+.menu-button span {
+    color: #0077B6; /* Plava */
+}
+
+.whatsapp-button span {
+    color: #25D366; /* Zelena */
+}
+
+/* HOVER EFEKT */
+.action-buttons a:hover {
+    filter: brightness(0.95); /* Blago zatamnjenje pri hoveru */
+    transform: scale(1.02);
 }
 
 .action-buttons a span {
-    font-size: 20px; /* Ikona malo veća */
-    line-height: 1; /* Sprečava preveliki razmak */
+    font-size: 28px; /* Povećava ikone */
+    line-height: 1; /* Sprečava dodatni prostor ispod ikone */
 }
-
-.call-button {
-    background-color: #ff5733;
-}
-
-.menu-button {
-    background-color: #007bff;
-}
-
-.whatsapp-button {
-    background-color: #25D366;
-}
-
-.call-button:hover, .menu-button:hover, .whatsapp-button:hover {
-    opacity: 0.8;
-}
-
-.action-buttons a i,
+/* Alternativa za slike */
 .action-buttons a img {
-    font-size: 24px; /* Veličina Font Awesome ikone */
-    width: 24px; /* Veličina SVG slike */
-    height: 24px;
+    width: 32px; /* Veća širina ikone */
+    height: 32px; /* Veća visina ikone */
 }
 
     </style>
