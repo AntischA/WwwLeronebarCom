@@ -30,18 +30,18 @@
             position: relative;
         }
 
-        .screen {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            color: black;
-            position: absolute;
-            top: 0;
-            transition: transform 0.5s ease-in-out;
-        }
+.screen {
+    width: 100vw;
+    height: calc(var(--vh, 1vh) * 100); /* Prilagođava se visini ekrana bez navigacione trake */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: black;
+    position: absolute;
+    top: 0;
+    transition: transform 0.5s ease-in-out;
+}
 
         .screen:nth-child(odd) {
             background: white;
@@ -396,6 +396,21 @@ footer {
     }
 
     updateScreenPosition();
+
+    function setScreenHeight() {
+    let vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+
+// Pozivanje funkcije pri učitavanju
+setScreenHeight();
+
+// Ažuriranje visine pri promeni veličine ekrana (rotacija telefona)
+window.addEventListener('resize', setScreenHeight);
+
+
+
+
 
     // Galerija
 document.addEventListener('DOMContentLoaded', () => {
