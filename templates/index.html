@@ -158,6 +158,10 @@
 }
 
 
+#map {
+    width: 100%; /* Mapa zauzima punu širinu */
+    height: 50vh; /* Zauzima gornju polovinu ekrana */
+}
 
 
         /* FOOTER */
@@ -165,7 +169,6 @@ footer {
     background: #191d22;
     color: white;
     text-align: center;
-    padding: 20px;
     width: 100%;
 }
 
@@ -173,33 +176,32 @@ footer {
 #screen4 {
     display: flex;
     flex-direction: column;
-    justify-content: center; /* Centriranje sadržaja */
     align-items: center;
     width: 100vw;
-    height: 100vh; /* Popunjava celu visinu ekrana */
+    height: 100vh;
     background: #191d22;
     color: white;
 }
 
-
 .footer-content {
+    flex: 1; /* Ostatak sadržaja ispod mape */
     display: flex;
     flex-direction: column;
-    justify-content: center; /* Centriranje sadržaja */
+    justify-content: center;
     align-items: center;
     width: 100%;
     max-width: 100%;
-    height: 100%;
-    max-height: 100%;
     text-align: center;
 }
 
-.footer-content map {
-    width: 100%; /* Mapa zauzima celu širinu ekrana */
-    height: 50vh; /* Zauzima polovinu ekrana */
-    max-height: 300px; /* Ograničena maksimalna visina */
-    margin-bottom: 20px; /* Razmak ispod mape */
+.footer-bottom {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    text-align: center;
 }
+
+
 
 
 
@@ -339,10 +341,10 @@ footer {
 <!-- EKRAN 4: FOOTER -->
 <div class="screen" id="screen4">
     <footer>
-        <div class="footer-content">
-            <!-- Mapa sada prva u footeru -->
-            <div id="map"></div>
+        <!-- Mapa zauzima gornju polovinu ekrana -->
+        <div id="map"></div>
 
+        <div class="footer-content">
             <h2>LERONE Bar</h2>
             <p><strong>Adresa:</strong> Poljička cesta 1, Split</p>
             <p><strong>Radno vreme:</strong> Ponedjeljak - Nedjelja: 06:30 - 00:00</p>
@@ -353,7 +355,8 @@ footer {
                 <a href="https://www.instagram.com/caffebarlerone" target="_blank">📷 Instagram</a>
             </div>
 
-            <p>&copy; 2025 LERONE Bar. Sva prava pridržana.</p>
+            <!-- Ovaj deo uvek ostaje na dnu -->
+            <p class="footer-bottom">&copy; 2025 LERONE Bar. Sva prava pridržana.</p>
         </div>
     </footer>
 </div>
