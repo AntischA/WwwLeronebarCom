@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LERONE Bar</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
     <style>
         * {
             margin: 0;
@@ -220,32 +221,54 @@ footer {
 
 .action-buttons {
     position: absolute;
-    bottom: 20px; /* Postavlja dugmad na dno ekrana */
+    bottom: 0;
+    left: 0;
+    width: 100vw; /* Zauzima celu širinu ekrana */
     display: flex;
-    gap: 15px; /* Razmak između dugmadi */
 }
 
 .action-buttons a {
-    padding: 12px 20px;
-    font-size: 16px;
-    font-weight: bold;
+    flex: 1; /* Svako dugme zauzima jednak deo ekrana */
+    text-align: center;
     text-decoration: none;
-    border-radius: 8px;
-    transition: 0.3s;
+    font-weight: bold;
+    font-size: 14px;
+    color: white;
+    padding: 10px 0;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0; /* Smanjuje razmak između ikone i teksta */
+}
+
+.action-buttons a span {
+    font-size: 20px; /* Ikona malo veća */
+    line-height: 1; /* Sprečava preveliki razmak */
 }
 
 .call-button {
-    background-color: #ff5733; /* Crvena boja za poziv */
-    color: white;
+    background-color: #ff5733;
 }
 
 .menu-button {
-    background-color: #007bff; /* Plava boja za cjenik */
-    color: white;
+    background-color: #007bff;
 }
 
-.call-button:hover, .menu-button:hover {
+.whatsapp-button {
+    background-color: #25D366;
+}
+
+.call-button:hover, .menu-button:hover, .whatsapp-button:hover {
     opacity: 0.8;
+}
+
+.action-buttons a i,
+.action-buttons a img {
+    font-size: 24px; /* Veličina Font Awesome ikone */
+    width: 24px; /* Veličina SVG slike */
+    height: 24px;
 }
 
     </style>
@@ -261,10 +284,20 @@ footer {
             </div>
         </header>
         <section class="hero"></section>
-        <div class="action-buttons">
-    <a href="tel:+385912224214" class="call-button">📞 Pozovi</a>
-    <a href="https://www.dotyourspot.com/Fnp253/" target="_blank" class="menu-button">📜 Cjenik</a>
+<div class="action-buttons">
+    <a href="tel:+385912224214" class="call-button">
+        <span>📞</span><br> Nazovi nas
+    </a>
+    <a href="https://www.dotyourspot.com/Fnp253/" target="_blank" class="menu-button">
+        <span>📜</span><br> Pregledaj Cjenik
+    </a>
+<a href="https://wa.me/385912224214?text=Dobar%20dan,%20želio%20bih%20dobiti%20više%20informacija%20o%20ponudi."
+   target="_blank" class="whatsapp-button">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
+         alt="WhatsApp" width="24" height="24"><br> Piši nam
+</a>
 </div>
+
 
     </div>
 

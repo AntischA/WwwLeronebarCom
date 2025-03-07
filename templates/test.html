@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LERONE Bar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+
+
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <div class="logo">
+            <a href="#">
+                <img src="/static/slike/logo.png" alt="Logo LERONE Bar">
+            </a>
+        </div>
+        <div class="nav-icons">
+            <a href="cjenik.html">
+                <img src="/static/slike/menu-icon.png" alt="Cjenik" class="menu-icon">
+            </a>
+            <a href="https://www.facebook.com/caffebarlerone" target="_blank">
+                <img src="/static/slike/facebook-icon.png" alt="Facebook" class="social-icon">
+            </a>
+            <a href="https://www.instagram.com/caffebarlerone" target="_blank">
+                <img src="/static/slike/Instagram-icon.png" alt="Instagram" class="social-icon">
+            </a>
+        </div>
+    </header>
+
+    <section class="hero">
+    </section>
+
+    <section class="about">
+        <div class="container">
+            <h1>Dobrodošli u LERONE Bar</h1>
+            <h2>Uživajte u vrhunskoj kavi i opuštenoj atmosferi u srcu Splita.</h2>
+
+            <p>LERONE Bar smješten je u Splitu i nudi širok izbor pića u ugodnom ambijentu. Posjetite nas i doživite jedinstveno iskustvo.</p>
+            <p><strong>Adresa:</strong> Poljička cesta 1, Split</p>
+            <p><strong>Radno vrijeme:</strong> Ponedjeljak – Nedjelja: 07:00 – 24:00</p>
+        </div>
+    </section>
+
+    <section class="gallery">
+        <div class="container">
+            <h2>Galerija</h2>
+            <div class="gallery-slider-wrapper">
+                <button class="gallery-nav prev">&lt;</button>
+                <div class="gallery-slider" id="gallery-slider"></div>
+                <button class="gallery-nav next">&gt;</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="map">
+        <div class="container">
+            <h2>Lokacija</h2>
+            <div id="map"></div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 LERONE Bar. Sva prava pridržana.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slider = document.getElementById('gallery-slider');
+            const images = [];
+
+            for (let i = 1; i <= 10; i++) {
+                const img = new Image();
+                img.src = `/static/slike/${i}.jpg`;
+                img.alt = `Galerija slika ${i}`;
+                img.className = 'gallery-item';
+
+                img.onload = () => {
+                    slider.appendChild(img);
+                    images.push(img);
+                };
+
+                img.onerror = () => {
+                    console.warn(`Slika nije pronađena: /static/slike/${i}.jpg`);
+                };
+            }
+        });
+
+        function initMap() {
+            const map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 15,
+                center: { lat: 43.505109, lng: 16.4547333 },
+            });
+
+            new google.maps.Marker({
+                position: { lat: 43.505109, lng: 16.4547333 },
+                map: map,
+                title: "LERONE Bar"
+            });
+        }
+    </script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQxY9g9ua-uI7KzU3-dRujg2WZ_gbQ7Ts&callback=initMap" defer></script>
+</body>
+</html>
