@@ -32,7 +32,7 @@
 
 .screen {
     width: 100vw;
-    height: calc(var(--vh, 1vh) * 100); /* Pravilno koristi varijablu */
+    height: 100vh; /* Ovo će JS nadjačati ako je potrebno */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -504,23 +504,19 @@ function initMap() {
 }
 
 
-function setScreenHeight() {
-    // Dobijamo trenutnu visinu prozora pregledača i računamo 1% visine ekrana
-    let vh = window.innerHeight * 0.01;
-    document.documentElement.style.setProperty('--vh', `${vh}px`);
+function adjustScreenHeight() {
+    let screenHeight = window.innerHeight + 'px'; // Prava visina prozora
+    document.querySelectorAll('.screen').forEach(screen => {
+        screen.style.height = screenHeight;
+    });
 }
 
-// Pozovi funkciju čim se stranica učita
-document.addEventListener("DOMContentLoaded", () => {
-    setScreenHeight(); // Inicijalno postavljanje visine
-    updateScreenPosition(); // Osigurava ispravan prikaz odmah
-});
+// Postavi visinu prilikom učitavanja stranice
+document.addEventListener("DOMContentLoaded", adjustScreenHeight);
 
-// Osiguraj ažuriranje pri promeni veličine ekrana (npr. rotacija telefona)
-window.addEventListener('resize', () => {
-    setScreenHeight();
-    updateScreenPosition(); // Ponovo ažuriraj prikaz kada se promeni veličina ekrana
-});
+// Ažuriraj visinu kada korisnik promeni veličinu ekrana (npr. rotacija telefona)
+window.addEventListener('resize', adjustScreenHeight);
+
 
 </script>
 
