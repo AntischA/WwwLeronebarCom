@@ -32,7 +32,7 @@
 
 .screen {
     width: 100vw;
-    height: calc(var(--vh, 1vh) * 100); /* Prilagođava se visini ekrana bez navigacione trake */
+    height: calc(var(--vh, 1vh) * 100); /* Pravilno koristi varijablu */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -397,22 +397,9 @@ footer {
 
     updateScreenPosition();
 
-    function setScreenHeight() {
-    let vh = window.innerHeight * 0.01;
-    document.documentElement.style.setProperty('--vh', `${vh}px`);
-}
 
 
-
-
-
-    // Pozivanje funkcije pri učitavanju
-    setScreenHeight();
-
-    // Ažuriranje visine pri promeni veličine ekrana (rotacija telefona)
-    window.addEventListener('resize', setScreenHeight);
-
-    // Galerija
+      // Galerija
 document.addEventListener('DOMContentLoaded', () => {
     const slider = document.getElementById('gallery-slider');
     const prevButton = document.querySelector('.gallery-nav.prev');
@@ -516,10 +503,29 @@ function initMap() {
     map.controls[google.maps.ControlPosition.TOP_RIGHT].push(mapControls);
 }
 
+function setScreenHeight() {
+    // Dobijamo trenutnu visinu prozora pregledača i računamo 1% visine ekrana
+    let vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+
+// Pozovi funkciju čim se stranica učita
+document.addEventListener("DOMContentLoaded", () => {
+    setScreenHeight(); // Inicijalno postavljanje visine
+    updateScreenPosition(); // Osigurava ispravan prikaz odmah
+});
+
+// Osiguraj ažuriranje pri promeni veličine ekrana (npr. rotacija telefona)
+window.addEventListener('resize', () => {
+    setScreenHeight();
+    updateScreenPosition(); // Ponovo ažuriraj prikaz kada se promeni veličina ekrana
+});
+
 
 </script>
 
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQxY9g9ua-uI7KzU3-dRujg2WZ_gbQ7Ts&callback=initMap" defer></script>
+
 
 </body>
 </html>
