@@ -503,6 +503,7 @@ function initMap() {
     map.controls[google.maps.ControlPosition.TOP_RIGHT].push(mapControls);
 }
 
+
 function setScreenHeight() {
     // Dobijamo trenutnu visinu prozora pregledača i računamo 1% visine ekrana
     let vh = window.innerHeight * 0.01;
@@ -520,7 +521,6 @@ window.addEventListener('resize', () => {
     setScreenHeight();
     updateScreenPosition(); // Ponovo ažuriraj prikaz kada se promeni veličina ekrana
 });
-
 
 </script>
 
