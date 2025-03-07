@@ -157,10 +157,8 @@
     justify-content: flex-start; /* Postavlja sadržaj na vrh */
 }
 
-#map {
-    width: 100vw;
-    height: 50vh; /* Mapa zauzima pola visine ekrana */
-}
+
+
 
         /* FOOTER */
 footer {
@@ -183,18 +181,34 @@ footer {
     color: white;
 }
 
+
 .footer-content {
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* Raspoređuje elemente ravnomerno */
+    justify-content: center; /* Centriranje sadržaja */
     align-items: center;
-    width: 100%; /* Širina sadržaja */
+    width: 100%;
     max-width: 100%;
-    height: 100%; /* Popunjava celu visinu */
+    height: 100%;
     max-height: 100%;
-
     text-align: center;
-    padding: 20px;
+}
+
+.footer-content map {
+    width: 100%; /* Mapa zauzima celu širinu ekrana */
+    height: 50vh; /* Zauzima polovinu ekrana */
+    max-height: 300px; /* Ograničena maksimalna visina */
+    margin-bottom: 20px; /* Razmak ispod mape */
+}
+
+
+
+.footer-content p:last-child {
+    position: absolute;
+    bottom: 20px; /* Razmak od dna */
+    left: 0;
+    width: 100%;
+    text-align: center;
 }
 
 .footer-links {
@@ -319,9 +333,6 @@ footer {
 
     <!-- EKRAN 3: MAPA -->
     <div class="screen" id="screen3">
-        <section class="map">
-            <div id="map"></div>
-        </section>
     </div>
 
     <!-- EKRAN 4: FOOTER -->
@@ -329,14 +340,15 @@ footer {
 <div class="screen" id="screen4">
     <footer>
         <div class="footer-content">
+            <!-- Mapa sada prva u footeru -->
+            <div id="map"></div>
+
             <h2>LERONE Bar</h2>
-            <p>Uživajte u vrhunskoj kafi i opuštenoj atmosferi u srcu Splita.</p>
-            <p><strong>Adresa:</strong> Poljička cesta 1, Split, Hrvatska</p>
+            <p><strong>Adresa:</strong> Poljička cesta 1, Split</p>
             <p><strong>Radno vreme:</strong> Ponedjeljak - Nedjelja: 06:30 - 00:00</p>
 
             <div class="footer-links">
                 <a href="https://www.google.com/maps/dir/?api=1&destination=43.505109,16.4547333" target="_blank">📍 Kako do nas (Google Maps)</a>
-                <a href="https://www.dotyourspot.com/Fnp253/">📜 Pogledajte cjenik</a>
                 <a href="https://www.facebook.com/caffebarlerone" target="_blank">📘 Facebook</a>
                 <a href="https://www.instagram.com/caffebarlerone" target="_blank">📷 Instagram</a>
             </div>
