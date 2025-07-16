@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/kalkulator.css') }}">
+
+</head>
+
+
+<body>
+    <div class="container">
+        <form id="calculatorForm">
+
+            <div class="top-section">
+                <div class="section calculator">
+                    <div class="input-area">
+                        <div class="form-group">
+                            <label>Polog (€):</label>
+                            <input type="number" id="pocetni-polog" name="pocetni_polog" value="350">
+                        </div>
+                        <div class="form-group">
+                            <label>Promet (€):</label>
+                            <input type="number" id="dnevni-promet" name="dnevni_promet">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bottom-section">
+                <div class="section currency">
+                    <h2>Kovanice i Gotovina</h2>
+                    <div class="currency-input">
+                        <!-- Kovanice i Gotovina -->
+                        <div class="currency-item">
+                            <img src="{{ url_for('static', filename='KovaniceNovcanice/0.1euro.jpg') }}" alt="0.10€" data-value="0.1">
+                            <input type="number" id="novcanica-0.1" name="novcanica-0.1" value="">
+                        </div>
+                        <div class="currency-item">
+                            <img src="{{ url_for('static', filename='KovaniceNovcanice/0.2euro.jpg') }}" alt="0.20€" data-value="0.2">
+                            <input type="number" id="novcanica-0.2" name="novcanica-0.2" value="">
+                        </div>
+                        <div class="currency-item">
+                            <img src="{{ url_for('static', filename='KovaniceNovcanice/0.5euro.jpg') }}" alt="0.50€" data-value="0.5">
+                            <input type="number" id="novcanica-0.5" name="novcanica-0.5" value="">
+                        </div>
+                        <div class="currency-item">
+                            <img src="{{ url_for('static', filename='KovaniceNovcanice/1euro.jpg') }}" alt="1€" data-value="1">
+                            <input type="number" id="novcanica-1" name="novcanica-1" value="">
+                        </div>
+                        <div class="currency-item">
+                            <img src="{{ url_for('static', filename='KovaniceNovcanice/2euro.jpg') }}" alt="2€" data-value="2">
+                            <input type="number" id="novcanica-2" name="novcanica-2" value="">
+                        </div>
+                        <div class="currency-item">
+                            <label>Gotovina (€):</label>
+                            <input type="number" id="gotovina" name="gotovina">
+                        </div>
+                    </div>
+                </div>
+                <div class="section currency">
+                    <h2>Novčanice</h2>
+                    <div class="currency-input">
+                        <!-- Novčanice -->
+                        <div class="currency-item">
+                            <img src="{{ url_for('static', filename='KovaniceNovcanice/5euro.jpg') }}" alt="5€" data-value="5">
+                            <input type="number" id="novcanica-5" name="novcanica-5" value="">
+                        </div>
+                        <div class="currency-item">
+                            <img src="{{ url_for('static', filename='KovaniceNovcanice/10euro.jpg') }}" alt="10€" data-value="10">
+                            <input type="number" id="novcanica-10" name="novcanica-10" value="">
+                        </div>
+                        <div class="currency-item">
+                            <img src="{{ url_for('static', filename='KovaniceNovcanice/20euro.jpg') }}" alt="20€" data-value="20">
+                            <input type="number" id="novcanica-20" name="novcanica-20" value="">
+                        </div>
+                        <div class="currency-item">
+                            <img src="{{ url_for('static', filename='KovaniceNovcanice/50euro.jpg') }}" alt="50€" data-value="50">
+                            <input type="number" id="novcanica-50" name="novcanica-50" value="">
+                        </div>
+                        <div class="currency-item">
+                            <img src="{{ url_for('static', filename='KovaniceNovcanice/100euro.jpg') }}" alt="100€" data-value="100">
+                            <input type="number" id="novcanica-100" name="novcanica-100" value="">
+                        </div>
+                        <div class="currency-item">
+                            <img src="{{ url_for('static', filename='KovaniceNovcanice/200euro.jpg') }}" alt="200€" data-value="200">
+                            <input type="number" id="novcanica-200" name="novcanica-200" value="">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="button-container">
+                <button type="button" id="izracunaj-button">IZRAČUNAJ</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modalni prozor za prikaz rezultata -->
+<div id="resultModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span> <!-- Dodaj ovo za zatvaranje prozora -->
+        <div class="currency-columns">
+            <div id="prilagodeniDetails" class="currency-column"></div>
+        </div>
+        <!-- Dodaj result div ispod svih elemenata -->
+        <div id="result" class="result-modal"></div>
+    </div>
+</div>
+
+
+
+
+    <script>
+        const staticImagePaths = {
+            '0.1': "{{ url_for('static', filename='KovaniceNovcanice/0.1euro.jpg') }}",
+            '0.2': "{{ url_for('static', filename='KovaniceNovcanice/0.2euro.jpg') }}",
+            '0.5': "{{ url_for('static', filename='KovaniceNovcanice/0.5euro.jpg') }}",
+            '1': "{{ url_for('static', filename='KovaniceNovcanice/1euro.jpg') }}",
+            '2': "{{ url_for('static', filename='KovaniceNovcanice/2euro.jpg') }}",
+            '5': "{{ url_for('static', filename='KovaniceNovcanice/5euro.jpg') }}",
+            '10': "{{ url_for('static', filename='KovaniceNovcanice/10euro.jpg') }}",
+            '20': "{{ url_for('static', filename='KovaniceNovcanice/20euro.jpg') }}",
+            '50': "{{ url_for('static', filename='KovaniceNovcanice/50euro.jpg') }}",
+            '100': "{{ url_for('static', filename='KovaniceNovcanice/100euro.jpg') }}",
+            '200': "{{ url_for('static', filename='KovaniceNovcanice/200euro.jpg') }}"
+        };
+    </script>
+
+    <script src="{{ url_for('static', filename='js/kalkulator.js') }}"></script>
+
+</body>
+</html>

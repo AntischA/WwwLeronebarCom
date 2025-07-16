@@ -1,0 +1,291 @@
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #222222;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            background-color: #2a2a2a;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            color: white; /* Bijeli tekst za bolji kontrast */
+            padding: 20px;
+        }
+
+        .top-section {
+            display: flex;
+        }
+
+        .top-section label{
+                        display: flex;
+        width: 100%;
+        }
+
+        .top-section input{
+                        display: flex;
+
+        width: 100%;
+        }
+
+        .bottom-section {
+            display: flex;
+                    width: 100%;
+        }
+
+       .bottom-section h2 {
+            display: flex;
+           text-align: center;
+           justify-content: center;
+        }
+
+        .form-group {
+         display: flex;
+        }
+
+
+        .form-group, label {
+            width: 100%;
+            padding: 10px;
+            font-size: 26px;
+            justify-items: center;
+            text-align: center;
+        }
+
+        .form-group, input {
+            width: 100%;
+            padding: 10px;
+            font-size: 26px;
+            justify-items: center;
+            text-align: center;
+        }
+
+        .form-group, button {
+            width: 100%;
+            padding: 10px;
+            font-size: 26px;
+            justify-items: center;
+            text-align: center;
+        }
+
+
+
+input[type="number"] {
+    -moz-appearance: textfield;
+    padding-right: 20px; /* Dodatni prostor s desne strane za strelice */
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"]:focus {
+    outline: none; /* Uklanja plavi okvir pri fokusu */
+}
+
+input[type="number"] {
+    position: relative;
+    padding-right: 30px; /* Dodatni prostor s desne strane */
+    text-align: left; /* Uklanja tekst sa središnje pozicije */
+}
+
+input[type="number"]::-webkit-inner-spin-button {
+    position: absolute;
+    right: 10px;
+}
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .currency-input {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .currency-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+        }
+
+        .currency-item img {
+            max-width: 1200px;
+            max-height: 60px;
+            border-radius: 5px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        .currency-item input {
+            font-size: 26px;
+            justify-content: center;
+            text-align: center;
+            margin-right: 20px;
+                        margin-left: 40px;
+
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .input-area {
+            display: flex;
+            margin-right: 10px;
+        }
+
+        /* Modalni prozor */
+.modal {
+    display: none; /* Skriveno po defaultu */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 98%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4); /* Crna sa transparentnošću */
+    transition: all 0.3s ease-in-out;
+    border-radius: 5px;
+}
+
+.modal-content {
+    background-color: black;
+    margin: 40px;
+    border: 1px solid #888;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    color: white;
+}
+
+.currency-columns {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+
+
+.currency-items span {
+    flex-grow: 1; /* Omogućuje zauzimanje preostalog prostora */
+    text-align: right; /* Poravnava sadržaj span-a desno */
+    white-space: nowrap; /* Sprečava prelamanje u više redaka */
+}
+
+.currency-left img,
+.currency-right img {
+    margin: 0 auto; /* Centrira slike horizontalno */
+}
+
+.currency-left span,
+.currency-right span {
+    width: 100%;
+    flex-grow: 1; /* Proširuje span kako bi zauzeo preostali prostor */
+    margin-right: 40px;
+}
+
+
+
+
+
+
+.currency-details .currency-column div {
+    display: flex;
+    align-items: center;
+    margin-bottom: 18px; /* Razmak između redaka */
+}
+
+.currency-details .currency-column div img {
+    height: 70px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.currency-details .currency-column div span {
+    font-size: 40px;
+    text-align: right;
+}
+
+input[type="number"]:focus {
+    outline: 2px solid #4CAF50; /* Boja okvira pri fokusu */
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5); /* Lagani efekt sjene */
+}
+        .maximize-modal .modal-content {
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            max-height: none;
+            padding: 20px;
+            margin: 0;
+            border-radius: 5px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 100px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+.result-modal {
+    font-size: 2.5em;
+    text-align: center; /* Centriraj tekst */
+    margin-top: 20px; /* Razmak od ostalih elemenata */
+}
+
+
+
+.result-widget {
+    font-size: 26px;
+    text-align: center;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+    color: white; /* Bijeli tekst za bolji kontrast */
+}
+
+.status-exact {
+    background-color: #4CAF50; /* Zelena */
+}
+
+.status-positive {
+    background-color: #F44336; /* Crvena */
+}
+
+.status-negative {
+    background-color: #F44336; /* Crvena */
+}
+
+
+
+
+
