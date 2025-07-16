@@ -10,6 +10,10 @@ GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 def home():
     return render_template('index.html')
 
+@app.route('/cjenik')
+def cjenik():
+    return redirect("https://www.dotyourspot.com/Fnp253", code=302)  # 302 = Temporary Redirect
+
 
 @app.route("/<path:filename>")
 def serve_static(filename):
