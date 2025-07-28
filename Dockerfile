@@ -9,7 +9,6 @@ COPY requirements.txt requirements.txt
 COPY app.py app.py
 COPY static static
 COPY templates templates
-COPY api api
 
 # Instaliraj Python pakete
 RUN pip install --no-cache-dir -r requirements.txt
