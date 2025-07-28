@@ -1,6 +1,6 @@
 from flask import Flask, render_template, send_from_directory, redirect
 import os
-from api.dohvat_radnja_korisnika import radnje_korisnika
+# from api.dohvat_radnja_korisnika import radnje_korisnika
 
 app = Flask(__name__, static_folder="static")
 
@@ -22,9 +22,9 @@ def prikaz_radnja_korisnika():
 
 
 # 🔹 API endpoint koji poziva funkciju i vraća JSON
-@app.route('/api/radnje_korisnika', methods=['POST'])
-def radnje_json():
-    return radnje_korisnika()
+# @app.route('/api/radnje_korisnika', methods=['POST'])
+# def radnje_json():
+#     return radnje_korisnika()
 
 @app.route('/cjenik')
 def cjenik():
