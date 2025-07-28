@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <title>Radnje korisnika</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #2e3d49;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        #loader {
+            display: none;
+            font-weight: bold;
+            color: #555;
+        }
+        .buttons {
+            margin-top: 10px;
+        }
+        .summary {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h2>📋 Radnje korisnika</h2>
+
+    <div class="summary">
+        <h3>Zbroj po vrsti akcije</h3>
+        <ul id="summary-list"></ul>
+    </div>
+
+    <form id="filter-form">
+        <label for="from_date">Od datuma:</label>
+        <input type="date" id="from_date" name="from_date" required>
+        <label for="to_date">Do datuma:</label>
+        <input type="date" id="to_date" name="to_date" required>
+        <button type="submit">Prikaži</button>
+    </form>
+
+    <div class="buttons">
+        <button id="prev-day">← Dan prije</button>
+        <button id="next-day">Dan poslije →</button>
+    </div>
+
+    <p id="loader">Učitavanje podataka...</p>
+
+    <table id="results-table">
+        <thead>
+            <tr>
+                <th>Vrijeme</th>
+                <th>Vrsta akcije</th>
+                <th>Opis</th>
+                <th>Iznos</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+
+
+    <script>
+        function formatDateToInput(date) {
+            return date.toISOString().split("T")[0];
+        }
+
+        function formatDateForBackend(date) {
+            return date.split("-").reverse().join(".");
+        }
+
+        function parseDateInput(inputId) {
+            return new Date(document.getElementById(inputId).value);
+        }
+
+        function updateDateInputs(date) {
+            const inputDate = formatDateToInput(date);
+            document.getElementById("from_date").value = inputDate;
+            document.getElementById("to_date").value = inputDate;
+        }
+
+        async function fetchData() {
+            const fromDate = formatDateForBackend(document.getElementById("from_date").value);
+            const toDate = formatDateForBackend(document.getElementById("to_date").value);
+            const loader = document.getElementById("loader");
+            const tbody = document.querySelector("#results-table tbody");
+            const summaryList = document.getElementById("summary-list");
+
+            loader.style.display = "block";
+            tbody.innerHTML = "";
+            summaryList.innerHTML = "";
+
+            const response = await fetch("/radnje_korisnika", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ from_date: fromDate, to_date: toDate })
+            });
+
+            const result = await response.json();
+            loader.style.display = "none";
+
+            if (result.success && result.data.length > 0) {
+                const totals = {};
+
+                result.data.forEach(item => {
+                    const iznos = parseFloat(item.iznos.replace(" €", "").replace(",", ".")) || 0;
+                    const vrsta = item.vrsta_akcije;
+
+                    // Dodaj u tabelu
+                    const row = `<tr>
+                        <td>${item.vrijeme}</td>
+                        <td>${vrsta}</td>
+                        <td>${item.opis || ""}</td>
+                        <td>${item.iznos}</td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+
+                    // Saberi po vrsti
+                    if (!totals[vrsta]) totals[vrsta] = 0;
+                    totals[vrsta] += iznos;
+                });
+
+                // Ispis zbrojeva
+                Object.entries(totals).forEach(([vrsta, suma]) => {
+                    summaryList.innerHTML += `<li><b>${vrsta}</b>: ${suma.toFixed(2)} €</li>`;
+                });
+
+            } else {
+                tbody.innerHTML = `<tr><td colspan="4">Nema podataka za odabrani raspon.</td></tr>`;
+            }
+        }
+
+        // Event listener za formu
+        document.getElementById("filter-form").addEventListener("submit", function(e) {
+            e.preventDefault();
+            fetchData();
+        });
+
+        // Event listeneri za dan prije / poslije
+        document.getElementById("prev-day").addEventListener("click", function() {
+            const date = parseDateInput("from_date");
+            date.setDate(date.getDate() - 1);
+            updateDateInputs(date);
+            fetchData();
+        });
+
+        document.getElementById("next-day").addEventListener("click", function() {
+            const date = parseDateInput("from_date");
+            date.setDate(date.getDate() + 1);
+            updateDateInputs(date);
+            fetchData();
+        });
+
+        // Učitaj podatke za današnji dan na početku
+        window.addEventListener("DOMContentLoaded", () => {
+            const today = new Date();
+            updateDateInputs(today);
+            fetchData();
+        });
+    </script>
+</body>
+</html>

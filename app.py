@@ -1,5 +1,6 @@
 from flask import Flask, render_template, send_from_directory, redirect
 import os
+from api.dohvat_radnja_korisnika import radnje_korisnika
 
 app = Flask(__name__, static_folder="static")
 
@@ -14,9 +15,13 @@ def home():
 def kalkulator():
     return render_template('kalkulator.html')
 
-@app.route('/test')
-def test():
-    return render_template('test.html')
+@app.route('/radnje_korisnika', methods=['POST'])
+def poziv_radnje():
+    return radnje_korisnika()
+
+@app.route('/radnje_korisnika')
+def prikaz_stranice():
+    return render_template('radnje_korisnika.html')
 
 @app.route('/cjenik')
 def cjenik():
