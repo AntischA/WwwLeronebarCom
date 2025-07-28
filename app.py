@@ -12,16 +12,19 @@ def home():
     return render_template('index.html')
 
 @app.route('/kalkulator')
-def kalkulator():
+def prikaz_kalkulator():
     return render_template('kalkulator.html')
 
-@app.route('/radnje_korisnika', methods=['POST'])
-def poziv_radnje():
-    return radnje_korisnika()
-
-@app.route('/radnje')
-def prikaz_stranice():
+# 🔹 Renderuj HTML stranicu
+@app.route('/radnje_korisnika')
+def prikaz_radnja_korisnika():
     return render_template('radnje_korisnika.html')
+
+
+# 🔹 API endpoint koji poziva funkciju i vraća JSON
+@app.route('/api/radnje_korisnika', methods=['POST'])
+def radnje_json():
+    return radnje_korisnika()
 
 @app.route('/cjenik')
 def cjenik():
