@@ -19,7 +19,7 @@ def kalkulator():
 def poziv_radnje():
     return radnje_korisnika()
 
-@app.route('/radnje_korisnika')
+@app.route('/radnje')
 def prikaz_stranice():
     return render_template('radnje_korisnika.html')
 
