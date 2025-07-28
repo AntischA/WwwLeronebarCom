@@ -15,9 +15,9 @@ def home():
 def prikaz_kalkulator():
     return render_template('kalkulator.html')
 
-# 🔹 Renderuj HTML stranicu
-@app.route('/radnje_korisnika')
+@app.route('/radnje')
 def prikaz_radnja_korisnika():
+    print("Otvaram radnje_korisnika.html")
     return render_template('radnje_korisnika.html')
 
 
@@ -42,5 +42,5 @@ def get_maps_api_key():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))  # Cloud Run koristi PORT iz okoline
+    port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
