@@ -14,6 +14,9 @@ def home():
 def kalkulator():
     return render_template('kalkulator.html')
 
+@app.route('/test')
+def test():
+    return render_template('test.html')
 
 @app.route('/cjenik')
 def cjenik():
