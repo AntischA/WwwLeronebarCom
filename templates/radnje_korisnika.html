@@ -1,177 +1,307 @@
 <!DOCTYPE html>
 <html lang="hr">
 <head>
-    <meta charset="UTF-8">
-    <title>Radnje korisnika</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #2e3d49;
-            color: white;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        #loader {
-            display: none;
-            font-weight: bold;
-            color: #555;
-        }
-        .buttons {
-            margin-top: 10px;
-        }
-        .summary {
-            margin-top: 30px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<!--  <title>Radnje korisnika</title>-->
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f6f8;
+      color: #333;
+    }
+
+    h2 {
+      font-size: 24px;
+      text-align: center;
+      color: #2e3d49;
+    }
+
+    .summary {
+      margin-top: 20px;
+    }
+
+    .summary ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .summary li {
+      padding: 8px 12px;
+      background-color: #dce6f1;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    input[type="date"], button {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #2e3d49;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #1b262f;
+    }
+
+    #loader {
+      text-align: center;
+      margin-top: 20px;
+      font-weight: bold;
+      display: none;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      padding: 15px;
+      margin-top: 15px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .card-header span {
+      font-size: 16px;
+    }
+
+    .card-header .vrijeme {
+      font-weight: bold;
+      color: #2e3d49;
+      flex: 1;
+    }
+
+    .card-header .vrsta {
+      text-align: center;
+      flex: 1;
+      font-weight: bold;
+      color: #444;
+    }
+
+    .card-header .iznos {
+      text-align: right;
+      flex: 1;
+      color: #006600;
+      font-weight: bold;
+    }
+
+    .card-opis {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .buttons {
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    .buttons button {
+      margin: 0 10px;
+    }
+
+    @media (max-width: 768px) {
+      .card p {
+        font-size: 18px;
+      }
+
+      input[type="date"], button {
+        width: 100%;
+        font-size: 18px;
+      }
+
+      form {
+        flex-direction: column;
+      }
+    }
+
+
+    .artikli-summary ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .artikli-summary li {
+      padding: 8px 12px;
+      background-color: #e0f7f1;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-weight: normal;
+    }
+
+  </style>
 </head>
 <body>
-    <h2>📋 Radnje korisnika</h2>
 
-    <div class="summary">
-        <h3>Zbroj po vrsti akcije</h3>
-        <ul id="summary-list"></ul>
-    </div>
+<!--  <h2>📋 Radnje korisnika</h2>-->
 
-    <form id="filter-form">
-        <label for="from_date">Od datuma:</label>
-        <input type="date" id="from_date" name="from_date" required>
-        <label for="to_date">Do datuma:</label>
-        <input type="date" id="to_date" name="to_date" required>
-        <button type="submit">Prikaži</button>
-    </form>
+  <div class="summary">
+<!--    <h3>Zbroj po vrsti akcije</h3>-->
+    <ul id="summary-list"></ul>
+  </div>
+<hr>
 
-    <div class="buttons">
-        <button id="prev-day">← Dan prije</button>
-        <button id="next-day">Dan poslije →</button>
-    </div>
+<div class="artikli-summary">
+  <ul id="artikli-summary-list"></ul>
+</div>
+<hr>
 
-    <p id="loader">Učitavanje podataka...</p>
+  <form id="filter-form">
+    <input type="date" id="from_date" name="from_date" required>
+    <input type="date" id="to_date" name="to_date" required>
+    <button type="submit">Prikaži</button>
+  </form>
 
-    <table id="results-table">
-        <thead>
-            <tr>
-                <th>Vrijeme</th>
-                <th>Vrsta akcije</th>
-                <th>Opis</th>
-                <th>Iznos</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+  <div class="buttons">
+    <button id="prev-day">← Dan prije</button>
+    <button id="next-day">Dan poslije →</button>
+  </div>
 
+  <p id="loader">Učitavanje podataka...</p>
 
+  <div id="results-container"></div>
 
-    <script>
-        function formatDateToInput(date) {
-            return date.toISOString().split("T")[0];
-        }
+  <script>
+    function formatDateToInput(date) {
+      return date.toISOString().split("T")[0];
+    }
 
-        function formatDateForBackend(date) {
-            return date.split("-").reverse().join(".");
-        }
+    function formatDateForBackend(date) {
+      return date.split("-").reverse().join(".");
+    }
 
-        function parseDateInput(inputId) {
-            return new Date(document.getElementById(inputId).value);
-        }
+    function parseDateInput(inputId) {
+      return new Date(document.getElementById(inputId).value);
+    }
 
-        function updateDateInputs(date) {
-            const inputDate = formatDateToInput(date);
-            document.getElementById("from_date").value = inputDate;
-            document.getElementById("to_date").value = inputDate;
-        }
+    function updateDateInputs(date) {
+      const inputDate = formatDateToInput(date);
+      document.getElementById("from_date").value = inputDate;
+      document.getElementById("to_date").value = inputDate;
+    }
 
-        async function fetchData() {
-            const fromDate = formatDateForBackend(document.getElementById("from_date").value);
-            const toDate = formatDateForBackend(document.getElementById("to_date").value);
-            const loader = document.getElementById("loader");
-            const tbody = document.querySelector("#results-table tbody");
-            const summaryList = document.getElementById("summary-list");
+async function fetchData() {
+  const fromDate = formatDateForBackend(document.getElementById("from_date").value);
+  const toDate = formatDateForBackend(document.getElementById("to_date").value);
+  const loader = document.getElementById("loader");
+  const resultsContainer = document.getElementById("results-container");
+  const summaryList = document.getElementById("summary-list");
+  const artikliSummaryList = document.getElementById("artikli-summary-list");
 
-            loader.style.display = "block";
-            tbody.innerHTML = "";
-            summaryList.innerHTML = "";
+  artikliSummaryList.innerHTML = "";
+  loader.style.display = "block";
+  resultsContainer.innerHTML = "";
+  summaryList.innerHTML = "";
 
-            const response = await fetch("/api/radnje_korisnika", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ from_date: fromDate, to_date: toDate })
-            });
+  const response = await fetch("/api/radnje_korisnika", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ from_date: fromDate, to_date: toDate })
+  });
 
-            const result = await response.json();
-            loader.style.display = "none";
+  const result = await response.json();
+  loader.style.display = "none";
 
-            if (result.success && result.data.length > 0) {
-                const totals = {};
+  if (result.success && result.data.length > 0) {
+    const totals = {};
 
-                result.data.forEach(item => {
-                    const iznos = parseFloat(item.iznos.replace(" €", "").replace(",", ".")) || 0;
-                    const vrsta = item.vrsta_akcije;
+    result.data.forEach(item => {
+      const iznos = parseFloat(item.iznos.replace(" €", "").replace(",", ".")) || 0;
+      const vrsta = item.vrsta_akcije;
 
-                    // Dodaj u tabelu
-                    const row = `<tr>
-                        <td>${item.vrijeme}</td>
-                        <td>${vrsta}</td>
-                        <td>${item.opis || ""}</td>
-                        <td>${item.iznos}</td>
-                    </tr>`;
-                    tbody.innerHTML += row;
+      const card = `
+        <div class="card">
+          <div class="card-header">
+            <span class="vrijeme">${item.vrijeme}</span>
+            <span class="vrsta">${vrsta}</span>
+            <span class="iznos">${item.iznos}</span>
+          </div>
+          <div class="card-opis">
+            ${item.opis || "-"}
+          </div>
+        </div>
+      `;
+      resultsContainer.innerHTML += card;
 
-                    // Saberi po vrsti
-                    if (!totals[vrsta]) totals[vrsta] = 0;
-                    totals[vrsta] += iznos;
-                });
+      if (!totals[vrsta]) totals[vrsta] = 0;
+      totals[vrsta] += iznos;
+    });
 
-                // Ispis zbrojeva
-                Object.entries(totals).forEach(([vrsta, suma]) => {
-                    summaryList.innerHTML += `<li><b>${vrsta}</b>: ${suma.toFixed(2)} €</li>`;
-                });
+    Object.entries(totals).forEach(([vrsta, suma]) => {
+      summaryList.innerHTML += `<li><b>${vrsta}</b>: ${suma.toFixed(2)} €</li>`;
+    });
 
-            } else {
-                tbody.innerHTML = `<tr><td colspan="4">Nema podataka za odabrani raspon.</td></tr>`;
-            }
-        }
-
-        // Event listener za formu
-        document.getElementById("filter-form").addEventListener("submit", function(e) {
-            e.preventDefault();
-            fetchData();
+    // ✔️ Dodaj prikaz potrošnje artikala ako postoji
+    if (result.potrosnja_artikala) {
+      artikliSummaryList.innerHTML = `<li><b>📦 Potrošnja artikala:</b></li>`;
+      Object.entries(result.potrosnja_artikala)
+        .sort((a, b) => b[1].kolicina - a[1].kolicina) // sortiraj po kolicini
+        .forEach(([naziv, statistika]) => {
+          artikliSummaryList.innerHTML += `<li>${naziv} — ${statistika.kolicina.toFixed(2)} kom (${statistika.broj} puta)</li>`;
         });
+    }
 
-        // Event listeneri za dan prije / poslije
-        document.getElementById("prev-day").addEventListener("click", function() {
-            const date = parseDateInput("from_date");
-            date.setDate(date.getDate() - 1);
-            updateDateInputs(date);
-            fetchData();
-        });
+  } else {
+    resultsContainer.innerHTML = `<p>Nema podataka za odabrani raspon.</p>`;
+    artikliSummaryList.innerHTML = `<li><i>Nema potrošnje artikala za odabrani dan.</i></li>`;
+  }
+}
 
-        document.getElementById("next-day").addEventListener("click", function() {
-            const date = parseDateInput("from_date");
-            date.setDate(date.getDate() + 1);
-            updateDateInputs(date);
-            fetchData();
-        });
 
-        // Učitaj podatke za današnji dan na početku
-        window.addEventListener("DOMContentLoaded", () => {
-            const today = new Date();
-            updateDateInputs(today);
-            fetchData();
-        });
-    </script>
+
+
+    document.getElementById("filter-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      fetchData();
+    });
+
+    document.getElementById("prev-day").addEventListener("click", function() {
+      const date = parseDateInput("from_date");
+      date.setDate(date.getDate() - 1);
+      updateDateInputs(date);
+      fetchData();
+    });
+
+    document.getElementById("next-day").addEventListener("click", function() {
+      const date = parseDateInput("from_date");
+      date.setDate(date.getDate() + 1);
+      updateDateInputs(date);
+      fetchData();
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const today = new Date();
+      updateDateInputs(today);
+      fetchData();
+    });
+  </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, send_from_directory, redirect
+from flask import Flask, render_template, send_from_directory, redirect, request, jsonify
 import os
 from api.dohvat_radnja_korisnika import radnje_korisnika
 
@@ -28,7 +28,14 @@ def prikaz_radnja_korisnika():
 # 🔹 API endpoint koji poziva funkciju i vraća JSON
 @app.route('/api/radnje_korisnika', methods=['POST'])
 def radnje_json():
-    return radnje_korisnika()
+    data = request.get_json()
+    from_date = data.get("from_date")
+    to_date = data.get("to_date")
+
+    if not from_date or not to_date:
+        return jsonify({"success": False, "message": "Nedostaje datum."}), 400
+
+    return jsonify(radnje_korisnika(from_date, to_date))
 
 
 @app.route('/cjenik')

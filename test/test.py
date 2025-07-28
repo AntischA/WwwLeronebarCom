@@ -1,12 +1,9 @@
-# api/dohvat_radnja_korisnika.py
 import datetime
 import requests
 import urllib3
 import json
 import re
 from collections import defaultdict
-
-from flask import request, jsonify
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -18,15 +15,10 @@ def potrebni_podatci():
     id_lokacije = '5'
     id_organizacije = '6'
     id_pos_uredjaja = '6'
-
-    if not all([remaris_domain, remaris_username, remaris_password, id_lokacije, id_organizacije, id_pos_uredjaja]):
-        raise ValueError("Nedostaju ključni podaci u sesiji.")
-
     return remaris_domain, remaris_username, remaris_password, id_lokacije, id_organizacije, id_pos_uredjaja
 
 
-def logiranje_na_domenu(session_requests):
-    remaris_domain, remaris_username, remaris_password, *_ = potrebni_podatci()
+def logiranje_na_domenu(session_requests, remaris_domain, remaris_username, remaris_password):
     login_payload = {
         'remaris_domain': remaris_domain,
         'UserName': remaris_username,
@@ -66,7 +58,7 @@ def radnje_korisnika(from_date, to_date):
     remaris_domain, remaris_username, remaris_password, id_lokacije, id_organizacije, id_pos_uredjaja = potrebni_podatci()
     session_requests = requests.Session()
 
-    if logiranje_na_domenu(session_requests):
+    if logiranje_na_domenu(session_requests, remaris_domain, remaris_username, remaris_password):
         url = f"https://{remaris_domain}.gastromaster.com.hr/Reports/GetUserActionsData?isc_dataFormat=json"
         headers = {
             'Accept': 'application/json',
@@ -132,4 +124,11 @@ def radnje_korisnika(from_date, to_date):
     else:
         return {'success': False, 'message': 'Neuspješna prijava.'}
 
+
+# Test poziv
+if __name__ == "__main__":
+    from_date = "28.07.2025"
+    to_date = "28.07.2025"
+    rezultat = radnje_korisnika(from_date, to_date)
+    print(json.dumps(rezultat, indent=2, ensure_ascii=False))
 
