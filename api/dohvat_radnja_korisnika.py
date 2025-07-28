@@ -3,9 +3,9 @@ import requests
 import urllib3
 import json
 from flask import request, jsonify
-from tabulate import tabulate
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 
 def potrebni_podatci():
     remaris_domain = 'maluma'
