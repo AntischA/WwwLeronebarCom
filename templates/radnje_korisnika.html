@@ -3,12 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<!--  <title>Radnje korisnika</title>-->
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
@@ -17,46 +13,45 @@
       color: #333;
     }
 
-    h2 {
-      font-size: 24px;
-      text-align: center;
-      color: #2e3d49;
+    .summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
     }
 
-.summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 20px;
-}
+    .summary ul { display: contents; }
 
-.summary ul {
-  display: contents;
-}
+    .summary li {
+      width: calc(50% - 10px);
+      padding: 12px;
+      background-color: #dce6f1;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
 
-.summary li {
-  width: calc(50% - 10px);
-  padding: 12px;
-  background-color: #dce6f1;
-  border-radius: 10px;
-  margin-bottom: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-size: 16px;
-}
+    .summary li.active {
+      background-color: #93c5fd;
+      transform: scale(1.03);
+    }
 
-.summary li .naziv {
-  font-weight: bold;
-  color: #2e3d49;
-}
+    .summary li .naziv { font-weight: bold; color: #2e3d49; }
+    .summary li .iznos { font-size: 15px; color: #006600; }
 
-.summary li .iznos {
-  font-size: 15px;
-  color: #006600;
-}
-
+    .artikli-summary ul { list-style: none; padding-left: 0; }
+    .artikli-summary li {
+      padding: 8px 12px;
+      background-color: #e0f7f1;
+      border-radius: 8px;
+      margin-bottom: 6px;
+    }
 
     form {
       display: flex;
@@ -81,23 +76,15 @@
       transition: background-color 0.2s;
     }
 
-    button:hover {
-      background-color: #1b262f;
-    }
-
-    #loader {
-      text-align: center;
-      margin-top: 20px;
-      font-weight: bold;
-      display: none;
-    }
+    button:hover { background-color: #1b262f; }
 
     .card {
       background-color: white;
       border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
       padding: 15px;
       margin-top: 15px;
+      display: none;
     }
 
     .card-header {
@@ -108,89 +95,28 @@
       flex-wrap: wrap;
     }
 
-    .card-header span {
-      font-size: 16px;
-    }
+    .card-header .vrijeme { font-weight: bold; color: #2e3d49; flex: 1; }
+    .card-header .vrsta { text-align: center; flex: 1; font-weight: bold; color: #444; }
+    .card-header .iznos { text-align: right; flex: 1; color: #006600; font-weight: bold; }
+    .card-opis { font-size: 14px; color: #666; }
 
-    .card-header .vrijeme {
-      font-weight: bold;
-      color: #2e3d49;
-      flex: 1;
-    }
+    .buttons { margin-top: 15px; text-align: center; }
+    .buttons button { margin: 0 10px; }
 
-    .card-header .vrsta {
+    #loader {
       text-align: center;
-      flex: 1;
+      margin-top: 20px;
       font-weight: bold;
-      color: #444;
-    }
-
-    .card-header .iznos {
-      text-align: right;
-      flex: 1;
-      color: #006600;
-      font-weight: bold;
-    }
-
-    .card-opis {
-      font-size: 14px;
-      color: #666;
-    }
-
-    .buttons {
-      margin-top: 15px;
-      text-align: center;
-    }
-
-    .buttons button {
-      margin: 0 10px;
+      display: none;
     }
 
     @media (max-width: 768px) {
-      .card p {
-        font-size: 18px;
-      }
-
-      input[type="date"], button {
-        width: 100%;
-        font-size: 18px;
-      }
-
-      form {
-        flex-direction: column;
-      }
+      input[type="date"], button { width: 100%; font-size: 18px; }
+      form { flex-direction: column; }
     }
-
-
-    .artikli-summary ul {
-      list-style: none;
-      padding-left: 0;
-    }
-
-    .artikli-summary li {
-      padding: 8px 12px;
-      background-color: #e0f7f1;
-      border-radius: 8px;
-      margin-bottom: 6px;
-      font-weight: normal;
-    }
-
   </style>
 </head>
 <body>
-
-<!--  <h2>📋 Radnje korisnika</h2>-->
-
-  <div class="summary">
-<!--    <h3>Zbroj po vrsti akcije</h3>-->
-    <ul id="summary-list"></ul>
-  </div>
-<hr>
-
-<div class="artikli-summary">
-  <ul id="artikli-summary-list"></ul>
-</div>
-<hr>
 
   <form id="filter-form">
     <input type="date" id="from_date" name="from_date" required>
@@ -203,156 +129,194 @@
     <button id="next-day">Dan poslije →</button>
   </div>
 
-  <p id="loader">Učitavanje podataka...</p>
+  <div class="summary">
+    <ul id="summary-list"></ul>
+  </div>
 
+  <div style="text-align:center; margin-bottom: 10px;">
+    <button onclick="prikaziSveKartice()">🔁 Prikaži sve</button>
+  </div>
+
+  <hr>
+
+  <div class="artikli-summary">
+    <ul id="artikli-summary-list"></ul>
+  </div>
+
+
+
+
+
+  <p id="loader">Učitavanje podataka...</p>
   <div id="results-container"></div>
 
-  <script>
-    function formatDateToInput(date) {
-      return date.toISOString().split("T")[0];
-    }
+ <script>
+  let aktivniFilteri = new Set();
 
-    function formatDateForBackend(date) {
-      return date.split("-").reverse().join(".");
-    }
+  function formatDateToInput(date) {
+    return date.toISOString().split("T")[0];
+  }
 
-    function parseDateInput(inputId) {
-      return new Date(document.getElementById(inputId).value);
-    }
+  function formatDateForBackend(date) {
+    return date.split("-").reverse().join(".");
+  }
 
-    function updateDateInputs(date) {
-      const inputDate = formatDateToInput(date);
-      document.getElementById("from_date").value = inputDate;
-      document.getElementById("to_date").value = inputDate;
-    }
+  function parseDateInput(inputId) {
+    return new Date(document.getElementById(inputId).value);
+  }
 
-async function fetchData() {
-  const fromDate = formatDateForBackend(document.getElementById("from_date").value);
-  const toDate = formatDateForBackend(document.getElementById("to_date").value);
-  const loader = document.getElementById("loader");
-  const resultsContainer = document.getElementById("results-container");
-  const summaryList = document.getElementById("summary-list");
-  const artikliSummaryList = document.getElementById("artikli-summary-list");
+  function updateDateInputs(date) {
+    const inputDate = formatDateToInput(date);
+    document.getElementById("from_date").value = inputDate;
+    document.getElementById("to_date").value = inputDate;
+  }
 
-  artikliSummaryList.innerHTML = "";
-  loader.style.display = "block";
-  resultsContainer.innerHTML = "";
-  summaryList.innerHTML = "";
+  async function fetchData() {
+    const fromDate = formatDateForBackend(document.getElementById("from_date").value);
+    const toDate = formatDateForBackend(document.getElementById("to_date").value);
+    const loader = document.getElementById("loader");
+    const resultsContainer = document.getElementById("results-container");
+    const summaryList = document.getElementById("summary-list");
+    const artikliSummaryList = document.getElementById("artikli-summary-list");
 
-  const response = await fetch("/api/radnje_korisnika", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ from_date: fromDate, to_date: toDate })
-  });
+    artikliSummaryList.innerHTML = "";
+    loader.style.display = "block";
+    resultsContainer.innerHTML = "";
+    summaryList.innerHTML = "";
+    aktivniFilteri.clear();
 
-  const result = await response.json();
-  loader.style.display = "none";
+    const response = await fetch("/api/radnje_korisnika", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ from_date: fromDate, to_date: toDate })
+    });
 
-  if (result.success && result.data.length > 0) {
-    const totals = {};
+    const result = await response.json();
+    loader.style.display = "none";
 
-    result.data.forEach(item => {
-      const iznos = parseFloat(item.iznos.replace(" €", "").replace(",", ".")) || 0;
-      const vrsta = item.vrsta_akcije;
+    if (result.success && result.data.length > 0) {
+      const totals = {};
 
-      const card = `
-        <div class="card">
+      result.data.forEach(item => {
+        const iznos = parseFloat(item.iznos.replace(" €", "").replace(",", ".")) || 0;
+        const vrsta = item.vrsta_akcije;
+
+        const cardHTML = document.createElement("div");
+        cardHTML.classList.add("card");
+        cardHTML.setAttribute("data-vrsta", vrsta);
+        cardHTML.innerHTML = `
           <div class="card-header">
             <span class="vrijeme">${item.vrijeme}</span>
             <span class="vrsta">${vrsta}</span>
             <span class="iznos">${item.iznos}</span>
           </div>
-          <div class="card-opis">
-            ${item.opis || "-"}
-          </div>
-        </div>
-      `;
-      resultsContainer.innerHTML += card;
+          <div class="card-opis">${item.opis || "-"}</div>
+        `;
+        resultsContainer.appendChild(cardHTML);
 
-      if (!totals[vrsta]) totals[vrsta] = 0;
-      totals[vrsta] += iznos;
-    });
-
-    const ignoriraneVrste = [
-      "Prijava",
-      "Odjava",
-      "Izlaz iz aplikacije",
-      "Prijava, neuspješna",
-      "Ostalo",
-      "Pokretanje aplikacije"
-    ];
-
-    const sortiraniTotali = Object.entries(totals)
-      .filter(([vrsta]) => !ignoriraneVrste.includes(vrsta))
-      .sort((a, b) => {
-        // "Čitanje totala" neka bude zadnji
-        if (a[0] === "Čitanje totala") return 1;
-        if (b[0] === "Čitanje totala") return -1;
-        // Ostale sortiraj po iznosu silazno
-        return b[1] - a[1];
+        if (!totals[vrsta]) totals[vrsta] = 0;
+        totals[vrsta] += iznos;
       });
 
-    sortiraniTotali.forEach(([vrsta, suma]) => {
-      const item = document.createElement("li");
+      const ignoriraneVrste = [
+        "Prijava", "Odjava", "Izlaz iz aplikacije",
+        "Prijava, neuspješna", "Ostalo", "Pokretanje aplikacije"
+      ];
 
-      const prikazIznosa =
-        vrsta === "Čitanje totala"
-          ? `${suma} čitanja`
-          : `${suma.toFixed(2)} €`;
-
-      item.innerHTML = `
-        <div class="naziv">${vrsta}</div>
-        <div class="iznos">${prikazIznosa}</div>
-      `;
-      summaryList.appendChild(item);
-    });
-
-
-
-
-    // ✔️ Dodaj prikaz potrošnje artikala ako postoji
-    if (result.potrosnja_artikala) {
-      artikliSummaryList.innerHTML = `<li><b>📦 Potrošnja artikala:</b></li>`;
-      Object.entries(result.potrosnja_artikala)
-        .sort((a, b) => b[1].kolicina - a[1].kolicina) // sortiraj po kolicini
-        .forEach(([naziv, statistika]) => {
-          artikliSummaryList.innerHTML += `<li>${naziv} — ${statistika.kolicina.toFixed(2)} kom (${statistika.broj} puta)</li>`;
+      const sortiraniTotali = Object.entries(totals)
+        .filter(([vrsta]) => !ignoriraneVrste.includes(vrsta))
+        .sort((a, b) => {
+          if (a[0] === "Čitanje totala") return 1;
+          if (b[0] === "Čitanje totala") return -1;
+          return b[1] - a[1];
         });
+
+      sortiraniTotali.forEach(([vrsta, suma]) => {
+        const item = document.createElement("li");
+        item.setAttribute("data-vrsta", vrsta);
+        item.addEventListener("click", () => toggleFiltriranje(vrsta, item));
+
+        const prikazIznosa =
+          vrsta === "Čitanje totala"
+            ? `${suma} čitanja`
+            : `${suma.toFixed(2)} €`;
+
+        item.innerHTML = `
+          <div class="naziv">${vrsta}</div>
+          <div class="iznos">${prikazIznosa}</div>
+        `;
+        summaryList.appendChild(item);
+      });
+
+      if (result.potrosnja_artikala) {
+        artikliSummaryList.innerHTML = `<li><b>📦 Potrošnja artikala:</b></li>`;
+        Object.entries(result.potrosnja_artikala)
+          .sort((a, b) => b[1].kolicina - a[1].kolicina)
+          .forEach(([naziv, statistika]) => {
+            artikliSummaryList.innerHTML += `<li>${naziv} — ${statistika.kolicina.toFixed(2)} kom (${statistika.broj} puta)</li>`;
+          });
+      }
+
+    } else {
+      resultsContainer.innerHTML = `<p>Nema podataka za odabrani raspon.</p>`;
+      artikliSummaryList.innerHTML = `<li><i>Nema potrošnje artikala za odabrani dan.</i></li>`;
+    }
+  }
+
+  function toggleFiltriranje(vrsta, element) {
+    const cards = document.querySelectorAll("#results-container .card");
+
+    if (aktivniFilteri.has(vrsta)) {
+      aktivniFilteri.delete(vrsta);
+      element.classList.remove("active");
+    } else {
+      aktivniFilteri.add(vrsta);
+      element.classList.add("active");
     }
 
-  } else {
-    resultsContainer.innerHTML = `<p>Nema podataka za odabrani raspon.</p>`;
-    artikliSummaryList.innerHTML = `<li><i>Nema potrošnje artikala za odabrani dan.</i></li>`;
+    if (aktivniFilteri.size === 0) {
+      cards.forEach(card => card.style.display = "none");
+    } else {
+      cards.forEach(card => {
+        const cardVrsta = card.getAttribute("data-vrsta");
+        card.style.display = aktivniFilteri.has(cardVrsta) ? "block" : "none";
+      });
+    }
   }
-}
 
-
-
-
-    document.getElementById("filter-form").addEventListener("submit", function(e) {
-      e.preventDefault();
-      fetchData();
+  function prikaziSveKartice() {
+    aktivniFilteri.clear();
+    document.querySelectorAll(".summary li").forEach(li => li.classList.remove("active"));
+    document.querySelectorAll("#results-container .card").forEach(card => {
+      card.style.display = "block";
     });
+  }
 
-    document.getElementById("prev-day").addEventListener("click", function() {
-      const date = parseDateInput("from_date");
-      date.setDate(date.getDate() - 1);
-      updateDateInputs(date);
-      fetchData();
-    });
+  document.getElementById("filter-form").addEventListener("submit", function(e) {
+    e.preventDefault();
+    fetchData();
+  });
 
-    document.getElementById("next-day").addEventListener("click", function() {
-      const date = parseDateInput("from_date");
-      date.setDate(date.getDate() + 1);
-      updateDateInputs(date);
-      fetchData();
-    });
+  document.getElementById("prev-day").addEventListener("click", function() {
+    const date = parseDateInput("from_date");
+    date.setDate(date.getDate() - 1);
+    updateDateInputs(date);
+    fetchData();
+  });
 
-    window.addEventListener("DOMContentLoaded", () => {
-      const today = new Date();
-      updateDateInputs(today);
-      fetchData();
-    });
-  </script>
+  document.getElementById("next-day").addEventListener("click", function() {
+    const date = parseDateInput("from_date");
+    date.setDate(date.getDate() + 1);
+    updateDateInputs(date);
+    fetchData();
+  });
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const today = new Date();
+    updateDateInputs(today);
+    fetchData();
+  });
+</script>
+
 </body>
 </html>
