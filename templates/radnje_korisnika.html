@@ -23,22 +23,40 @@
       color: #2e3d49;
     }
 
-    .summary {
-      margin-top: 20px;
-    }
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
+}
 
-    .summary ul {
-      list-style: none;
-      padding-left: 0;
-    }
+.summary ul {
+  display: contents;
+}
 
-    .summary li {
-      padding: 8px 12px;
-      background-color: #dce6f1;
-      border-radius: 8px;
-      margin-bottom: 6px;
-      font-weight: bold;
-    }
+.summary li {
+  width: calc(50% - 10px);
+  padding: 12px;
+  background-color: #dce6f1;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 16px;
+}
+
+.summary li .naziv {
+  font-weight: bold;
+  color: #2e3d49;
+}
+
+.summary li .iznos {
+  font-size: 15px;
+  color: #006600;
+}
+
 
     form {
       display: flex;
@@ -255,9 +273,15 @@ async function fetchData() {
       totals[vrsta] += iznos;
     });
 
-    Object.entries(totals).forEach(([vrsta, suma]) => {
-      summaryList.innerHTML += `<li><b>${vrsta}</b>: ${suma.toFixed(2)} €</li>`;
-    });
+Object.entries(totals).forEach(([vrsta, suma]) => {
+  const item = document.createElement("li");
+  item.innerHTML = `
+    <div class="naziv">${vrsta}</div>
+    <div class="iznos">${suma.toFixed(2)} €</div>
+  `;
+  summaryList.appendChild(item);
+});
+
 
     // ✔️ Dodaj prikaz potrošnje artikala ako postoji
     if (result.potrosnja_artikala) {
