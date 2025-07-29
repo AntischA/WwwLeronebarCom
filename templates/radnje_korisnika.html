@@ -273,14 +273,41 @@ async function fetchData() {
       totals[vrsta] += iznos;
     });
 
-Object.entries(totals).forEach(([vrsta, suma]) => {
-  const item = document.createElement("li");
-  item.innerHTML = `
-    <div class="naziv">${vrsta}</div>
-    <div class="iznos">${suma.toFixed(2)} €</div>
-  `;
-  summaryList.appendChild(item);
-});
+    const ignoriraneVrste = [
+      "Prijava",
+      "Odjava",
+      "Izlaz iz aplikacije",
+      "Prijava, neuspješna",
+      "Ostalo",
+      "Pokretanje aplikacije"
+    ];
+
+    const sortiraniTotali = Object.entries(totals)
+      .filter(([vrsta]) => !ignoriraneVrste.includes(vrsta))
+      .sort((a, b) => {
+        // "Čitanje totala" neka bude zadnji
+        if (a[0] === "Čitanje totala") return 1;
+        if (b[0] === "Čitanje totala") return -1;
+        // Ostale sortiraj po iznosu silazno
+        return b[1] - a[1];
+      });
+
+    sortiraniTotali.forEach(([vrsta, suma]) => {
+      const item = document.createElement("li");
+
+      const prikazIznosa =
+        vrsta === "Čitanje totala"
+          ? `${suma} čitanja`
+          : `${suma.toFixed(2)} €`;
+
+      item.innerHTML = `
+        <div class="naziv">${vrsta}</div>
+        <div class="iznos">${prikazIznosa}</div>
+      `;
+      summaryList.appendChild(item);
+    });
+
+
 
 
     // ✔️ Dodaj prikaz potrošnje artikala ako postoji
