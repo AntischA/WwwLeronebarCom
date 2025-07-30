@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
 
   <style>
     * { box-sizing: border-box; }
@@ -213,6 +215,7 @@
 
 
 
+
   </style>
 </head>
 <body>
@@ -237,15 +240,6 @@
   </div>
 
 
-<div style="margin-top: 15px;">
-  <h3 style="text-align:center;">📊 Naplate po satu — 06:00–15:00</h3>
-  <canvas id="chart06_15"></canvas>
-</div>
-
-<div style="margin-top: 15px;">
-  <h3 style="text-align:center;">📊 Naplate po satu — 15:00–01:00</h3>
-  <canvas id="chart15_01"></canvas>
-</div>
 
 
 
@@ -260,7 +254,7 @@
   <!-- Footer bar -->
 <div class="footer-bar">
   <button id="artikli-button">📦 Artikli</button>
-  <button>Prazno 1</button>
+  <button id="grafikon-button">📈 Grafikon</button>
   <button>Prazno 2</button>
   <button>Prazno 3</button>
 </div>
@@ -274,6 +268,16 @@
   </div>
 </div>
 
+<!-- Grafikon modal -->
+<div id="grafikon-modal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="zatvoriGrafikonModal()">&times;</span>
+    <h3 style="text-align: center;">📈 Naplate po satu</h3>
+    <canvas id="modal-chart06_15" style="height: 300px;"></canvas>
+    <hr>
+    <canvas id="modal-chart15_01" style="height: 300px;"></canvas>
+  </div>
+</div>
 
 
 
@@ -408,8 +412,8 @@
   values15_01.push(sati["00"] || 0);
 
 if (result.naplate_po_satu) {
-  prikaziGrafikon("chart06_15", result.naplate_po_satu, 6, 15);
-  prikaziGrafikon("chart15_01", result.naplate_po_satu, 16, 23);
+prikaziGrafikon("modal-chart06_15", result.naplate_po_satu, 6, 15);
+prikaziGrafikon("modal-chart15_01", result.naplate_po_satu, 16, 23);
 }
     }
 
@@ -429,49 +433,104 @@ function prikaziGrafikon(canvasId, naplate_po_satu, odSat, doSat) {
   for (let h = odSat; h <= doSat; h++) {
     labels.push(h.toString().padStart(2, '0'));
   }
-  if (doSat === 23) labels.push("00");
+  if (doSat === 23) {
+    labels.push("00");
+  }
 
-  const datasets = Object.entries(naplate_po_satu).map(([datum, sati], index) => {
+  const datasets = [];
+  const customLabels = [];
+
+  Object.entries(naplate_po_satu).forEach(([datum, sati], index) => {
     const podaci = labels.map(sat => sati[sat] || 0);
-    return {
-      label: datum,
+    const zbroj = podaci.reduce((a, b) => a + b, 0);
+    const datumParts = datum.split('.');
+    const datumObj = new Date(`${datumParts[2]}-${datumParts[1]}-${datumParts[0]}`);
+    const daniUTjednu = ['ned', 'pon', 'uto', 'sri', 'čet', 'pet', 'sub'];
+    const dan = daniUTjednu[datumObj.getDay()];
+    const prikazDatuma = `${datumParts[0]}.${datumParts[1]}.\n${dan}\n(${zbroj.toFixed(2)} €)`;
+
+    customLabels.push(prikazDatuma);
+
+    datasets.push({
+      label: prikazDatuma,
       data: podaci,
       fill: false,
       borderColor: `hsl(${(index * 67) % 360}, 70%, 50%)`,
-      tension: 0.3
-    };
+      tension: 0,
+      pointRadius: 0,
+      pointHoverRadius: 6
+    });
   });
+
+  // ✅ Sada izračunavamo maksimalnu vrijednost iz svih podataka
+  let maxValue = 0;
+  datasets.forEach(dataset => {
+    const localMax = Math.max(...dataset.data);
+    if (localMax > maxValue) maxValue = localMax;
+  });
+  const yMax = Math.ceil((maxValue + 10) / 10) * 10;
 
   if (grafikonCache[canvasId]) {
     grafikonCache[canvasId].destroy();
   }
 
   const ctx = document.getElementById(canvasId).getContext("2d");
+
   grafikonCache[canvasId] = new Chart(ctx, {
     type: "line",
-    data: { labels: labels, datasets: datasets },
+    data: { labels, datasets },
     options: {
       responsive: true,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { position: 'top' },
-        tooltip: { callbacks: { label: ctx => ctx.raw.toFixed(2) + ' €' } }
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.raw.toFixed(2) + ' €'
+          }
+        },
+        datalabels: {
+          color: '#333',
+          align: 'top',
+          anchor: 'end',
+          formatter: value => value > 0 ? value.toFixed(2) + ' €' : ''
+        }
       },
       scales: {
         y: {
           beginAtZero: true,
-          ticks: { callback: value => value + " €" }
+          max: yMax,
+          ticks: {
+                display: false, // sakriva brojeve sa y-osi
+            stepSize: 10,
+            callback: value => value + " €"
+          }
         }
       }
-    }
+    },
+    plugins: [ChartDataLabels]
   });
 }
 
 
 
-            function zatvoriModal() {
+  function zatvoriModal() {
     document.getElementById("artikli-modal").style.display = "none";
   }
+
+  function zatvoriGrafikonModal() {
+    document.getElementById("grafikon-modal").style.display = "none";
+
+    // Izađi iz fullscreen i otključaj orijentaciju
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    }
+
+    if (screen.orientation && screen.orientation.unlock) {
+      screen.orientation.unlock(); // Nije podržano svuda
+    }
+  }
+
 
   function toggleFiltriranje(vrsta, element) {
     const cards = document.querySelectorAll("#results-container .card");
@@ -494,13 +553,7 @@ function prikaziGrafikon(canvasId, naplate_po_satu, odSat, doSat) {
     }
   }
 
-  function prikaziSveKartice() {
-    aktivniFilteri.clear();
-    document.querySelectorAll(".summary li").forEach(li => li.classList.remove("active"));
-    document.querySelectorAll("#results-container .card").forEach(card => {
-      card.style.display = "block";
-    });
-  }
+
 
   document.getElementById("filter-form").addEventListener("submit", function(e) {
     e.preventDefault();
@@ -530,8 +583,28 @@ function prikaziGrafikon(canvasId, naplate_po_satu, odSat, doSat) {
 
   document.getElementById("artikli-button").addEventListener("click", () => {
   document.getElementById("artikli-modal").style.display = "block";
-});
+  });
 
+document.getElementById("grafikon-button").addEventListener("click", async () => {
+  document.getElementById("grafikon-modal").style.display = "block";
+
+  // Pokušaj ući u fullscreen i zaključati orijentaciju
+  const modal = document.documentElement;
+
+  try {
+    if (modal.requestFullscreen) {
+      await modal.requestFullscreen();
+    } else if (modal.webkitRequestFullscreen) {
+      await modal.webkitRequestFullscreen();
+    }
+
+    if (screen.orientation && screen.orientation.lock) {
+      await screen.orientation.lock("landscape");
+    }
+  } catch (err) {
+    console.warn("Zaključavanje orijentacije nije moguće:", err);
+  }
+});
 
 
 </script>
