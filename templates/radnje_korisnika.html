@@ -10,17 +10,18 @@
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      padding: 20px;
       background-color: #f4f6f8;
       color: #333;
+      padding-bottom: 80px; /* dovoljno za footer da ne preklopi sadržaj */
+
     }
 
     .summary {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 5px;
       justify-content: center;
-      margin-top: 20px;
+      margin-top: 10px;
     }
 
     .summary ul { display: contents; }
@@ -84,8 +85,7 @@
       background-color: white;
       border-radius: 12px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      padding: 15px;
-      margin-top: 15px;
+      padding: 5px;
       display: none;
     }
 
@@ -115,6 +115,7 @@
     .buttonstwo {
       display: flex;
       gap: 10px;
+      margin-top: 5px;
       margin-right: 10px;
       margin-left: 10px;
       }
@@ -141,7 +142,6 @@
   background-color: #2e3d49;
   display: flex;
   justify-content: space-around;
-  padding: 10px 0;
   z-index: 100;
 }
 
@@ -149,11 +149,8 @@
   background: #ffffff;
   color: #2e3d49;
   border: none;
-  padding: 10px 16px;
-  border-radius: 8px;
   font-size: 16px;
   font-weight: bold;
-  cursor: pointer;
 }
 
 .modal {
@@ -170,10 +167,9 @@
 
 .modal-content {
   background-color: #fff;
-  margin: 10% auto;
   padding: 20px;
-  border-radius: 12px;
-  width: 90%;
+  border-radius: 5px;
+  width: 100%;
   max-width: 500px;
   position: relative;
   box-shadow: 0 4px 10px rgba(0,0,0,0.2);
@@ -221,7 +217,12 @@
 </head>
 <body>
 
-<form id="filter-form">
+  <div class="buttonstwo">
+    <button id="prev-day">← Dan prije</button>
+    <button id="next-day">Dan poslije →</button>
+  </div>
+
+  <form id="filter-form">
   <div class="date-range">
     <input type="date" id="from_date" name="from_date" required>
     <input type="date" id="to_date" name="to_date" required>
@@ -229,27 +230,19 @@
   <button type="submit">Prikaži</button>
 </form>
 
-  <div class="buttonstwo">
-    <button id="prev-day">← Dan prije</button>
-    <button id="next-day">Dan poslije →</button>
-  </div>
+
 
   <div class="summary">
     <ul id="summary-list"></ul>
   </div>
 
-  <div style="text-align:center; margin-bottom: 10px;">
-    <button onclick="prikaziSveKartice()">🔁 Prikaži sve</button>
-  </div>
 
-  <hr>
-
-<div style="margin-top: 30px;">
+<div style="margin-top: 15px;">
   <h3 style="text-align:center;">📊 Naplate po satu — 06:00–15:00</h3>
   <canvas id="chart06_15"></canvas>
 </div>
 
-<div style="margin-top: 30px;">
+<div style="margin-top: 15px;">
   <h3 style="text-align:center;">📊 Naplate po satu — 15:00–01:00</h3>
   <canvas id="chart15_01"></canvas>
 </div>
