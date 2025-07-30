@@ -268,7 +268,7 @@
 <div class="footer-bar">
   <button id="artikli-button">📦 Artikli</button>
   <button id="grafikon-button">📈 Grafikon</button>
-  <button>Prazno 2</button>
+  <button id="grafikon2-button">📊 Grafikon 2</button>
   <button>Prazno 3</button>
 </div>
 
@@ -287,11 +287,17 @@
     <span class="close" onclick="zatvoriGrafikonModal()">&times;</span>
     <h3 style="text-align: center;">📈 Naplate po satu</h3>
     <canvas id="modal-chart06_15" style="height: 300px;"></canvas>
-    <hr>
-    <canvas id="modal-chart15_01" style="height: 300px;"></canvas>
   </div>
 </div>
 
+<!-- Grafikon 2 modal -->
+<div id="grafikon2-modal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="zatvoriGrafikon2Modal()">&times;</span>
+    <h3 style="text-align: center;">📊 Naplate po satu (15 – 00)</h3>
+    <canvas id="modal-chart15_01_b" style="height: 300px;"></canvas>
+  </div>
+</div>
 
 
  <script>
@@ -426,7 +432,7 @@
 
 if (result.naplate_po_satu) {
 prikaziGrafikon("modal-chart06_15", result.naplate_po_satu, 6, 15);
-prikaziGrafikon("modal-chart15_01", result.naplate_po_satu, 16, 23);
+prikaziGrafikon("modal-chart15_01_b", result.naplate_po_satu, 16, 23); // za modal "Grafikon 2"
 }
     }
 
@@ -543,6 +549,17 @@ function zatvoriGrafikonModal() {
   }
 }
 
+function zatvoriGrafikon2Modal() {
+  document.getElementById("grafikon2-modal").style.display = "none";
+
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  }
+
+  if (screen.orientation && screen.orientation.unlock) {
+    screen.orientation.unlock?.();
+  }
+}
 
   function toggleFiltriranje(vrsta, element) {
     const cards = document.querySelectorAll("#results-container .card");
@@ -616,6 +633,24 @@ document.getElementById("grafikon-button").addEventListener("click", async () =>
   }
 });
 
+document.getElementById("grafikon2-button").addEventListener("click", async () => {
+  const modal = document.getElementById("grafikon2-modal");
+  modal.style.display = "block";
+
+  try {
+    if (modal.requestFullscreen) {
+      await modal.requestFullscreen();
+    } else if (modal.webkitRequestFullscreen) {
+      await modal.webkitRequestFullscreen();
+    }
+
+    if (screen.orientation && screen.orientation.lock) {
+      await screen.orientation.lock("landscape");
+    }
+  } catch (err) {
+    console.warn("Fullscreen/orijentacija nije moguća:", err);
+  }
+});
 
 </script>
 
