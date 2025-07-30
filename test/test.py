@@ -160,8 +160,8 @@ def radnje_korisnika(from_date, to_date):
 
 # Test poziv
 if __name__ == "__main__":
-    from_date = "28.07.2025"
-    to_date = "28.07.2025"
+    from_date = "29.07.2025"
+    to_date = "30.07.2025"
     rezultat = radnje_korisnika(from_date, to_date)
     print(json.dumps(rezultat, indent=2, ensure_ascii=False))
 

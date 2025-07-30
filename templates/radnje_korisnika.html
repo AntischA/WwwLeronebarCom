@@ -399,13 +399,13 @@
   const labels06_15 = [], values06_15 = [];
   const labels15_01 = [], values15_01 = [];
 
-  for (let h = 6; h <= 14; h++) {
+  for (let h = 6; h <= 15; h++) {
     const sat = h.toString().padStart(2, '0');
     labels06_15.push(sat);
     values06_15.push(sati[sat] || 0);
   }
 
-  for (let h = 15; h <= 23; h++) {
+  for (let h = 16; h <= 23; h++) {
     const sat = h.toString();
     labels15_01.push(sat.padStart(2, '0'));
     values15_01.push(sati[sat] || 0);
@@ -414,9 +414,11 @@
   labels15_01.push("00");
   values15_01.push(sati["00"] || 0);
 
-  prikaziGrafikon("chart06_15", labels06_15, values06_15);
-  prikaziGrafikon("chart15_01", labels15_01, values15_01);
+if (result.naplate_po_satu) {
+  prikaziGrafikon("chart06_15", result.naplate_po_satu, 6, 15);
+  prikaziGrafikon("chart15_01", result.naplate_po_satu, 16, 23);
 }
+    }
 
       } else {
       resultsContainer.innerHTML = `<p>Nema podataka za odabrani raspon.</p>`;
@@ -428,32 +430,43 @@
 
  let grafikonCache = {};
 
-function prikaziGrafikon(canvasId, labels, data) {
+function prikaziGrafikon(canvasId, naplate_po_satu, odSat, doSat) {
+  const labels = [];
+  for (let h = odSat; h <= doSat; h++) {
+    labels.push(h.toString().padStart(2, '0'));
+  }
+  if (doSat === 23) labels.push("00");
+
+  const datasets = Object.entries(naplate_po_satu).map(([datum, sati], index) => {
+    const podaci = labels.map(sat => sati[sat] || 0);
+    return {
+      label: datum,
+      data: podaci,
+      fill: false,
+      borderColor: `hsl(${(index * 67) % 360}, 70%, 50%)`,
+      tension: 0.3
+    };
+  });
+
   if (grafikonCache[canvasId]) {
     grafikonCache[canvasId].destroy();
   }
 
   const ctx = document.getElementById(canvasId).getContext("2d");
   grafikonCache[canvasId] = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: labels,
-      datasets: [{
-        label: "Iznos naplate (€)",
-        data: data,
-        backgroundColor: "rgba(54, 162, 235, 0.6)",
-        borderColor: "rgba(54, 162, 235, 1)",
-        borderWidth: 1
-      }]
-    },
+    type: "line",
+    data: { labels: labels, datasets: datasets },
     options: {
       responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: { callbacks: { label: ctx => ctx.raw.toFixed(2) + ' €' } }
+      },
       scales: {
         y: {
           beginAtZero: true,
-          ticks: {
-            callback: value => value + " €"
-          }
+          ticks: { callback: value => value + " €" }
         }
       }
     }
