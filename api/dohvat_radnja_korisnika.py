@@ -101,6 +101,7 @@ def radnje_korisnika(from_date, to_date):
         filtered_data = []
         artikli_statistika = defaultdict(lambda: {'broj': 0, 'kolicina': 0.0})
         zbroj_po_vrsti = defaultdict(float)
+        naplate_po_satu = defaultdict(lambda: defaultdict(float))
         broj_total_citanja = 0
 
         for item in fetched_data:
@@ -113,13 +114,25 @@ def radnje_korisnika(from_date, to_date):
             if vrsta_akcije == "Naplata" and "STOL" in opis:
                 vrsta_akcije = "Naplata stola"
 
+            # Dodaj naplate po satu
+            original_time_str = item.get('date')
+            try:
+                dt = datetime.datetime.strptime(original_time_str, '%d.%m.%Y %H:%M:%S')
+                datum = dt.strftime('%d.%m.%Y')
+                sat = dt.strftime('%H')
+                if vrsta_akcije.startswith("Naplata"):
+                    naplate_po_satu[datum][sat] += iznos
+            except (TypeError, ValueError):
+                pass  # Ako format ne valja, samo preskoči
+
+            # Artikli
             if vrsta_akcije.startswith("Naplata"):
                 artikli = izvuci_artikle_iz_opisa(opis)
                 for naziv, kolicina in artikli:
                     artikli_statistika[naziv]['broj'] += 1
                     artikli_statistika[naziv]['kolicina'] += kolicina
 
-            # Broji samo pojavljivanje "Čitanje totala" umjesto zbrajanja iznosa
+            # Broji "Čitanje totala"
             if vrsta_akcije == "Čitanje totala":
                 broj_total_citanja += 1
             else:
@@ -132,7 +145,6 @@ def radnje_korisnika(from_date, to_date):
                 'iznos': f"{iznos:.2f} €" if vrsta_akcije != "Čitanje totala" else "1x"
             })
 
-        # Dodaj broj pojavljivanja "Čitanje totala"
         if broj_total_citanja > 0:
             zbroj_po_vrsti["Čitanje totala"] = broj_total_citanja
 
@@ -140,7 +152,14 @@ def radnje_korisnika(from_date, to_date):
             'success': True,
             'data': filtered_data,
             'potrosnja_artikala': dict(artikli_statistika),
-            'zbroj_po_vrsti': dict(zbroj_po_vrsti)
+            'zbroj_po_vrsti': dict(zbroj_po_vrsti),
+            'naplate_po_satu': {
+                datum: {
+                    sat: round(iznos, 2)
+                    for sat, iznos in sati.items()
+                }
+                for datum, sati in naplate_po_satu.items()
+            }
         }
 
     except json.JSONDecodeError:

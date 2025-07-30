@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     * { box-sizing: border-box; }
     body {
@@ -100,8 +102,23 @@
     .card-header .iznos { text-align: right; flex: 1; color: #006600; font-weight: bold; }
     .card-opis { font-size: 14px; color: #666; }
 
-    .buttons { margin-top: 15px; text-align: center; }
-    .buttons button { margin: 0 10px; }
+    .buttons {
+      margin-top: 15px;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .buttons button {
+      margin: 10px 20px;
+    }
+
+    .buttonstwo {
+      display: flex;
+      gap: 10px;
+      margin-right: 10px;
+      margin-left: 10px;
+      }
+
 
     #loader {
       text-align: center;
@@ -114,17 +131,105 @@
       input[type="date"], button { width: 100%; font-size: 18px; }
       form { flex-direction: column; }
     }
+
+
+    .footer-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #2e3d49;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0;
+  z-index: 100;
+}
+
+.footer-bar button {
+  background: #ffffff;
+  color: #2e3d49;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 101;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: 10% auto;
+  padding: 20px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  position: relative;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  color: #2e3d49;
+  text-align: center;
+}
+
+.modal-content ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.modal-content li {
+  padding: 8px 12px;
+  background-color: #e0f7f1;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+
+.close {
+  position: absolute;
+  top: 10px;
+  right: 16px;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+}
+
+.date-range {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 10px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+
+
   </style>
 </head>
 <body>
 
-  <form id="filter-form">
+<form id="filter-form">
+  <div class="date-range">
     <input type="date" id="from_date" name="from_date" required>
     <input type="date" id="to_date" name="to_date" required>
-    <button type="submit">Prikaži</button>
-  </form>
+  </div>
+  <button type="submit">Prikaži</button>
+</form>
 
-  <div class="buttons">
+  <div class="buttonstwo">
     <button id="prev-day">← Dan prije</button>
     <button id="next-day">Dan poslije →</button>
   </div>
@@ -139,9 +244,15 @@
 
   <hr>
 
-  <div class="artikli-summary">
-    <ul id="artikli-summary-list"></ul>
-  </div>
+<div style="margin-top: 30px;">
+  <h3 style="text-align:center;">📊 Naplate po satu — 06:00–15:00</h3>
+  <canvas id="chart06_15"></canvas>
+</div>
+
+<div style="margin-top: 30px;">
+  <h3 style="text-align:center;">📊 Naplate po satu — 15:00–01:00</h3>
+  <canvas id="chart15_01"></canvas>
+</div>
 
 
 
@@ -149,6 +260,29 @@
 
   <p id="loader">Učitavanje podataka...</p>
   <div id="results-container"></div>
+
+
+
+
+  <!-- Footer bar -->
+<div class="footer-bar">
+  <button id="artikli-button">📦 Artikli</button>
+  <button>Prazno 1</button>
+  <button>Prazno 2</button>
+  <button>Prazno 3</button>
+</div>
+
+<!-- Artikli modal -->
+<div id="artikli-modal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="zatvoriModal()">&times;</span>
+    <h3>📦 Potrošnja artikala</h3>
+    <ul id="artikli-summary-list"></ul>
+  </div>
+</div>
+
+
+
 
  <script>
   let aktivniFilteri = new Set();
@@ -249,18 +383,87 @@
       });
 
       if (result.potrosnja_artikala) {
-        artikliSummaryList.innerHTML = `<li><b>📦 Potrošnja artikala:</b></li>`;
+        artikliSummaryList.innerHTML = "";
         Object.entries(result.potrosnja_artikala)
           .sort((a, b) => b[1].kolicina - a[1].kolicina)
           .forEach(([naziv, statistika]) => {
             artikliSummaryList.innerHTML += `<li>${naziv} — ${statistika.kolicina.toFixed(2)} kom (${statistika.broj} puta)</li>`;
           });
-      }
 
-    } else {
+
+    if (result.naplate_po_satu) {
+  const dataPerHour = result.naplate_po_satu;
+  const datum = Object.keys(dataPerHour)[0]; // Pretpostavljamo jedan dan
+  const sati = dataPerHour[datum];
+
+  const labels06_15 = [], values06_15 = [];
+  const labels15_01 = [], values15_01 = [];
+
+  for (let h = 6; h <= 14; h++) {
+    const sat = h.toString().padStart(2, '0');
+    labels06_15.push(sat);
+    values06_15.push(sati[sat] || 0);
+  }
+
+  for (let h = 15; h <= 23; h++) {
+    const sat = h.toString();
+    labels15_01.push(sat.padStart(2, '0'));
+    values15_01.push(sati[sat] || 0);
+  }
+
+  labels15_01.push("00");
+  values15_01.push(sati["00"] || 0);
+
+  prikaziGrafikon("chart06_15", labels06_15, values06_15);
+  prikaziGrafikon("chart15_01", labels15_01, values15_01);
+}
+
+      } else {
       resultsContainer.innerHTML = `<p>Nema podataka za odabrani raspon.</p>`;
       artikliSummaryList.innerHTML = `<li><i>Nema potrošnje artikala za odabrani dan.</i></li>`;
     }
+  }
+ }
+
+
+ let grafikonCache = {};
+
+function prikaziGrafikon(canvasId, labels, data) {
+  if (grafikonCache[canvasId]) {
+    grafikonCache[canvasId].destroy();
+  }
+
+  const ctx = document.getElementById(canvasId).getContext("2d");
+  grafikonCache[canvasId] = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Iznos naplate (€)",
+        data: data,
+        backgroundColor: "rgba(54, 162, 235, 0.6)",
+        borderColor: "rgba(54, 162, 235, 1)",
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: value => value + " €"
+          }
+        }
+      }
+    }
+  });
+}
+
+
+
+            function zatvoriModal() {
+    document.getElementById("artikli-modal").style.display = "none";
   }
 
   function toggleFiltriranje(vrsta, element) {
@@ -316,6 +519,14 @@
     updateDateInputs(today);
     fetchData();
   });
+
+
+  document.getElementById("artikli-button").addEventListener("click", () => {
+  document.getElementById("artikli-modal").style.display = "block";
+});
+
+
+
 </script>
 
 </body>
