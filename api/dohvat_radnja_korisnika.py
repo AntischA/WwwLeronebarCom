@@ -121,7 +121,11 @@ def radnje_korisnika(from_date, to_date):
                 datum = dt.strftime('%d.%m.%Y')
                 sat = dt.strftime('%H')
                 if vrsta_akcije.startswith("Naplata"):
-                    naplate_po_satu[datum][sat] += iznos
+                    # Pomakni sat unaprijed, tako da 07:00–07:59 ide pod ključ "08"
+                    sat_int = int(sat)
+                    sat_shifted = (sat_int + 1) % 24
+                    sat_key = str(sat_shifted).zfill(2)
+                    naplate_po_satu[datum][sat_key] += iznos
             except (TypeError, ValueError):
                 pass  # Ako format ne valja, samo preskoči
 
