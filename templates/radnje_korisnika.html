@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Radnje korisnika</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
@@ -18,45 +19,101 @@
 
     }
 
+
+        .buttonstwo {
+      display: flex;
+      gap: 10px;
+      margin-top: 5px;
+      margin-right: 10px;
+      margin-left: 10px;
+      }
+
+
+
+
+
+
     .summary {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      justify-content: center;
-      margin-top: 10px;
+      display: block;       /* umjesto contents */
+      width: 100%;
+      margin: 0;
+      padding: 0;
     }
 
-    .summary ul { display: contents; }
+    .summary ul,
+.summary-date {
+  list-style: none;
+  margin: 0;
+  padding: 0; /* 🔹 ovo uklanja tu uvlaku od ~50px */
+}
 
-    .summary li {
-      width: calc(50% - 10px);
-      padding: 12px;
-      background-color: #dce6f1;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-size: 16px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
+.date-section h3 {
+  text-align: center;    /* centriraj tekst */
+  margin: 0 0 10px 0;    /* makni default margine, ostavi malo ispod */
+  padding: 0;
+  font-size: 18px;       /* možeš prilagoditi */
+  color: #2e3d49;        /* boja kao što već imaš */
+  font-weight: bold;
+}
 
-    .summary li.active {
+
+.summary-date {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  justify-content: flex-start; /* 🔹 slaže od lijeva bez centriranja */
+}
+
+.summary-date li {
+  flex: 1 1 120px; /* minimalna širina 120px, rasteže se do raspoloživog prostora */
+  max-width: calc(25% - 8px); /* 4 po redu na većim ekranima */
+  box-sizing: border-box;
+  padding: 12px;
+  background-color: #dce6f1;
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* Tableti - max 2 po redu */
+@media (max-width: 768px) {
+  .summary-date li {
+    max-width: calc(50% - 8px);
+  }
+}
+
+/* Mobiteli - 1 po redu */
+@media (max-width: 480px) {
+  .summary-date li {
+    max-width: 100%;
+  }
+}
+
+    .summary-date li.active {
       background-color: #93c5fd;
       transform: scale(1.03);
     }
 
-    .summary li .naziv { font-weight: bold; color: #2e3d49; }
-    .summary li .iznos { font-size: 15px; color: #006600; }
 
-    .artikli-summary ul { list-style: none; padding-left: 0; }
-    .artikli-summary li {
-      padding: 8px 12px;
-      background-color: #e0f7f1;
-      border-radius: 8px;
-      margin-bottom: 6px;
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     form {
       display: flex;
@@ -104,23 +161,8 @@
     .card-header .iznos { text-align: right; flex: 1; color: #006600; font-weight: bold; }
     .card-opis { font-size: 14px; color: #666; }
 
-    .buttons {
-      margin-top: 15px;
-      text-align: center;
-      margin-bottom: 15px;
-    }
 
-    .buttons button {
-      margin: 10px 20px;
-    }
 
-    .buttonstwo {
-      display: flex;
-      gap: 10px;
-      margin-top: 5px;
-      margin-right: 10px;
-      margin-left: 10px;
-      }
 
 
     #loader {
@@ -225,7 +267,7 @@
 
 .modal-content canvas {
   width: 100% !important;
-  height: 100vh !important; /* cijela visina ekrana */
+  height: 96vh !important; /* cijela visina ekrana */
   max-height: 100vh;
 }
 
@@ -300,6 +342,13 @@
 </div>
 
 
+
+
+
+
+
+
+
  <script>
   let aktivniFilteri = new Set();
 
@@ -321,7 +370,7 @@
     document.getElementById("to_date").value = inputDate;
   }
 
-  async function fetchData() {
+async function fetchData() {
     const fromDate = formatDateForBackend(document.getElementById("from_date").value);
     const toDate = formatDateForBackend(document.getElementById("to_date").value);
     const loader = document.getElementById("loader");
@@ -329,123 +378,130 @@
     const summaryList = document.getElementById("summary-list");
     const artikliSummaryList = document.getElementById("artikli-summary-list");
 
+    // Reset prikaza
     artikliSummaryList.innerHTML = "";
     loader.style.display = "block";
     resultsContainer.innerHTML = "";
     summaryList.innerHTML = "";
     aktivniFilteri.clear();
 
-    const response = await fetch("/api/radnje_korisnika", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ from_date: fromDate, to_date: toDate })
-    });
-
-    const result = await response.json();
-    loader.style.display = "none";
-
-    if (result.success && result.data.length > 0) {
-      const totals = {};
-
-      result.data.forEach(item => {
-        const iznos = parseFloat(item.iznos.replace(" €", "").replace(",", ".")) || 0;
-        const vrsta = item.vrsta_akcije;
-
-        const cardHTML = document.createElement("div");
-        cardHTML.classList.add("card");
-        cardHTML.setAttribute("data-vrsta", vrsta);
-        cardHTML.innerHTML = `
-          <div class="card-header">
-            <span class="vrijeme">${item.vrijeme}</span>
-            <span class="vrsta">${vrsta}</span>
-            <span class="iznos">${item.iznos}</span>
-          </div>
-          <div class="card-opis">${item.opis || "-"}</div>
-        `;
-        resultsContainer.appendChild(cardHTML);
-
-        if (!totals[vrsta]) totals[vrsta] = 0;
-        totals[vrsta] += iznos;
-      });
-
-      const ignoriraneVrste = [
-        "Prijava", "Odjava", "Izlaz iz aplikacije",
-        "Prijava, neuspješna", "Ostalo", "Pokretanje aplikacije"
-      ];
-
-      const sortiraniTotali = Object.entries(totals)
-        .filter(([vrsta]) => !ignoriraneVrste.includes(vrsta))
-        .sort((a, b) => {
-          if (a[0] === "Čitanje totala") return 1;
-          if (b[0] === "Čitanje totala") return -1;
-          return b[1] - a[1];
+    let result;
+    try {
+        const response = await fetch("/api/radnje_korisnika", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ from_date: fromDate, to_date: toDate })
         });
 
-      sortiraniTotali.forEach(([vrsta, suma]) => {
-        const item = document.createElement("li");
-        item.setAttribute("data-vrsta", vrsta);
-        item.addEventListener("click", () => toggleFiltriranje(vrsta, item));
+        result = await response.json();
+    } catch (err) {
+        console.error("Greška kod dohvata podataka:", err);
+        loader.style.display = "none";
+        resultsContainer.innerHTML = `<p style="color:red">Greška pri dohvatu podataka.</p>`;
+        return;
+    }
 
-        const prikazIznosa =
-          vrsta === "Čitanje totala"
-            ? `${suma} čitanja`
-            : `${suma.toFixed(2)} €`;
+    loader.style.display = "none";
 
-        item.innerHTML = `
-          <div class="naziv">${vrsta}</div>
-          <div class="iznos">${prikazIznosa}</div>
-        `;
-        summaryList.appendChild(item);
-      });
+    // Sigurnosna provjera
+    if (!(result.success && result.data_po_datumima && Object.keys(result.data_po_datumima).length > 0)) {
+        resultsContainer.innerHTML = `<p>Nema podataka za odabrani raspon.</p>`;
+        artikliSummaryList.innerHTML = `<li><i>Nema potrošnje artikala za odabrani period.</i></li>`;
+        return;
+    }
 
-      if (result.potrosnja_artikala) {
+    // Vrste koje ignoriramo
+    const ignoriraneVrste = [
+        "Prijava", "Odjava", "Izlaz iz aplikacije", "Čitanje liste totala", "Čitanje totala konobara",
+        "Prijava, neuspješna", "Ostalo", "Pokretanje aplikacije", "Čitanje totala", "Premještanje stola"
+    ];
+
+    // Prolazimo kroz svaki datum
+    Object.keys(result.data_po_datumima)
+        .sort((a, b) => {
+            const [da, ma, ya] = a.split(".");
+            const [db, mb, yb] = b.split(".");
+            return new Date(yb, mb - 1, db) - new Date(ya, ma - 1, da);
+        })
+        .forEach(datum => {
+            const items = result.data_po_datumima[datum];
+            const totalsByType = {};
+
+            // Dodavanje sekcije za datum
+            const dateSection = document.createElement("div");
+            dateSection.classList.add("date-section");
+
+            const dateTitle = document.createElement("h3");
+            dateTitle.textContent = datum;
+            dateSection.appendChild(dateTitle);
+
+            const dateList = document.createElement("ul");
+            dateList.classList.add("summary-date");
+
+            items.forEach(item => {
+                const iznos = parseFloat(item.iznos.replace(" €", "").replace(",", ".")) || 0;
+                const vrsta = item.vrsta_akcije;
+
+                if (!totalsByType[vrsta]) totalsByType[vrsta] = 0;
+                totalsByType[vrsta] += iznos;
+
+                // Dodaj karticu u rezultate
+                const cardHTML = document.createElement("div");
+                cardHTML.classList.add("card");
+                cardHTML.setAttribute("data-vrsta", vrsta);
+                cardHTML.innerHTML = `
+                    <div class="card-header">
+                        <span class="vrijeme">${item.vrijeme}</span>
+                        <span class="vrsta">${vrsta}</span>
+                        <span class="iznos">${item.iznos}</span>
+                    </div>
+                    <div class="card-opis">${item.opis || "-"}</div>
+                `;
+                resultsContainer.appendChild(cardHTML);
+            });
+
+            // Widgeti za vrste radnji tog dana
+            Object.entries(totalsByType)
+                .filter(([vrsta]) => !ignoriraneVrste.includes(vrsta))
+                .sort((a, b) => b[1] - a[1])
+                .forEach(([vrsta, suma]) => {
+                    const item = document.createElement("li");
+                    item.setAttribute("data-vrsta", vrsta);
+                    item.addEventListener("click", () => toggleFiltriranje(vrsta, item));
+
+                    const prikazIznosa =
+                        vrsta === "Čitanje totala"
+                            ? `${suma} čitanja`
+                            : `${suma.toFixed(2)} €`;
+
+                    item.innerHTML = `
+                        <div class="naziv">${vrsta}</div>
+                        <div class="iznos">${prikazIznosa}</div>
+                    `;
+                    dateList.appendChild(item);
+                });
+
+            dateSection.appendChild(dateList);
+            summaryList.appendChild(dateSection);
+        });
+
+    // Potrošnja artikala
+    if (result.potrosnja_artikala) {
         artikliSummaryList.innerHTML = "";
         Object.entries(result.potrosnja_artikala)
-          .sort((a, b) => b[1].kolicina - a[1].kolicina)
-          .forEach(([naziv, statistika]) => {
-            artikliSummaryList.innerHTML += `<li>${naziv} — ${statistika.kolicina.toFixed(2)} kom (${statistika.broj} puta)</li>`;
-          });
+            .sort((a, b) => b[1].kolicina - a[1].kolicina)
+            .forEach(([naziv, statistika]) => {
+                artikliSummaryList.innerHTML += `<li>${naziv} — ${statistika.kolicina.toFixed(2)} kom (${statistika.broj} puta)</li>`;
+            });
+    }
 
-
+    // Grafikoni po satu
     if (result.naplate_po_satu) {
-  const dataPerHour = result.naplate_po_satu;
-  const datum = Object.keys(dataPerHour)[0]; // Pretpostavljamo jedan dan
-  const sati = dataPerHour[datum];
-
-  const labels06_15 = [], values06_15 = [];
-  const labels15_01 = [], values15_01 = [];
-
-  for (let h = 6; h <= 15; h++) {
-    const sat = h.toString().padStart(2, '0');
-    labels06_15.push(sat);
-    values06_15.push(sati[sat] || 0);
-  }
-
-  for (let h = 16; h <= 23; h++) {
-    const sat = h.toString();
-    labels15_01.push(sat.padStart(2, '0'));
-    values15_01.push(sati[sat] || 0);
-  }
-
-  labels15_01.push("00");
-  values15_01.push(sati["00"] || 0);
-
-if (result.naplate_po_satu) {
-prikaziGrafikon("modal-chart06_15", result.naplate_po_satu, 6, 15);
-prikaziGrafikon("modal-chart15_01_b", result.naplate_po_satu, 16, 24); // za modal "Grafikon 2"
+        prikaziGrafikon("modal-chart06_15", result.naplate_po_satu, 6, 15);
+        prikaziGrafikon("modal-chart15_01_b", result.naplate_po_satu, 16, 24);
+    }
 }
-    }
 
-      } else {
-      resultsContainer.innerHTML = `<p>Nema podataka za odabrani raspon.</p>`;
-      artikliSummaryList.innerHTML = `<li><i>Nema potrošnje artikala za odabrani dan.</i></li>`;
-    }
-  }
- }
-
-
-
- let grafikonCache = {};
 
 
 
@@ -499,20 +555,43 @@ prikaziGrafikon("modal-chart15_01_b", result.naplate_po_satu, 16, 24); // za mod
   });
 
   window.addEventListener("DOMContentLoaded", () => {
-    const today = new Date();
-    updateDateInputs(today);
-    fetchData();
+      const today = new Date();
+      const weekAgo = new Date();
+      weekAgo.setDate(today.getDate() - 7);
+
+      document.getElementById("from_date").value = formatDateToInput(weekAgo);
+      document.getElementById("to_date").value = formatDateToInput(today);
+
+      fetchData();
   });
 
 
   document.getElementById("artikli-button").addEventListener("click", () => {
   document.getElementById("artikli-modal").style.display = "block";
   });
+
 </script>
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <script>
+let grafikonCache = {};
+
 function prikaziGrafikon(canvasId, naplate_po_satu, odSat, doSat) {
   const labels = [];
   for (let h = odSat; h <= doSat; h++) {

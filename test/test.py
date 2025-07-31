@@ -90,7 +90,9 @@ def radnje_korisnika(from_date, to_date):
     try:
         response_json = response.json()
         fetched_data = response_json.get('response', {}).get('data', [])
-        filtered_data = []
+
+        # Novi način — grupisanje po datumima
+        grouped_data = defaultdict(list)
         artikli_statistika = defaultdict(lambda: {'broj': 0, 'kolicina': 0.0})
         zbroj_po_vrsti = defaultdict(float)
         naplate_po_satu = defaultdict(lambda: defaultdict(float))
@@ -100,25 +102,28 @@ def radnje_korisnika(from_date, to_date):
             opis = item.get('action', '')
             vrsta_akcije = item.get('actionType', '')
             iznos = float(item.get('decimalValue', 0.0))
-            vrijeme = format_time_order_items(item.get('date'))
+
+            original_time_str = item.get('date')
+            try:
+                dt = datetime.datetime.strptime(original_time_str, '%d.%m.%Y %H:%M:%S')
+                datum = dt.strftime('%d.%m.%Y')
+                vrijeme = dt.strftime('%H:%M:%S')
+            except (TypeError, ValueError):
+                datum = "Nepoznat datum"
+                vrijeme = ""
 
             # Preimenovanje specifičnih akcija
             if vrsta_akcije == "Naplata" and "STOL" in opis:
                 vrsta_akcije = "Naplata stola"
 
             # Dodaj naplate po satu
-            original_time_str = item.get('date')
-            try:
-                dt = datetime.datetime.strptime(original_time_str, '%d.%m.%Y %H:%M:%S')
-                datum = dt.strftime('%d.%m.%Y')
-                sat = dt.strftime('%H')
-                if vrsta_akcije.startswith("Naplata"):
-                    naplate_po_satu[datum][sat] += iznos
-            except (TypeError, ValueError):
-                pass  # Ako format ne valja, samo preskoči
-
-            # Artikli
             if vrsta_akcije.startswith("Naplata"):
+                sat_int = int(dt.strftime('%H'))
+                sat_shifted = (sat_int + 1) % 24
+                sat_key = str(sat_shifted).zfill(2)
+                naplate_po_satu[datum][sat_key] += iznos
+
+                # Artikli
                 artikli = izvuci_artikle_iz_opisa(opis)
                 for naziv, kolicina in artikli:
                     artikli_statistika[naziv]['broj'] += 1
@@ -130,7 +135,8 @@ def radnje_korisnika(from_date, to_date):
             else:
                 zbroj_po_vrsti[vrsta_akcije] += iznos
 
-            filtered_data.append({
+            # Dodaj transakciju u grupu za taj datum
+            grouped_data[datum].append({
                 'vrijeme': vrijeme,
                 'opis': opis,
                 'vrsta_akcije': vrsta_akcije,
@@ -140,16 +146,14 @@ def radnje_korisnika(from_date, to_date):
         if broj_total_citanja > 0:
             zbroj_po_vrsti["Čitanje totala"] = broj_total_citanja
 
+        # Konvertuj defaultdict u običan dict za JSON
         return {
             'success': True,
-            'data': filtered_data,
+            'data_po_datumima': dict(grouped_data),  # 🔹 Transakcije razdvojene po datumima
             'potrosnja_artikala': dict(artikli_statistika),
             'zbroj_po_vrsti': dict(zbroj_po_vrsti),
             'naplate_po_satu': {
-                datum: {
-                    sat: round(iznos, 2)
-                    for sat, iznos in sati.items()
-                }
+                datum: {sat: round(iznos, 2) for sat, iznos in sati.items()}
                 for datum, sati in naplate_po_satu.items()
             }
         }
@@ -160,7 +164,7 @@ def radnje_korisnika(from_date, to_date):
 
 # Test poziv
 if __name__ == "__main__":
-    from_date = "27.07.2025"
+    from_date = "28.07.2025"
     to_date = "30.07.2025"
     rezultat = radnje_korisnika(from_date, to_date)
     print(json.dumps(rezultat, indent=2, ensure_ascii=False))
