@@ -11,9 +11,10 @@
 <body>
 
   <div class="buttonstwo">
-    <button id="prev-day">← Dan prije</button>
-    <button id="next-day">Dan poslije →</button>
+      <button id="prev-day">← Tjedan prije</button>
+      <button id="next-day">Tjedan poslije →</button>
   </div>
+
 
 <form id="filter-form">
   <div class="date-range">
@@ -189,10 +190,12 @@ function resetPrikaz() {
 
 function sortirajDatume(a, b) {
     const [da, ma, ya] = a.split(".");
+    const dateA = new Date(`${ya}-${String(ma).padStart(2, "0")}-${String(da).padStart(2, "0")}`);
     const [db, mb, yb] = b.split(".");
-    // Uspoređujemo od najnovijeg prema najstarijem
-    return new Date(yb, mb - 1, db) - new Date(ya, ma - 1, da);
+    const dateB = new Date(`${yb}-${String(mb).padStart(2, "0")}-${String(db).padStart(2, "0")}`);
+    return dateB - dateA; // od najnovijeg prema starom
 }
+
 
 function kreirajSekcijuDatuma(datum) {
     const dateSection = document.createElement("div");
@@ -265,6 +268,9 @@ function prikaziPodatkePoDatumima(data_po_datumima) {
         "Prijava, neuspješna", "Ostalo", "Pokretanje aplikacije", "Čitanje totala", "Premještanje stola"
     ];
 
+    // --- Tjedni zbroj ---
+    let tjedniZbroj = 0;
+
     Object.keys(data_po_datumima)
         .sort(sortirajDatume)
         .forEach(datum => {
@@ -321,7 +327,13 @@ function prikaziPodatkePoDatumima(data_po_datumima) {
 
             dateList.appendChild(kreirajWidgetVrste("Jutro", jutroSuma, datum));
             dateList.appendChild(kreirajWidgetVrste("Popodne", popodneSuma, datum));
-            dateList.appendChild(kreirajWidgetVrste("Ukupno", jutroSuma + popodneSuma, datum));
+
+            // Ukupno widget
+            const ukupnoVrijednost = jutroSuma + popodneSuma;
+            dateList.appendChild(kreirajWidgetVrste("Ukupno", ukupnoVrijednost, datum));
+
+            // --- Dodaj u tjedni zbroj ---
+            tjedniZbroj += ukupnoVrijednost;
 
             // Ostali widgeti
             Object.entries(totalsByType)
@@ -346,9 +358,15 @@ function prikaziPodatkePoDatumima(data_po_datumima) {
             dateSection.appendChild(ostaliWrapper);
             summaryList.appendChild(dateSection);
         });
-}
 
-
+    // --- Nakon svih dana: dodaj Tjedni zbroj ---
+    const tjedniWidget = document.createElement("div");
+    tjedniWidget.classList.add("tjedni-ukupno");
+    tjedniWidget.innerHTML = `
+        <strong>📅 Tjedan ukupno: ${tjedniZbroj.toFixed(2)} €</strong>
+    `;
+    summaryList.appendChild(tjedniWidget);
+    }
 
 
 
@@ -545,17 +563,31 @@ function toggleFiltriranje(vrsta, datum, element) {
   });
 
   document.getElementById("prev-day").addEventListener("click", function() {
-    const date = parseDateInput("from_date");
-    date.setDate(date.getDate() - 1);
-    updateDateInputs(date);
-    fetchData();
+      const dateFrom = parseDateInput("from_date");
+      const dateTo = parseDateInput("to_date");
+
+      // Pomakni oba datuma za -7 dana
+      dateFrom.setDate(dateFrom.getDate() - 7);
+      dateTo.setDate(dateTo.getDate() - 7);
+
+      document.getElementById("from_date").value = formatDateToInput(dateFrom);
+      document.getElementById("to_date").value = formatDateToInput(dateTo);
+
+      fetchData();
   });
 
   document.getElementById("next-day").addEventListener("click", function() {
-    const date = parseDateInput("from_date");
-    date.setDate(date.getDate() + 1);
-    updateDateInputs(date);
-    fetchData();
+      const dateFrom = parseDateInput("from_date");
+      const dateTo = parseDateInput("to_date");
+
+      // Pomakni oba datuma za +7 dana
+      dateFrom.setDate(dateFrom.getDate() + 7);
+      dateTo.setDate(dateTo.getDate() + 7);
+
+      document.getElementById("from_date").value = formatDateToInput(dateFrom);
+      document.getElementById("to_date").value = formatDateToInput(dateTo);
+
+      fetchData();
   });
 
   window.addEventListener("DOMContentLoaded", () => {

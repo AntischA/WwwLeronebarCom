@@ -338,3 +338,16 @@ form { flex-direction: column; }
     align-items: center;     /* horizontalno centriranje */
     text-align: center;
 }
+
+/* Stil za tjedni ukupno widget */
+.tjedni-ukupno {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f3f3f3;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    font-size: 1.2em;
+    text-align: center;
+    font-weight: bold;
+    color: #333;
+}
