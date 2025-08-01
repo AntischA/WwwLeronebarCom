@@ -6,274 +6,7 @@
   <title>Radnje korisnika</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-
-
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      background-color: #f4f6f8;
-      color: #333;
-      padding-bottom: 80px; /* dovoljno za footer da ne preklopi sadržaj */
-
-    }
-
-
-        .buttonstwo {
-      display: flex;
-      gap: 10px;
-      margin-top: 5px;
-      margin-right: 10px;
-      margin-left: 10px;
-      }
-
-
-
-
-
-
-    .summary {
-      display: block;       /* umjesto contents */
-      width: 100%;
-      margin: 0;
-      padding: 0;
-    }
-
-    .summary ul,
-.summary-date {
-  list-style: none;
-  margin: 0;
-  padding: 0; /* 🔹 ovo uklanja tu uvlaku od ~50px */
-}
-
-.date-section h3 {
-  text-align: center;    /* centriraj tekst */
-  margin: 0 0 10px 0;    /* makni default margine, ostavi malo ispod */
-  padding: 0;
-  font-size: 18px;       /* možeš prilagoditi */
-  color: #2e3d49;        /* boja kao što već imaš */
-  font-weight: bold;
-}
-
-
-.summary-date {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  justify-content: flex-start; /* 🔹 slaže od lijeva bez centriranja */
-}
-
-.summary-date li {
-  flex: 1 1 120px; /* minimalna širina 120px, rasteže se do raspoloživog prostora */
-  max-width: calc(25% - 8px); /* 4 po redu na većim ekranima */
-  box-sizing: border-box;
-  padding: 12px;
-  background-color: #dce6f1;
-  border-radius: 10px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-/* Tableti - max 2 po redu */
-@media (max-width: 768px) {
-  .summary-date li {
-    max-width: calc(50% - 8px);
-  }
-}
-
-/* Mobiteli - 1 po redu */
-@media (max-width: 480px) {
-  .summary-date li {
-    max-width: 100%;
-  }
-}
-
-    .summary-date li.active {
-      background-color: #93c5fd;
-      transform: scale(1.03);
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    form {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 20px;
-      align-items: center;
-      justify-content: center;
-    }
-
-    input[type="date"], button {
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-
-    button {
-      background-color: #2e3d49;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-
-    button:hover { background-color: #1b262f; }
-
-    .card {
-      background-color: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      padding: 5px;
-      display: none;
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-      flex-wrap: wrap;
-    }
-
-    .card-header .vrijeme { font-weight: bold; color: #2e3d49; flex: 1; }
-    .card-header .vrsta { text-align: center; flex: 1; font-weight: bold; color: #444; }
-    .card-header .iznos { text-align: right; flex: 1; color: #006600; font-weight: bold; }
-    .card-opis { font-size: 14px; color: #666; }
-
-
-
-
-
-    #loader {
-      text-align: center;
-      margin-top: 20px;
-      font-weight: bold;
-      display: none;
-    }
-
-    @media (max-width: 768px) {
-      input[type="date"], button { width: 100%; font-size: 18px; }
-      form { flex-direction: column; }
-    }
-
-
-    .footer-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: #2e3d49;
-  display: flex;
-  justify-content: space-around;
-  z-index: 100;
-}
-
-.footer-bar button {
-  background: #ffffff;
-  color: #2e3d49;
-  border: none;
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 101;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgba(0,0,0,0.4);
-}
-
-.modal-content {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 5px;
-  width: 100%;
-  max-width: 500px;
-  position: relative;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
-
-.modal-content h3 {
-  margin-top: 0;
-  color: #2e3d49;
-  text-align: center;
-}
-
-.modal-content ul {
-  list-style: none;
-  padding-left: 0;
-}
-
-.modal-content li {
-  padding: 8px 12px;
-  background-color: #e0f7f1;
-  border-radius: 8px;
-  margin-bottom: 6px;
-}
-:fullscreen .modal-content {
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  border-radius: 0;
-  padding: 10px;
-  box-sizing: border-box;
-  overflow-y: auto;
-}
-
-.close {
-  position: absolute;
-  top: 10px;
-  right: 16px;
-  font-size: 24px;
-  color: #666;
-  cursor: pointer;
-}
-
-.date-range {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  gap: 10px;
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-
-.modal-content canvas {
-  width: 100% !important;
-  height: 96vh !important; /* cijela visina ekrana */
-  max-height: 100vh;
-}
-
-
-
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/radnje_korisnika.css') }}">
 </head>
 <body>
 
@@ -295,8 +28,6 @@
   <div class="summary">
     <ul id="summary-list"></ul>
   </div>
-
-
 
 
 
@@ -350,7 +81,13 @@
 
 
  <script>
-  let aktivniFilteri = new Set();
+let resultNaplatePoSatu = null;
+let aktivniFilteri = new Set();
+
+const nazivMap = {
+    "Dodavanje na stol": "Na stol",
+    "Otkazivanje narudžbe": "Otkaz stola"
+};
 
   function formatDateToInput(date) {
     return date.toISOString().split("T")[0];
@@ -370,22 +107,34 @@
     document.getElementById("to_date").value = inputDate;
   }
 
+
 async function fetchData() {
-    const fromDate = formatDateForBackend(document.getElementById("from_date").value);
-    const toDate = formatDateForBackend(document.getElementById("to_date").value);
+    resetPrikaz();
+
+    const { fromDate, toDate } = getDateRange();
+    const result = await dohvatiPodatkeSaServera(fromDate, toDate);
+    if (!result) return;
+
+    prikaziPodatkePoDatumima(result.data_po_datumima);
+    prikaziPotrosnjuArtikala(result.potrosnja_artikala);
+    resultNaplatePoSatu = result.naplate_po_satu;
+    prikaziGrafikone(resultNaplatePoSatu);
+}
+
+function getDateRange() {
+    const fromDateInput = document.getElementById("from_date").value;
+    const toDateInput = document.getElementById("to_date").value;
+
+    return {
+        fromDate: formatDateForBackend(fromDateInput),
+        toDate: formatDateForBackend(toDateInput)
+    };
+}
+
+async function dohvatiPodatkeSaServera(fromDate, toDate) {
     const loader = document.getElementById("loader");
-    const resultsContainer = document.getElementById("results-container");
-    const summaryList = document.getElementById("summary-list");
-    const artikliSummaryList = document.getElementById("artikli-summary-list");
-
-    // Reset prikaza
-    artikliSummaryList.innerHTML = "";
     loader.style.display = "block";
-    resultsContainer.innerHTML = "";
-    summaryList.innerHTML = "";
-    aktivniFilteri.clear();
 
-    let result;
     try {
         const response = await fetch("/api/radnje_korisnika", {
             method: "POST",
@@ -393,114 +142,332 @@ async function fetchData() {
             body: JSON.stringify({ from_date: fromDate, to_date: toDate })
         });
 
-        result = await response.json();
+        const result = await response.json();
+        loader.style.display = "none";
+
+        if (!(result.success && result.data_po_datumima && Object.keys(result.data_po_datumima).length > 0)) {
+            prikaziPorukuBezPodataka();
+            return null;
+        }
+
+        return result;
     } catch (err) {
         console.error("Greška kod dohvata podataka:", err);
         loader.style.display = "none";
-        resultsContainer.innerHTML = `<p style="color:red">Greška pri dohvatu podataka.</p>`;
-        return;
+        prikaziPorukuOGresci();
+        return null;
+    }
+}
+
+
+function resetPrikaz() {
+    document.getElementById("artikli-summary-list").innerHTML = "";
+    document.getElementById("results-container").innerHTML = "";
+    document.getElementById("summary-list").innerHTML = "";
+    aktivniFilteri.clear();
+}
+
+function sortirajDatume(a, b) {
+    const [da, ma, ya] = a.split(".");
+    const [db, mb, yb] = b.split(".");
+    // Uspoređujemo od najnovijeg prema najstarijem
+    return new Date(yb, mb - 1, db) - new Date(ya, ma - 1, da);
+}
+
+function kreirajSekcijuDatuma(datum) {
+    const dateSection = document.createElement("div");
+    dateSection.classList.add("date-section");
+    // Kreiraj omotač za datum i gumb
+    const dateHeader = document.createElement("div");
+    dateHeader.classList.add("date-header");
+
+// Naslov datuma
+const dateTitle = document.createElement("h3");
+dateTitle.textContent = datum;
+dateHeader.appendChild(dateTitle);
+
+// Gumb
+if (ostaliWrapper.childNodes.length > 0) {
+    const btn = document.createElement("button");
+    btn.textContent = "Prikaži ostale";
+    btn.classList.add("toggle-ostale");
+    btn.onclick = () => {
+        if (ostaliWrapper.style.display === "none") {
+            ostaliWrapper.style.display = "flex";
+            btn.textContent = "Sakrij ostale";
+        } else {
+            ostaliWrapper.style.display = "none";
+            btn.textContent = "Prikaži ostale";
+        }
+    };
+    dateHeader.appendChild(btn);
+}
+
+dateSection.appendChild(dateHeader);
+}
+
+
+
+function pronadiPodatkeNaplate(datum) {
+    if (!resultNaplatePoSatu) return null;
+
+    // 1. Pokušaj direktno
+    if (resultNaplatePoSatu[datum]) return resultNaplatePoSatu[datum];
+
+    // 2. Pokušaj bez vodećih nula (01.08.2025 → 1.8.2025)
+    const parts = datum.split(".");
+    if (parts.length >= 3) {
+        const dan = parseInt(parts[0], 10);
+        const mjesec = parseInt(parts[1], 10);
+        const godina = parts[2];
+        const bezNula = `${dan}.${mjesec}.${godina}`;
+        if (resultNaplatePoSatu[bezNula]) return resultNaplatePoSatu[bezNula];
+
+        // 3. Pokušaj u ISO formatu (YYYY-MM-DD)
+        const iso = `${godina}-${String(mjesec).padStart(2, "0")}-${String(dan).padStart(2, "0")}`;
+        if (resultNaplatePoSatu[iso]) return resultNaplatePoSatu[iso];
     }
 
-    loader.style.display = "none";
+    return null; // Ako ništa nije pronađeno
+}
 
-    // Sigurnosna provjera
-    if (!(result.success && result.data_po_datumima && Object.keys(result.data_po_datumima).length > 0)) {
-        resultsContainer.innerHTML = `<p>Nema podataka za odabrani raspon.</p>`;
-        artikliSummaryList.innerHTML = `<li><i>Nema potrošnje artikala za odabrani period.</i></li>`;
-        return;
-    }
 
-    // Vrste koje ignoriramo
+function prikaziPodatkePoDatumima(data_po_datumima) {
+    const summaryList = document.getElementById("summary-list");
+    const resultsContainer = document.getElementById("results-container");
+
     const ignoriraneVrste = [
         "Prijava", "Odjava", "Izlaz iz aplikacije", "Čitanje liste totala", "Čitanje totala konobara",
         "Prijava, neuspješna", "Ostalo", "Pokretanje aplikacije", "Čitanje totala", "Premještanje stola"
     ];
 
-    // Prolazimo kroz svaki datum
-    Object.keys(result.data_po_datumima)
-        .sort((a, b) => {
-            const [da, ma, ya] = a.split(".");
-            const [db, mb, yb] = b.split(".");
-            return new Date(yb, mb - 1, db) - new Date(ya, ma - 1, da);
-        })
+    Object.keys(data_po_datumima)
+        .sort(sortirajDatume)
         .forEach(datum => {
-            const items = result.data_po_datumima[datum];
+            const items = data_po_datumima[datum];
             const totalsByType = {};
 
-            // Dodavanje sekcije za datum
+            // Kreiraj sekciju i zaglavlje s datumom
             const dateSection = document.createElement("div");
             dateSection.classList.add("date-section");
 
+            const dateHeader = document.createElement("div");
+            dateHeader.classList.add("date-header");
+
             const dateTitle = document.createElement("h3");
             dateTitle.textContent = datum;
-            dateSection.appendChild(dateTitle);
+            dateHeader.appendChild(dateTitle);
+
+            dateSection.appendChild(dateHeader);
 
             const dateList = document.createElement("ul");
             dateList.classList.add("summary-date");
 
+            // Dodaj kartice i zbroji po vrsti
             items.forEach(item => {
-                const iznos = parseFloat(item.iznos.replace(" €", "").replace(",", ".")) || 0;
-                const vrsta = item.vrsta_akcije;
-
-                if (!totalsByType[vrsta]) totalsByType[vrsta] = 0;
-                totalsByType[vrsta] += iznos;
-
-                // Dodaj karticu u rezultate
-                const cardHTML = document.createElement("div");
-                cardHTML.classList.add("card");
-                cardHTML.setAttribute("data-vrsta", vrsta);
-                cardHTML.innerHTML = `
-                    <div class="card-header">
-                        <span class="vrijeme">${item.vrijeme}</span>
-                        <span class="vrsta">${vrsta}</span>
-                        <span class="iznos">${item.iznos}</span>
-                    </div>
-                    <div class="card-opis">${item.opis || "-"}</div>
-                `;
-                resultsContainer.appendChild(cardHTML);
+                dodajKarticu(resultsContainer, item, totalsByType, datum);
             });
 
-            // Widgeti za vrste radnji tog dana
+            // Izračunaj Jutro i Popodne
+            let jutroSuma = 0, popodneSuma = 0;
+            const sati = pronadiPodatkeNaplate(datum);
+
+            if (sati) {
+            for (let h = 6; h <= 14; h++) {
+                jutroSuma += sati[h.toString().padStart(2, '0')] || 0;
+            }
+            for (let h = 15; h <= 23; h++) {
+                popodneSuma += sati[h.toString().padStart(2, '0')] || 0;
+            }
+            popodneSuma += sati["00"] || 0; // još uvijek noć ide u popodne
+                popodneSuma += sati["00"] || 0;
+            } else {
+                if (totalsByType["Jutro"]) jutroSuma = totalsByType["Jutro"];
+                if (totalsByType["Popodne"]) popodneSuma = totalsByType["Popodne"];
+            }
+
+            // Dodaj Jutro, Popodne, Ukupno
+            dateList.appendChild(kreirajWidgetVrste("Jutro", jutroSuma, datum));
+            dateList.appendChild(kreirajWidgetVrste("Popodne", popodneSuma, datum));
+            const ukupnoSuma = jutroSuma + popodneSuma;
+            dateList.appendChild(kreirajWidgetVrste("Ukupno", ukupnoSuma, datum));
+
+            // Ostali widgeti
+            const ostaliWrapper = document.createElement("div");
+            ostaliWrapper.classList.add("ostali-wrapper");
+            ostaliWrapper.style.display = "none";
+            ostaliWrapper.style.flexWrap = "wrap";
+            ostaliWrapper.style.gap = "8px";
+
             Object.entries(totalsByType)
-                .filter(([vrsta]) => !ignoriraneVrste.includes(vrsta))
+                .filter(([vrsta]) => vrsta !== "Jutro" && vrsta !== "Popodne" && !ignoriraneVrste.includes(vrsta))
                 .sort((a, b) => b[1] - a[1])
                 .forEach(([vrsta, suma]) => {
-                    const item = document.createElement("li");
-                    item.setAttribute("data-vrsta", vrsta);
-                    item.addEventListener("click", () => toggleFiltriranje(vrsta, item));
-
-                    const prikazIznosa =
-                        vrsta === "Čitanje totala"
-                            ? `${suma} čitanja`
-                            : `${suma.toFixed(2)} €`;
-
-                    item.innerHTML = `
-                        <div class="naziv">${vrsta}</div>
-                        <div class="iznos">${prikazIznosa}</div>
-                    `;
-                    dateList.appendChild(item);
+                    ostaliWrapper.appendChild(kreirajWidgetVrste(vrsta, suma, datum));
                 });
 
+            // Gumb "Prikaži ostale" odmah pored datuma
+            if (ostaliWrapper.childNodes.length > 0) {
+                const btn = document.createElement("button");
+                btn.textContent = "Prikaži ostale";
+                btn.classList.add("toggle-ostale");
+                btn.onclick = () => {
+                    if (ostaliWrapper.style.display === "none") {
+                        ostaliWrapper.style.display = "flex";
+                        btn.textContent = "Sakrij ostale";
+                    } else {
+                        ostaliWrapper.style.display = "none";
+                        btn.textContent = "Prikaži ostale";
+                    }
+                };
+                dateHeader.appendChild(btn); // ← Dodan u isti red s datumom
+            }
+
             dateSection.appendChild(dateList);
+            dateSection.appendChild(ostaliWrapper);
             summaryList.appendChild(dateSection);
         });
-
-    // Potrošnja artikala
-    if (result.potrosnja_artikala) {
-        artikliSummaryList.innerHTML = "";
-        Object.entries(result.potrosnja_artikala)
-            .sort((a, b) => b[1].kolicina - a[1].kolicina)
-            .forEach(([naziv, statistika]) => {
-                artikliSummaryList.innerHTML += `<li>${naziv} — ${statistika.kolicina.toFixed(2)} kom (${statistika.broj} puta)</li>`;
-            });
-    }
-
-    // Grafikoni po satu
-    if (result.naplate_po_satu) {
-        prikaziGrafikon("modal-chart06_15", result.naplate_po_satu, 6, 15);
-        prikaziGrafikon("modal-chart15_01_b", result.naplate_po_satu, 16, 24);
-    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function dodajKarticu(resultsContainer, item, totalsByType, datum) {
+    const iznos = parseFloat(item.iznos.replace(" €", "").replace(",", ".")) || 0;
+    let vrsta = nazivMap[item.vrsta_akcije] || item.vrsta_akcije;
+
+    // Ako je naplata ili naplata stola → dodaj u jutro/popodne
+    if (vrsta === "Naplata" || vrsta === "Naplata stola") {
+        const sati = parseInt(item.vrijeme.split(":")[0], 10);
+        const jeJutro = (sati >= 6 && sati <= 14);
+
+        const vrstaDnevno = jeJutro ? "Jutro" : "Popodne";
+        if (!totalsByType[vrstaDnevno]) totalsByType[vrstaDnevno] = 0;
+        totalsByType[vrstaDnevno] += iznos;
+
+        // Dodaj u originalnu vrstu samo ako NIJE "Naplata"
+        if (vrsta !== "Naplata") {
+            if (!totalsByType[vrsta]) totalsByType[vrsta] = 0;
+            totalsByType[vrsta] += iznos;
+        }
+
+        var dataVrsta = vrsta; // original
+        var dataDnevno = vrstaDnevno; // za filtriranje
+    } else {
+        // Sve ostale vrste normalno dodaj
+        if (!totalsByType[vrsta]) totalsByType[vrsta] = 0;
+        totalsByType[vrsta] += iznos;
+
+        var dataVrsta = vrsta;
+        var dataDnevno = vrsta;
+    }
+
+    const cardHTML = document.createElement("div");
+    cardHTML.classList.add("card");
+
+    cardHTML.setAttribute("data-vrsta", dataVrsta);
+    cardHTML.setAttribute("data-dnevno", dataDnevno);
+    cardHTML.setAttribute("data-datum", datum);
+
+    cardHTML.innerHTML = `
+        <div class="card-header">
+            <span class="vrijeme">${item.vrijeme}</span>
+            <span class="vrsta">${vrsta}</span>
+            <span class="iznos">${item.iznos}</span>
+        </div>
+        <div class="card-opis">${item.opis || "-"}</div>
+    `;
+    resultsContainer.appendChild(cardHTML);
+}
+
+
+
+
+
+
+
+function kreirajWidgetVrste(vrsta, suma, datum) {
+    const item = document.createElement("li");
+    item.setAttribute("data-vrsta", vrsta);
+    item.setAttribute("data-datum", datum); // <-- dodaj
+
+    item.addEventListener("click", () => toggleFiltriranje(vrsta, datum, item));
+
+    const prikazIznosa =
+        vrsta === "Čitanje totala"
+            ? `${suma} čitanja`
+            : `${suma.toFixed(2)} €`;
+
+    item.innerHTML = `
+        <div class="naziv">${nazivMap[vrsta] || vrsta}</div>
+        <div class="iznos">${prikazIznosa}</div>
+    `;
+    return item;
+}
+
+
+function prikaziPorukuBezPodataka() {
+    document.getElementById("results-container").innerHTML = `<p>Nema podataka za odabrani raspon.</p>`;
+    document.getElementById("artikli-summary-list").innerHTML = `<li><i>Nema potrošnje artikala za odabrani period.</i></li>`;
+}
+
+function prikaziPorukuOGresci() {
+    document.getElementById("results-container").innerHTML = `<p style="color:red">Greška pri dohvatu podataka.</p>`;
+}
+
+function prikaziPotrosnjuArtikala(potrosnja_artikala) {
+    const artikliSummaryList = document.getElementById("artikli-summary-list");
+    artikliSummaryList.innerHTML = "";
+
+    if (!potrosnja_artikala) {
+        artikliSummaryList.innerHTML = `<li><i>Nema potrošnje artikala za odabrani period.</i></li>`;
+        return;
+    }
+
+    Object.entries(potrosnja_artikala)
+        .sort((a, b) => b[1].kolicina - a[1].kolicina)
+        .forEach(([naziv, statistika]) => {
+            artikliSummaryList.innerHTML += `<li>${naziv} — ${statistika.kolicina.toFixed(2)} kom (${statistika.broj} puta)</li>`;
+        });
+}
+
+
+
+function prikaziGrafikone(naplate_po_satu) {
+    if (!naplate_po_satu) return;
+    prikaziGrafikon("modal-chart06_15", naplate_po_satu, 6, 14); // jutro do 14h
+    prikaziGrafikon("modal-chart15_01_b", naplate_po_satu, 15, 23); // popodne od 15h
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -512,26 +479,38 @@ async function fetchData() {
 
 
 
-  function toggleFiltriranje(vrsta, element) {
+function toggleFiltriranje(vrsta, datum, element) {
     const cards = document.querySelectorAll("#results-container .card");
 
-    if (aktivniFilteri.has(vrsta)) {
-      aktivniFilteri.delete(vrsta);
-      element.classList.remove("active");
+    const key = `${vrsta}_${datum}`;
+
+    if (aktivniFilteri.has(key)) {
+        aktivniFilteri.delete(key);
+        element.classList.remove("active");
     } else {
-      aktivniFilteri.add(vrsta);
-      element.classList.add("active");
+        aktivniFilteri.add(key);
+        element.classList.add("active");
     }
 
     if (aktivniFilteri.size === 0) {
-      cards.forEach(card => card.style.display = "none");
+        cards.forEach(card => card.style.display = "none");
     } else {
-      cards.forEach(card => {
-        const cardVrsta = card.getAttribute("data-vrsta");
-        card.style.display = aktivniFilteri.has(cardVrsta) ? "block" : "none";
-      });
+        cards.forEach(card => {
+            const cardVrsta = card.getAttribute("data-vrsta");
+            const cardDnevno = card.getAttribute("data-dnevno");
+            const cardDatum = card.getAttribute("data-datum");
+
+            const cardKeyVrsta = `${cardVrsta}_${cardDatum}`;
+            const cardKeyDnevno = `${cardDnevno}_${cardDatum}`;
+
+            // Prikazuj ako filter odgovara originalnoj vrsti ili jutro/popodne grupi
+            card.style.display = (aktivniFilteri.has(cardKeyVrsta) || aktivniFilteri.has(cardKeyDnevno))
+                ? "block"
+                : "none";
+        });
     }
-  }
+}
+
 
 
 
@@ -577,135 +556,7 @@ async function fetchData() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-<script>
-let grafikonCache = {};
-
-function prikaziGrafikon(canvasId, naplate_po_satu, odSat, doSat) {
-  const labels = [];
-  for (let h = odSat; h <= doSat; h++) {
-    labels.push(h.toString().padStart(2, '0'));
-  }
-  if (doSat === 23) {
-    labels.push("00");
-  }
-
-  const datasets = [];
-  const customLabels = [];
-
-  Object.entries(naplate_po_satu).forEach(([datum, sati], index) => {
-    const podaci = labels.map(sat => sati[sat] || 0);
-    const zbroj = podaci.reduce((a, b) => a + b, 0);
-    const datumParts = datum.split('.');
-    const datumObj = new Date(`${datumParts[2]}-${datumParts[1]}-${datumParts[0]}`);
-    const daniUTjednu = ['ned', 'pon', 'uto', 'sri', 'čet', 'pet', 'sub'];
-    const dan = daniUTjednu[datumObj.getDay()];
-    const prikazDatuma = `${datumParts[0]}.${datumParts[1]}.\n${dan}\n(${zbroj.toFixed(2)} €)`;
-
-    customLabels.push(prikazDatuma);
-
-    datasets.push({
-      label: prikazDatuma,
-      data: podaci,
-      fill: false,
-      borderColor: `hsl(${(index * 67) % 360}, 70%, 50%)`,
-      tension: 0,
-      pointRadius: 0,
-      pointHoverRadius: 6
-    });
-  });
-
-  // ✅ Sada izračunavamo maksimalnu vrijednost iz svih podataka
-  let maxValue = 0;
-  datasets.forEach(dataset => {
-    const localMax = Math.max(...dataset.data);
-    if (localMax > maxValue) maxValue = localMax;
-  });
-  const yMax = Math.ceil((maxValue + 10) / 10) * 10;
-
-  if (grafikonCache[canvasId]) {
-    grafikonCache[canvasId].destroy();
-  }
-
-  const ctx = document.getElementById(canvasId).getContext("2d");
-
-  grafikonCache[canvasId] = new Chart(ctx, {
-    type: "line",
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false, // <-- dodaj ovo!
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { position: 'top' },
-        tooltip: {
-          callbacks: {
-            label: ctx => ctx.raw.toFixed(2) + ' €'
-          }
-        },
-        datalabels: {
-          color: '#333',
-          align: 'top',
-          anchor: 'end',
-          formatter: value => value > 0 ? value.toFixed(2) + ' €' : ''
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          max: yMax,
-          ticks: {
-                display: false, // sakriva brojeve sa y-osi
-            stepSize: 10,
-            callback: value => value + " €"
-          }
-        }
-      }
-    },
-    plugins: [ChartDataLabels]
-  });
-}
-
-function resizeChartToScreen(canvasId) {
-  const canvas = document.getElementById(canvasId);
-  if (canvas) {
-    canvas.style.height = window.innerHeight + "px";
-  }
-}
-
-function zatvoriGrafikonModal() {
-  document.getElementById("grafikon-modal").style.display = "none";
-}
-
-function zatvoriGrafikon2Modal() {
-  document.getElementById("grafikon2-modal").style.display = "none";
-}
-
-
-document.getElementById("grafikon-button").addEventListener("click", () => {
-  const modal = document.getElementById("grafikon-modal");
-  modal.style.display = "block";
-  resizeChartToScreen("modal-chart06_15");
-});
-
-document.getElementById("grafikon2-button").addEventListener("click", () => {
-  const modal = document.getElementById("grafikon2-modal");
-  modal.style.display = "block";
-  resizeChartToScreen("modal-chart15_01_b");
-});
-
-</script>
+<script src="{{ url_for('static', filename='js/kreiranje_grafikona.js') }}"></script>
 
 </body>
 </html>

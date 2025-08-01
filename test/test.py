@@ -15,16 +15,21 @@ def potrebni_podatci():
     id_lokacije = '5'
     id_organizacije = '6'
     id_pos_uredjaja = '6'
+
+    if not all([remaris_domain, remaris_username, remaris_password, id_lokacije, id_organizacije, id_pos_uredjaja]):
+        raise ValueError("Nedostaju ključni podaci u sesiji.")
+
     return remaris_domain, remaris_username, remaris_password, id_lokacije, id_organizacije, id_pos_uredjaja
 
 
 def logiranje_na_domenu(session_requests):
+    remaris_domain, remaris_username, remaris_password, *_ = potrebni_podatci()
     login_payload = {
-        'remaris_domain': 'maluma',
-        'UserName': 'ante',
-        'Password': 'antehaker2'
+        'remaris_domain': remaris_domain,
+        'UserName': remaris_username,
+        'Password': remaris_password
     }
-    login_url = f'https://maluma.gastromaster.com.hr/Account/LogOn'
+    login_url = f'https://{remaris_domain}.gastromaster.com.hr/Account/LogOn'
     response = session_requests.post(login_url, data=login_payload, verify=False)
     return response.status_code == 200 and 'LogOn' not in response.url
 
@@ -51,7 +56,6 @@ def izvuci_artikle_iz_opisa(opis):
                 kolicina = 1.0
             artikli.append((naziv, kolicina))
     return artikli
-
 
 
 def radnje_korisnika(from_date, to_date):
