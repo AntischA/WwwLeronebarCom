@@ -15,13 +15,33 @@
     <button id="next-day">Dan poslije →</button>
   </div>
 
-  <form id="filter-form">
+<form id="filter-form">
   <div class="date-range">
     <input type="date" id="from_date" name="from_date" required>
     <input type="date" id="to_date" name="to_date" required>
   </div>
   <button type="submit">Prikaži</button>
 </form>
+
+<!-- Novi red widgeta -->
+<ul class="summary-date custom-widgets">
+  <li>
+    <div class="naziv">Datum</div>
+    <div class="iznos"></div>
+  </li>
+  <li>
+    <div class="naziv">Jutro</div>
+    <div class="iznos"></div>
+  </li>
+  <li>
+    <div class="naziv">Popodne</div>
+    <div class="iznos"></div>
+  </li>
+  <li>
+    <div class="naziv">Ukupno</div>
+    <div class="iznos"></div>
+  </li>
+</ul>
 
 
 
@@ -42,8 +62,8 @@
   <!-- Footer bar -->
 <div class="footer-bar">
   <button id="artikli-button">📦 Artikli</button>
-  <button id="grafikon-button">📈 Grafikon</button>
-  <button id="grafikon2-button">📊 Grafikon 2</button>
+  <button id="grafikon-button">📈 Jut.</button>
+  <button id="grafikon2-button">📊 Pop.</button>
   <button>Prazno 3</button>
 </div>
 
@@ -202,7 +222,6 @@ if (ostaliWrapper.childNodes.length > 0) {
     };
     dateHeader.appendChild(btn);
 }
-
 dateSection.appendChild(dateHeader);
 }
 
@@ -236,6 +255,11 @@ function prikaziPodatkePoDatumima(data_po_datumima) {
     const summaryList = document.getElementById("summary-list");
     const resultsContainer = document.getElementById("results-container");
 
+    const daniUTjednu = [
+        "Nedjelja", "Ponedjeljak", "Utorak", "Srijeda",
+        "Četvrtak", "Petak", "Subota"
+    ];
+
     const ignoriraneVrste = [
         "Prijava", "Odjava", "Izlaz iz aplikacije", "Čitanje liste totala", "Čitanje totala konobara",
         "Prijava, neuspješna", "Ostalo", "Pokretanje aplikacije", "Čitanje totala", "Premještanje stola"
@@ -247,58 +271,59 @@ function prikaziPodatkePoDatumima(data_po_datumima) {
             const items = data_po_datumima[datum];
             const totalsByType = {};
 
-            // Kreiraj sekciju i zaglavlje s datumom
             const dateSection = document.createElement("div");
             dateSection.classList.add("date-section");
-
-            const dateHeader = document.createElement("div");
-            dateHeader.classList.add("date-header");
-
-            const dateTitle = document.createElement("h3");
-            dateTitle.textContent = datum;
-            dateHeader.appendChild(dateTitle);
-
-            dateSection.appendChild(dateHeader);
 
             const dateList = document.createElement("ul");
             dateList.classList.add("summary-date");
 
-            // Dodaj kartice i zbroji po vrsti
-            items.forEach(item => {
-                dodajKarticu(resultsContainer, item, totalsByType, datum);
-            });
+            // Parsiraj datum u JS Date objekt
+            const [dan, mjesec, godina] = datum.split(".");
+            const jsDate = new Date(`${godina}-${mjesec}-${dan}`);
+            const danUTjednu = daniUTjednu[jsDate.getDay()];
+            const formatiraniDatum = `${String(dan).padStart(2, "0")}.${String(mjesec).padStart(2, "0")}.`;
 
-            // Izračunaj Jutro i Popodne
-            let jutroSuma = 0, popodneSuma = 0;
-            const sati = pronadiPodatkeNaplate(datum);
+            // Widget za datum
+            const dateWidget = document.createElement("li");
+            dateWidget.classList.add("date-widget");
+            dateWidget.innerHTML = `
+                <div class="naziv">${danUTjednu}</div>
+                <div class="iznos">${formatiraniDatum}</div>
+            `;
+            dateList.appendChild(dateWidget);
 
-            if (sati) {
-            for (let h = 6; h <= 14; h++) {
-                jutroSuma += sati[h.toString().padStart(2, '0')] || 0;
-            }
-            for (let h = 15; h <= 23; h++) {
-                popodneSuma += sati[h.toString().padStart(2, '0')] || 0;
-            }
-            popodneSuma += sati["00"] || 0; // još uvijek noć ide u popodne
-                popodneSuma += sati["00"] || 0;
-            } else {
-                if (totalsByType["Jutro"]) jutroSuma = totalsByType["Jutro"];
-                if (totalsByType["Popodne"]) popodneSuma = totalsByType["Popodne"];
-            }
-
-            // Dodaj Jutro, Popodne, Ukupno
-            dateList.appendChild(kreirajWidgetVrste("Jutro", jutroSuma, datum));
-            dateList.appendChild(kreirajWidgetVrste("Popodne", popodneSuma, datum));
-            const ukupnoSuma = jutroSuma + popodneSuma;
-            dateList.appendChild(kreirajWidgetVrste("Ukupno", ukupnoSuma, datum));
-
-            // Ostali widgeti
             const ostaliWrapper = document.createElement("div");
             ostaliWrapper.classList.add("ostali-wrapper");
             ostaliWrapper.style.display = "none";
             ostaliWrapper.style.flexWrap = "wrap";
             ostaliWrapper.style.gap = "8px";
 
+            // Dodaj kartice i zbroji po vrsti
+            items.forEach(item => {
+                dodajKarticu(resultsContainer, item, totalsByType, datum);
+            });
+
+            // Izračun Jutro i Popodne
+            let jutroSuma = 0, popodneSuma = 0;
+            const sati = pronadiPodatkeNaplate(datum);
+            if (sati) {
+                for (let h = 6; h <= 14; h++) {
+                    jutroSuma += sati[h.toString().padStart(2, '0')] || 0;
+                }
+                for (let h = 15; h <= 23; h++) {
+                    popodneSuma += sati[h.toString().padStart(2, '0')] || 0;
+                }
+                popodneSuma += sati["00"] || 0;
+            } else {
+                if (totalsByType["Jutro"]) jutroSuma = totalsByType["Jutro"];
+                if (totalsByType["Popodne"]) popodneSuma = totalsByType["Popodne"];
+            }
+
+            dateList.appendChild(kreirajWidgetVrste("Jutro", jutroSuma, datum));
+            dateList.appendChild(kreirajWidgetVrste("Popodne", popodneSuma, datum));
+            dateList.appendChild(kreirajWidgetVrste("Ukupno", jutroSuma + popodneSuma, datum));
+
+            // Ostali widgeti
             Object.entries(totalsByType)
                 .filter(([vrsta]) => vrsta !== "Jutro" && vrsta !== "Popodne" && !ignoriraneVrste.includes(vrsta))
                 .sort((a, b) => b[1] - a[1])
@@ -306,22 +331,16 @@ function prikaziPodatkePoDatumima(data_po_datumima) {
                     ostaliWrapper.appendChild(kreirajWidgetVrste(vrsta, suma, datum));
                 });
 
-            // Gumb "Prikaži ostale" odmah pored datuma
-            if (ostaliWrapper.childNodes.length > 0) {
-                const btn = document.createElement("button");
-                btn.textContent = "Prikaži ostale";
-                btn.classList.add("toggle-ostale");
-                btn.onclick = () => {
-                    if (ostaliWrapper.style.display === "none") {
-                        ostaliWrapper.style.display = "flex";
-                        btn.textContent = "Sakrij ostale";
-                    } else {
-                        ostaliWrapper.style.display = "none";
-                        btn.textContent = "Prikaži ostale";
-                    }
-                };
-                dateHeader.appendChild(btn); // ← Dodan u isti red s datumom
-            }
+            // Klik na datum otvara/zatvara ostale
+            dateWidget.addEventListener("click", () => {
+                if (ostaliWrapper.style.display === "none") {
+                    ostaliWrapper.style.display = "flex";
+                    dateWidget.classList.add("open");
+                } else {
+                    ostaliWrapper.style.display = "none";
+                    dateWidget.classList.remove("open");
+                }
+            });
 
             dateSection.appendChild(dateList);
             dateSection.appendChild(ostaliWrapper);
@@ -403,7 +422,7 @@ function dodajKarticu(resultsContainer, item, totalsByType, datum) {
 function kreirajWidgetVrste(vrsta, suma, datum) {
     const item = document.createElement("li");
     item.setAttribute("data-vrsta", vrsta);
-    item.setAttribute("data-datum", datum); // <-- dodaj
+    item.setAttribute("data-datum", datum);
 
     item.addEventListener("click", () => toggleFiltriranje(vrsta, datum, item));
 
@@ -416,6 +435,12 @@ function kreirajWidgetVrste(vrsta, suma, datum) {
         <div class="naziv">${nazivMap[vrsta] || vrsta}</div>
         <div class="iznos">${prikazIznosa}</div>
     `;
+
+    // Ako je Ukupno → bold
+    if (vrsta === "Ukupno") {
+        item.classList.add("ukupno-bold");
+    }
+
     return item;
 }
 

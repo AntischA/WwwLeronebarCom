@@ -1,49 +1,34 @@
-    * { box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      background-color: #f4f6f8;
-      color: #333;
-      padding-bottom: 80px; /* dovoljno za footer da ne preklopi sadržaj */
+* { box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  background-color: #f4f6f8;
+  color: #333;
+  padding-bottom: 80px; /* dovoljno za footer da ne preklopi sadržaj */
+  }
 
-    }
-
-
-        .buttonstwo {
-      display: flex;
-      gap: 10px;
-      margin-top: 5px;
-      margin-right: 10px;
-      margin-left: 10px;
-      }
+.buttonstwo {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+  margin-right: 10px;
+  margin-left: 10px;
+  }
 
 
+.summary {
+  display: block;       /* umjesto contents */
+  width: 100%;
+  margin-top: 10px;
+  padding: 0;
+  }
 
-
-
-
-    .summary {
-      display: block;       /* umjesto contents */
-      width: 100%;
-      margin: 0;
-      padding: 0;
-    }
-
-    .summary ul,
+.summary ul,
 .summary-date {
   list-style: none;
-  margin: 0;
+  margin-top: 15px;
   padding: 0; /* 🔹 ovo uklanja tu uvlaku od ~50px */
-}
-
-.date-section h3 {
-  text-align: center;    /* centriraj tekst */
-  margin: 0 0 10px 0;    /* makni default margine, ostavi malo ispod */
-  padding: 0;
-  font-size: 18px;       /* možeš prilagoditi */
-  color: #2e3d49;        /* boja kao što već imaš */
-  font-weight: bold;
-}
+  }
 
 
 .summary-date {
@@ -52,122 +37,122 @@
   gap: 8px;
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 5px;
   justify-content: flex-start; /* 🔹 slaže od lijeva bez centriranja */
-}
+  }
 
 .summary-date li {
-  flex: 1 1 120px; /* minimalna širina 120px, rasteže se do raspoloživog prostora */
+  flex: 1 1 100px; /* minimalna širina 120px, rasteže se do raspoloživog prostora */
   max-width: calc(25% - 8px); /* 4 po redu na većim ekranima */
   box-sizing: border-box;
-  padding: 12px;
+  padding: 5px;
   background-color: #dce6f1;
   border-radius: 10px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-}
+  }
 
-/* Tableti - max 2 po redu */
+
+.summary-date li.active {
+  background-color: #93c5fd;
+  transform: scale(1.03);
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+  align-items: center;
+  justify-content: center;
+  }
+
+input[type="date"], button {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  }
+
+button {
+  background-color: #2e3d49;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  }
+
+button:hover { background-color: #1b262f; }
+
+.card {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 5px;
+  display: none;
+  }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+  }
+
+.card-header .vrijeme { font-weight: bold; color: #2e3d49; flex: 1; }
+.card-header .vrsta { text-align: center; flex: 1; font-weight: bold; color: #444; }
+.card-header .iznos { text-align: right; flex: 1; color: #006600; font-weight: bold; }
+.card-opis { font-size: 14px; color: #666; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#loader {
+  text-align: center;
+  margin-top: 20px;
+  font-weight: bold;
+  display: none;
+  }
+
 @media (max-width: 768px) {
-  .summary-date li {
-    max-width: calc(50% - 8px);
-  }
+input[type="date"], button { width: 100%; font-size: 18px; }
+form { flex-direction: column; }
 }
 
-/* Mobiteli - 1 po redu */
-@media (max-width: 480px) {
-  .summary-date li {
-    max-width: 100%;
-  }
-}
 
-    .summary-date li.active {
-      background-color: #93c5fd;
-      transform: scale(1.03);
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    form {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 20px;
-      align-items: center;
-      justify-content: center;
-    }
-
-    input[type="date"], button {
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-
-    button {
-      background-color: #2e3d49;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-
-    button:hover { background-color: #1b262f; }
-
-    .card {
-      background-color: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      padding: 5px;
-      display: none;
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-      flex-wrap: wrap;
-    }
-
-    .card-header .vrijeme { font-weight: bold; color: #2e3d49; flex: 1; }
-    .card-header .vrsta { text-align: center; flex: 1; font-weight: bold; color: #444; }
-    .card-header .iznos { text-align: right; flex: 1; color: #006600; font-weight: bold; }
-    .card-opis { font-size: 14px; color: #666; }
-
-
-
-
-
-    #loader {
-      text-align: center;
-      margin-top: 20px;
-      font-weight: bold;
-      display: none;
-    }
-
-    @media (max-width: 768px) {
-      input[type="date"], button { width: 100%; font-size: 18px; }
-      form { flex-direction: column; }
-    }
-
-
-    .footer-bar {
+.footer-bar {
   position: fixed;
   bottom: 0;
   left: 0;
@@ -176,7 +161,7 @@
   display: flex;
   justify-content: space-around;
   z-index: 100;
-}
+  }
 
 .footer-bar button {
   background: #ffffff;
@@ -184,7 +169,7 @@
   border: none;
   font-size: 16px;
   font-weight: bold;
-}
+  }
 
 .modal {
   display: none;
@@ -196,7 +181,7 @@
   height: 100%;
   overflow: auto;
   background-color: rgba(0,0,0,0.4);
-}
+  }
 
 .modal-content {
   background-color: #fff;
@@ -206,25 +191,26 @@
   max-width: 500px;
   position: relative;
   box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
+  }
 
 .modal-content h3 {
   margin-top: 0;
   color: #2e3d49;
   text-align: center;
-}
+  }
 
 .modal-content ul {
   list-style: none;
   padding-left: 0;
-}
+  }
 
 .modal-content li {
   padding: 8px 12px;
   background-color: #e0f7f1;
   border-radius: 8px;
   margin-bottom: 6px;
-}
+  }
+
 :fullscreen .modal-content {
   width: 100%;
   height: 100%;
@@ -233,7 +219,7 @@
   padding: 10px;
   box-sizing: border-box;
   overflow-y: auto;
-}
+  }
 
 .close {
   position: absolute;
@@ -242,7 +228,7 @@
   font-size: 24px;
   color: #666;
   cursor: pointer;
-}
+  }
 
 .date-range {
   display: flex;
@@ -250,15 +236,15 @@
   width: 100%;
   gap: 10px;
   max-width: 400px;
-  margin: 0 auto;
-}
+  margin-bottom: 5px;
+  }
 
 
 .modal-content canvas {
   width: 100% !important;
   height: 96vh !important; /* cijela visina ekrana */
   max-height: 100vh;
-}
+  }
 
 .date-header {
   display: flex;
@@ -266,14 +252,14 @@
   justify-content: center;
   gap: 10px;
   margin-bottom: 10px;
-}
+  }
 
 .date-header h3 {
   margin: 0;
   font-size: 18px;
   font-weight: bold;
   color: #2e3d49;
-}
+  }
 
 .date-header .toggle-ostale {
   background-color: #2e3d49;
@@ -283,11 +269,13 @@
   font-size: 14px;
   border-radius: 8px;
   cursor: pointer;
-}
+  }
 
 .date-header .toggle-ostale:hover {
   background-color: #1b262f;
-}
+  }
+
+
 .ostali-wrapper li {
   flex: 1 1 120px;
   max-width: calc(25% - 8px);
@@ -298,4 +286,55 @@
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  }
+
+
+.custom-widgets {
+  margin-top: 10px; /* razmak od forme */
+  font-weight: bold;
+}
+
+.summary-date li[data-vrsta="Jutro"] .naziv,
+.summary-date li[data-vrsta="Popodne"] .naziv,
+.summary-date li[data-vrsta="Ukupno"] .naziv {
+  display: none;
+}
+
+
+/* Widget za datum */
+.summary-date .date-widget {
+    background-color: #ffe4b3;
+    font-weight: bold;
+}
+
+/* Mali widget za strelicu */
+.summary-date .arrow-widget {
+    background-color: #d1e7ff;
+    text-align: center;
+    padding: 8px;
+    flex: 0 0 50px;
+}
+
+.summary-date .toggle-ostale-arrow {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+
+.ukupno-bold {
+    font-weight: bold;
+    background-color: rgba(0,0,0,0.05); /* opcionalno malo isticanje */
+    align-content: center;
+}
+
+/* Centriraj sadržaj unutar Jutro i Popodne widgeta po danima */
+.summary-date li[data-vrsta="Jutro"],
+.summary-date li[data-vrsta="Popodne"] {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* vertikalno centriranje */
+    align-items: center;     /* horizontalno centriranje */
+    text-align: center;
 }
