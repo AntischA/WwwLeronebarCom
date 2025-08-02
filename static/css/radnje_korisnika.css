@@ -10,50 +10,6 @@ body {
 
 
 
-.summary {
-  display: block;       /* umjesto contents */
-  width: 100%;
-  margin-top: 10px;
-  padding: 0;
-  }
-
-.summary ul,
-.summary-date {
-  list-style: none;
-  margin-top: 15px;
-  padding: 0; /* 🔹 ovo uklanja tu uvlaku od ~50px */
-  }
-
-
-.summary-date {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  list-style: none;
-  padding: 0;
-  margin: 5px;
-  justify-content: flex-start; /* 🔹 slaže od lijeva bez centriranja */
-  }
-
-.summary-date li {
-  flex: 1 1 100px; /* minimalna širina 120px, rasteže se do raspoloživog prostora */
-  max-width: calc(25% - 8px); /* 4 po redu na većim ekranima */
-  box-sizing: border-box;
-  padding: 5px;
-  background-color: #dce6f1;
-  border-radius: 10px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  }
-
-
-.summary-date li.active {
-  background-color: #93c5fd;
-  transform: scale(1.03);
-  }
-
-
 
 
 
@@ -132,6 +88,101 @@ button:hover { background-color: #1b262f; }
 
 
 
+.summary {
+  display: block;       /* umjesto contents */
+  width: 100%;
+  margin-top: 10px;
+  padding: 0;
+  }
+
+.summary ul,
+.summary-date {
+  list-style: none;
+  margin-top: 15px;
+  padding: 0; /* 🔹 ovo uklanja tu uvlaku od ~50px */
+  }
+
+
+.summary-date {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 5px;
+  justify-content: flex-start; /* 🔹 slaže od lijeva bez centriranja */
+  }
+
+.summary-date li {
+  flex: 1 1 100px; /* minimalna širina 120px, rasteže se do raspoloživog prostora */
+  max-width: calc(25% - 8px); /* 4 po redu na većim ekranima */
+  box-sizing: border-box;
+  padding: 5px;
+  background-color: #dce6f1;
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  }
+
+
+.summary-date li.active {
+  background-color: #93c5fd;
+  transform: scale(1.03);
+  }
+
+
+
+.summary-date li[data-vrsta="Jutro"] .naziv,
+.summary-date li[data-vrsta="Popodne"] .naziv,
+.summary-date li[data-vrsta="Ukupno"] .naziv {
+  display: none;
+}
+
+
+/* Widget za datum */
+.summary-date .date-widget {
+    background-color: #ffe4b3;
+    font-weight: bold;
+}
+
+/* Mali widget za strelicu */
+.summary-date .arrow-widget {
+    background-color: #d1e7ff;
+    text-align: center;
+    padding: 8px;
+    flex: 0 0 50px;
+}
+
+.summary-date .toggle-ostale-arrow {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+
+
+
+/* Centriraj sadržaj unutar Jutro i Popodne widgeta po danima */
+.summary-date li[data-vrsta="Jutro"],
+.summary-date li[data-vrsta="Popodne"] {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* vertikalno centriranje */
+    align-items: center;     /* horizontalno centriranje */
+    text-align: center;
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -161,7 +212,11 @@ button:hover { background-color: #1b262f; }
 
 
 
-
+.ukupno-bold {
+    font-weight: bold;
+    background-color: rgba(0,0,0,0.05); /* opcionalno malo isticanje */
+    align-content: center;
+}
 
 
 
@@ -183,12 +238,20 @@ button:hover { background-color: #1b262f; }
 
 
 
+
+
+
+
+
+
+
+
+
 .footer-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: #2e3d49;
   display: flex;
   justify-content: space-around;
   z-index: 100;
@@ -200,7 +263,17 @@ button:hover { background-color: #1b262f; }
   border-color: white;
   font-size: 16px;
   font-weight: bold;
+  width: 100%;
   }
+
+
+
+
+
+
+
+
+
 
 .modal {
   display: none;
@@ -319,50 +392,6 @@ button:hover { background-color: #1b262f; }
   font-weight: bold;
 }
 
-.summary-date li[data-vrsta="Jutro"] .naziv,
-.summary-date li[data-vrsta="Popodne"] .naziv,
-.summary-date li[data-vrsta="Ukupno"] .naziv {
-  display: none;
-}
-
-
-/* Widget za datum */
-.summary-date .date-widget {
-    background-color: #ffe4b3;
-    font-weight: bold;
-}
-
-/* Mali widget za strelicu */
-.summary-date .arrow-widget {
-    background-color: #d1e7ff;
-    text-align: center;
-    padding: 8px;
-    flex: 0 0 50px;
-}
-
-.summary-date .toggle-ostale-arrow {
-    background: none;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
-}
-
-
-.ukupno-bold {
-    font-weight: bold;
-    background-color: rgba(0,0,0,0.05); /* opcionalno malo isticanje */
-    align-content: center;
-}
-
-/* Centriraj sadržaj unutar Jutro i Popodne widgeta po danima */
-.summary-date li[data-vrsta="Jutro"],
-.summary-date li[data-vrsta="Popodne"] {
-    display: flex;
-    flex-direction: column;
-    justify-content: center; /* vertikalno centriranje */
-    align-items: center;     /* horizontalno centriranje */
-    text-align: center;
-}
 
 /* Stil za tjedni ukupno widget */
 .tjedni-ukupno {

@@ -15,7 +15,7 @@
       <button id="next-day">Tjedan poslije →</button>
   </div>
 
-<form id="filter-form">
+<form id="drugired-form">
   <input type="date" id="from_date" name="from_date" required>
   <input type="date" id="to_date" name="to_date" required>
   <button type="submit">Prikaži</button>
@@ -63,10 +63,13 @@
   <!-- Footer bar -->
 <div class="footer-bar">
   <button id="artikli-button">📦 Artikli</button>
-  <button id="grafikon-button">📈 Jutarnja smjena</button>
-  <button id="grafikon2-button">📊 Popodnevna smjena</button>
+  <button id="grafikon-button">📈 Jutro</button>
+  <button id="grafikon2-button">📊 Popodne</button>
   <button>Prazno 3</button>
 </div>
+
+
+
 
 <!-- Artikli modal -->
 <div id="artikli-modal" class="modal">
@@ -102,6 +105,7 @@
 
 
  <script>
+
 let resultNaplatePoSatu = null;
 let aktivniFilteri = new Set();
 
@@ -197,36 +201,6 @@ function sortirajDatume(a, b) {
 }
 
 
-function kreirajSekcijuDatuma(datum) {
-    const dateSection = document.createElement("div");
-    dateSection.classList.add("date-section");
-    // Kreiraj omotač za datum i gumb
-    const dateHeader = document.createElement("div");
-    dateHeader.classList.add("date-header");
-
-// Naslov datuma
-const dateTitle = document.createElement("h3");
-dateTitle.textContent = datum;
-dateHeader.appendChild(dateTitle);
-
-// Gumb
-if (ostaliWrapper.childNodes.length > 0) {
-    const btn = document.createElement("button");
-    btn.textContent = "Prikaži ostale";
-    btn.classList.add("toggle-ostale");
-    btn.onclick = () => {
-        if (ostaliWrapper.style.display === "none") {
-            ostaliWrapper.style.display = "flex";
-            btn.textContent = "Sakrij ostale";
-        } else {
-            ostaliWrapper.style.display = "none";
-            btn.textContent = "Prikaži ostale";
-        }
-    };
-    dateHeader.appendChild(btn);
-}
-dateSection.appendChild(dateHeader);
-}
 
 
 
@@ -569,7 +543,7 @@ function toggleFiltriranje(vrsta, datum, element) {
 
 
 
-  document.getElementById("filter-form").addEventListener("submit", function(e) {
+  document.getElementById("drugired-form").addEventListener("submit", function(e) {
     e.preventDefault();
     fetchData();
   });
