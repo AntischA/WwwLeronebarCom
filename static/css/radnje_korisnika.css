@@ -7,13 +7,7 @@ body {
   padding-bottom: 80px; /* dovoljno za footer da ne preklopi sadržaj */
   }
 
-.buttonstwo {
-  display: flex;
-  gap: 10px;
-  margin-top: 5px;
-  margin-right: 10px;
-  margin-left: 10px;
-  }
+
 
 
 .summary {
@@ -73,33 +67,73 @@ body {
 
 
 
+.prvired {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+  margin-bottom: 0;
+  width: 100%;
+  justify-content: space-between;
+  }
 
+.prvired button{
+  width: 100%;
+  }
+
+
+.drugired {
+  display: flex;
+  margin-top: 5px;
+  margin-bottom: 0;
+  }
 
 
 form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 20px;
-  align-items: center;
-  justify-content: center;
-  }
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 5px;
+    align-items: center;
+    margin: 10px 0;
+}
 
-input[type="date"], button {
-  padding: 10px;
-  font-size: 16px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  }
+form > * {
+    flex: 1;         /* svi elementi iste širine */
+    min-width: 0;    /* sprječava preširoko rastezanje */
+}
+
+input[type="date"],
+button {
+    padding: 15px 0;
+  border-radius: 10px;
+}
 
 button {
   background-color: #2e3d49;
   color: white;
   cursor: pointer;
   transition: background-color 0.2s;
+  padding: 15px 0 15px 0;
   }
 
 button:hover { background-color: #1b262f; }
+
+@media (max-width: 768px) {
+    input[type="date"], button {
+        width: auto; /* ili neka bude manji postotak ako želiš da se smanje */
+        font-size: 16px;
+    }
+    form {
+        flex-direction: row; /* ostaje u jednom redu */
+        flex-wrap: nowrap;   /* sprječava prelazak */
+    }
+}
+
+
+
+
+
+
+
 
 .card {
   background-color: white;
@@ -146,10 +180,7 @@ button:hover { background-color: #1b262f; }
   display: none;
   }
 
-@media (max-width: 768px) {
-input[type="date"], button { width: 100%; font-size: 18px; }
-form { flex-direction: column; }
-}
+
 
 
 .footer-bar {
@@ -230,14 +261,8 @@ form { flex-direction: column; }
   cursor: pointer;
   }
 
-.date-range {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  gap: 10px;
-  max-width: 400px;
-  margin-bottom: 5px;
-  }
+
+
 
 
 .modal-content canvas {
@@ -341,7 +366,7 @@ form { flex-direction: column; }
 
 /* Stil za tjedni ukupno widget */
 .tjedni-ukupno {
-    margin-top: 15px;
+    margin: 15px 5px 15px 5px;
     padding: 10px;
     background-color: #f3f3f3;
     border: 2px solid #ccc;
@@ -354,8 +379,7 @@ form { flex-direction: column; }
 
 .prosjek-red {
     background-color: #f5f5f5;
-    border: 2px solid #ddd;
-    margin: 10px 0;
+    margin: 5px 5px;
     border-radius: 8px;
     font-weight: bold;
 }

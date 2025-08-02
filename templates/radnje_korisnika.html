@@ -10,21 +10,21 @@
 </head>
 <body>
 
-  <div class="buttonstwo">
+  <div class="prvired">
       <button id="prev-day">← Tjedan prije</button>
       <button id="next-day">Tjedan poslije →</button>
   </div>
 
-
 <form id="filter-form">
-  <div class="date-range">
-    <input type="date" id="from_date" name="from_date" required>
-    <input type="date" id="to_date" name="to_date" required>
-  </div>
+  <input type="date" id="from_date" name="from_date" required>
+  <input type="date" id="to_date" name="to_date" required>
   <button type="submit">Prikaži</button>
 </form>
 
-<!-- Novi red widgeta -->
+
+
+
+  <!-- Novi red widgeta -->
 <ul class="summary-date custom-widgets">
   <li>
     <div class="naziv">Datum</div>
@@ -343,11 +343,24 @@ function prikaziPodatkePoDatumima(data_po_datumima) {
     });
 
     // 📌 2. Računanje prosjeka za sve osim prvog dana
-    if (daniPodaci.length > 1) {
-        const ostatakDana = daniPodaci.slice(1); // sve osim prvog
-        const prosjekJutro = ostatakDana.reduce((sum, d) => sum + d.jutro, 0) / ostatakDana.length;
-        const prosjekPopodne = ostatakDana.reduce((sum, d) => sum + d.popodne, 0) / ostatakDana.length;
-        const prosjekUkupno = ostatakDana.reduce((sum, d) => sum + d.ukupno, 0) / ostatakDana.length;
+// 📌 2. Računanje prosjeka za sve osim prvog (najnovijeg) dana
+if (daniPodaci.length > 1) {
+    // Izbaci prvi dan iz liste
+    const ostatakDana = [...daniPodaci].slice(1);
+
+    const brojDana = ostatakDana.length;
+
+    const prosjekJutro = brojDana > 0
+        ? ostatakDana.reduce((sum, d) => sum + d.jutro, 0) / brojDana
+        : 0;
+
+    const prosjekPopodne = brojDana > 0
+        ? ostatakDana.reduce((sum, d) => sum + d.popodne, 0) / brojDana
+        : 0;
+
+    const prosjekUkupno = brojDana > 0
+        ? ostatakDana.reduce((sum, d) => sum + d.ukupno, 0) / brojDana
+        : 0;
 
         const prosjekList = document.createElement("ul");
         prosjekList.classList.add("summary-date", "prosjek-red");
