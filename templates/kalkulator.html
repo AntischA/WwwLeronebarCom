@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kalkulator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/kalkulator.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modalni_kalkulator.css') }}">
 
 </head>
 
@@ -108,6 +109,13 @@
     </div>
 </div>
 
+<!-- Dobrodošli modal -->
+<div id="welcomeModal" class="modal welcome-modal">
+    <div class="welcome-content">
+        <h1>Dobrodošli!</h1>
+        <button id="closeWelcomeBtn">ZATVORI</button>
+    </div>
+</div>
 
 
 
@@ -128,6 +136,7 @@
     </script>
 
     <script src="{{ url_for('static', filename='js/kalkulator.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modalni_kalkulator.js') }}"></script>
 
 </body>
 </html>
