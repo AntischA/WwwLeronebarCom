@@ -1,39 +1,69 @@
-/* Modal za dobrodošlicu */
 .modal.welcome-modal {
     display: none;
     position: fixed;
     top: 0; left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 1);
+    background-color: black;
     z-index: 9999;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    color: white;
 }
 
-.welcome-content {
-    width: 100%;
-    height: 100%;
+/* Grid raspored 2x2 */
+.welcome-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    width: 90%;
+    height: 70%;
+    gap: 20px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Pojedinačni dijelovi u gridu */
+.grid-item {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
+    font-size: 1.8rem;
+    color: white;
+    text-align: center;
 }
 
-.welcome-content h1 {
-    font-size: 4rem;
-    margin-bottom: auto;
-}
-
-.welcome-content button {
-    width: 100%;
-    height: 80px;
+/* Info o totalu */
+#welcomeTotalInfo {
     font-size: 2rem;
+    font-weight: bold;
+}
+
+/* Gumb Makni sve */
+#clearAllBtn {
+    height: 100%;
+    font-size: 1.6rem;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+#clearAllBtn:hover {
+    background-color: #d32f2f;
+}
+
+/* Zatvori gumb */
+#welcomeModal #closeWelcomeBtn {
+    width: 90%;
+    height: 160px; /* duplo viši */
+    font-size: 2.5rem;
     background-color: #4CAF50;
     color: white;
     border: none;
+    border-radius: 10px;
+    margin-top: 30px;
     cursor: pointer;
-    margin-top: auto;
 }

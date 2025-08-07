@@ -1,6 +1,7 @@
 from flask import Flask, render_template, send_from_directory, redirect, request, jsonify
 import os
 from api.dohvat_radnja_korisnika import radnje_korisnika
+from api.dohvat_otkazanih_narudzbi import dohvati_ukupni_total_otkazanih_narudzbi
 
 
 app = Flask(__name__, static_folder="static")
@@ -37,6 +38,16 @@ def radnje_json():
 
     return jsonify(radnje_korisnika(from_date, to_date))
 
+@app.route('/api/otkazane_narudzbe', methods=['POST'])
+def total_otkazanih():
+    data = request.get_json()
+    from_date = data.get("from_date")
+    to_date = data.get("to_date")
+
+    if not from_date or not to_date:
+        return jsonify({"success": False, "message": "Nedostaje datum."}), 400
+
+    return jsonify(dohvati_ukupni_total_otkazanih_narudzbi(from_date, to_date))
 
 @app.route('/cjenik')
 def cjenik():

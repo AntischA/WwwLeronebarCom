@@ -111,11 +111,32 @@
 
 <!-- Dobrodošli modal -->
 <div id="welcomeModal" class="modal welcome-modal">
-    <div class="welcome-content">
-        <h1>Dobrodošli!</h1>
-        <button id="closeWelcomeBtn">ZATVORI</button>
+    <div class="welcome-grid">
+
+        <!-- Gornji lijevi -->
+        <div class="grid-item">
+            <div id="welcomeTotalInfo">📦 Otkazane narudžbe danas: 0.00 €</div>
+        </div>
+
+        <!-- Gornji desni -->
+        <div class="grid-item">
+            <div>Desno gore</div>
+        </div>
+
+        <!-- Donji lijevi -->
+        <div class="grid-item">
+            <button id="clearAllBtn">Makni sve</button>
+        </div>
+
+        <!-- Donji desni -->
+        <div class="grid-item">
+            <div>Desno dolje</div>
+        </div>
     </div>
+
+    <button id="closeWelcomeBtn">ZATVORI</button>
 </div>
+
 
 
 
