@@ -6,7 +6,7 @@ document.addEventListener('click', function(event) {
     const clickY = event.clientY;
 
     // Provjeri je li klik iznad calculatorForm
-    if (clickY < formRect.top) {
+    if (clickY > formRect.bottom) {
         clickCount++;
 
         if (clickCount === 1) {
