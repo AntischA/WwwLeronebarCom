@@ -2,12 +2,57 @@ from flask import Flask, render_template, send_from_directory, redirect, request
 import os
 from api.dohvat_radnja_korisnika import radnje_korisnika
 from api.dohvat_otkazanih_narudzbi import dohvati_ukupni_total_otkazanih_narudzbi
+import urllib.parse
+import requests
+
+CLIENT_ID = "1984f9c1fdff48d3b5ecc493152dc5c4"
+CLIENT_SECRET = "e82cf9f67fca4450a68a85ce6ab2f253"
+REDIRECT_URI = "http://127.0.0.1:8080/callback"
+
+SPOTIFY_SCOPES = "streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state"
 
 
 app = Flask(__name__, static_folder="static")
 
 # Učitaj API ključ iz okruženja
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+
+@app.route('/spotify_auth')
+def spotify_auth():
+    query_params = {
+        "client_id": CLIENT_ID,
+        "response_type": "code",
+        "redirect_uri": REDIRECT_URI,
+        "scope": SPOTIFY_SCOPES,
+    }
+    url = f"https://accounts.spotify.com/authorize?{urllib.parse.urlencode(query_params)}"
+    return redirect(url)
+
+@app.route('/callback')
+def spotify_callback():
+    code = request.args.get("code")
+    if not code:
+        return "Greška: Kod nije poslan!"
+
+    payload = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": REDIRECT_URI,
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET
+    }
+
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    response = requests.post("https://accounts.spotify.com/api/token", data=payload, headers=headers)
+
+    if response.status_code == 200:
+        data = response.json()
+        return jsonify({
+            "access_token": data["access_token"],
+            "refresh_token": data["refresh_token"]
+        })
+    else:
+        return f"Token greška: {response.text}", 400
 
 
 @app.route('/')
@@ -18,6 +63,10 @@ def home():
 @app.route('/kalkulator')
 def prikaz_kalkulator():
     return render_template('kalkulator.html')
+
+@app.route('/spotify')
+def prikaz_spotify():
+    return render_template('spotify.html')
 
 
 @app.route('/radnje')
