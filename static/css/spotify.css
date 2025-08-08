@@ -6,6 +6,7 @@ body {
   padding: 40px;
   display: flex;
   justify-content: center;
+  height: 100%;
 }
 
 .main_container {
