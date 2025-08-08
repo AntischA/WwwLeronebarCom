@@ -1,13 +1,16 @@
-let token = "BQDCqGTTEuHahoC2PmGjwVQOggx80ENdCURWC7tQG-OsZQNELtmQMuyA3Xhh51M9rV-G9L9kd2UgYRC_cHnrrvqbMn191I-_ZIAUQFhfL2fMqX7EpylnodfAcBxShvly0_esdSdD67EeS0dxXyX2w5Nns_OeydHUY3c5hauONM2zk5i1RzkBX0yJhUv5gRNO6tsLxWgucgewV8SqeuXW4BkKYOmFjYEP0A_7rWdDZJF_i24VC-DiKQrsuZeGp2HvUR6YTy9J7HA";
 
 let player;
 
-window.onSpotifyWebPlaybackSDKReady = () => {
-  player = new Spotify.Player({
+window.onSpotifyWebPlaybackSDKReady = async () => {
+  const token = await getValidToken();
+  if (!token) return;
+
+  const player = new Spotify.Player({
     name: "My Web Player",
-    getOAuthToken: cb => { cb(token); },
+    getOAuthToken: cb => cb(token),
     volume: 0.5
   });
+
 
   // Prikaz statusa
   player.addListener("ready", ({ device_id }) => {
@@ -24,6 +27,20 @@ window.onSpotifyWebPlaybackSDKReady = () => {
         "Authorization": `Bearer ${token}`
       }
     });
+
+    // frontend na stranici koja se otvori nakon autorizacije
+fetch(window.location.href)
+  .then(res => res.json())
+  .then(data => {
+    localStorage.setItem("access_token", data.access_token);
+    localStorage.setItem("refresh_token", data.refresh_token);
+    localStorage.setItem("token_timestamp", Date.now());
+    window.location.href = "/spotify";  // preusmjeri na Spotify player
+  });
+
+
+
+
   });
 
   player.addListener("not_ready", ({ device_id }) => {
@@ -64,4 +81,35 @@ function changeVolume(amount) {
       console.log("Novi volumen:", newVolume);
     });
   });
+}
+
+async function getValidToken() {
+  const accessToken = localStorage.getItem("access_token");
+  const refreshToken = localStorage.getItem("refresh_token");
+  const tokenTimestamp = parseInt(localStorage.getItem("token_timestamp") || "0");
+
+  const expiresIn = 3600 * 1000;  // 1 sat u ms
+
+  const now = Date.now();
+  if (now - tokenTimestamp >= expiresIn) {
+    console.log("Token istekao, osvježavam...");
+
+    const response = await fetch("/refresh_token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("token_timestamp", Date.now());
+      return data.access_token;
+    } else {
+      alert("Greška pri osvježavanju tokena.");
+      return null;
+    }
+  }
+
+  return accessToken;
 }

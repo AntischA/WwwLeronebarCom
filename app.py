@@ -28,6 +28,32 @@ def spotify_auth():
     url = f"https://accounts.spotify.com/authorize?{urllib.parse.urlencode(query_params)}"
     return redirect(url)
 
+@app.route('/refresh_token', methods=['POST'])
+def refresh_token():
+    refresh_token = request.json.get("refresh_token")
+
+    if not refresh_token:
+        return jsonify({"success": False, "message": "Nedostaje refresh_token."}), 400
+
+    payload = {
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET
+    }
+
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    response = requests.post("https://accounts.spotify.com/api/token", data=payload, headers=headers)
+
+    if response.status_code == 200:
+        data = response.json()
+        return jsonify({
+            "access_token": data["access_token"],
+            "expires_in": data.get("expires_in", 3600)  # u sekundama
+        })
+    else:
+        return jsonify({"success": False, "message": "Neuspješno osvježavanje tokena.", "error": response.text}), 400
+
 @app.route('/callback')
 def spotify_callback():
     code = request.args.get("code")
