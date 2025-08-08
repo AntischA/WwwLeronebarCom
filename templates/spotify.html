@@ -7,16 +7,22 @@
 </head>
 <body>
   <div class="container">
-      <div class="controls">
-        <button onclick="previousTrack()">&laquo;</button>
-        <button onclick="togglePlay()" id="playPause">PAUSE</button>
-        <button onclick="nextTrack()">&raquo;</button>
-      </div>
-    <div class="player">
+
+    <div class="playlist-section">
+      <h2>Moje Playliste</h2>
+      <ul id="playlistList"></ul>
+    </div>
+
+        <div class="player">
       <img id="albumImage" src="" alt="Album Cover">
       <div class="track-info">
         <div id="trackName">Track Name</div>
         <div id="artistName">Artist</div>
+      </div>
+      <div class="controls">
+        <button onclick="previousTrack()">&laquo;</button>
+        <button onclick="togglePlay()" id="playPause">PAUSE</button>
+        <button onclick="nextTrack()">&raquo;</button>
       </div>
 <div class="volume-controls">
   <span>Volume</span>
@@ -33,10 +39,7 @@
 </div>
     </div>
 
-    <div class="playlist-section">
-      <h2>Moje Playliste</h2>
-      <ul id="playlistList"></ul>
-    </div>
+
   </div>
 
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
