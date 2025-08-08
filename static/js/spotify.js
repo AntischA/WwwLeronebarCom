@@ -123,14 +123,33 @@ async function loadPlaylists(token) {
   const res = await fetch("https://api.spotify.com/v1/me/playlists", {
     headers: { "Authorization": `Bearer ${token}` }
   });
+
   const data = await res.json();
   const list = document.getElementById("playlistList");
   list.innerHTML = "";
-  data.items.forEach(pl => {
+
+  // 🔠 Sortiraj playliste po imenu (A–Ž)
+  const sortedPlaylists = data.items.sort((a, b) =>
+    a.name.localeCompare(b.name, 'hr', { sensitivity: 'base' })
+  );
+
+  let firstPlaylistUri = null;
+
+  sortedPlaylists.forEach((pl, index) => {
     const li = document.createElement("li");
     li.textContent = pl.name;
     li.style.cursor = "pointer";
     li.onclick = () => playPlaylist(pl.uri);
     list.appendChild(li);
+
+    // 🎯 Zapamti URI prve playliste za automatsko pokretanje
+    if (index === 0) {
+      firstPlaylistUri = pl.uri;
+    }
   });
+
+  // ▶️ Automatski pusti prvu playlistu
+  if (firstPlaylistUri) {
+    playPlaylist(firstPlaylistUri);
+  }
 }
