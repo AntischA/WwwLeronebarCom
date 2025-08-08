@@ -1,4 +1,3 @@
-
 let player;
 
 window.onSpotifyWebPlaybackSDKReady = async () => {
@@ -14,37 +13,31 @@ window.onSpotifyWebPlaybackSDKReady = async () => {
   const token = await getValidToken();
   if (!token) return;
 
-  const player = new Spotify.Player({
+  // ✅ Ispravno: bez const/let
+  player = new Spotify.Player({
     name: "My Web Player",
     getOAuthToken: cb => cb(token),
     volume: 0.5
   });
 
-  // Prikaz statusa
   player.addListener("ready", ({ device_id }) => {
-    console.log("Player spreman. Device ID:", device_id);
+    console.log("✅ Player spreman. Device ID:", device_id);
 
-    // Automatski pusti pesmu kad je spreman
+    // Automatski pusti pesmu
     fetch(`https://api.spotify.com/v1/me/player/play?device_id=${device_id}`, {
       method: "PUT",
       body: JSON.stringify({
-        uris: ["spotify:track:7GhIk7Il098yCjg4BQjzvb"] // Never Gonna Give You Up
+        uris: ["spotify:track:7GhIk7Il098yCjg4BQjzvb"]
       }),
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       }
     });
-
-
-
-
-
-
   });
 
   player.addListener("not_ready", ({ device_id }) => {
-    console.log("Player nije spreman:", device_id);
+    console.log("⛔ Player nije spreman:", device_id);
   });
 
   player.addListener("player_state_changed", state => {
@@ -52,55 +45,57 @@ window.onSpotifyWebPlaybackSDKReady = async () => {
 
     const currentTrack = state.track_window.current_track;
     document.getElementById("trackName").textContent = currentTrack.name;
-    document.getElementById("artistName").textContent = currentTrack.artists.map(artist => artist.name).join(", ");
+    document.getElementById("artistName").textContent = currentTrack.artists.map(a => a.name).join(", ");
     document.getElementById("albumImage").src = currentTrack.album.images[0].url;
-
     document.getElementById("playPause").textContent = state.paused ? "PLAY" : "PAUSE";
   });
 
   player.connect();
 };
 
-// Kontrole
+// 🎵 Kontrole
 function togglePlay() {
+  if (!player) return console.warn("⛔ Player nije spreman");
   player.togglePlay();
 }
 
 function nextTrack() {
+  if (!player) return;
   player.nextTrack();
 }
 
 function previousTrack() {
+  if (!player) return;
   player.previousTrack();
 }
 
 function changeVolume(amount) {
+  if (!player) return;
   player.getVolume().then(volume => {
-    let newVolume = Math.min(1, Math.max(0, volume + amount));
+    const newVolume = Math.min(1, Math.max(0, volume + amount));
     player.setVolume(newVolume).then(() => {
-      console.log("Novi volumen:", newVolume);
+      console.log("🔊 Novi volumen:", newVolume);
     });
   });
 }
 
+// 🔁 Token management
 async function getValidToken() {
   const accessToken = localStorage.getItem("access_token");
   const refreshToken = localStorage.getItem("refresh_token");
 
-if (!refreshToken) {
-  console.warn("⚠️ Refresh token ne postoji u localStorage!");
-  // Pokreni autentikaciju ponovo
-  window.location.href = "/spotify_auth";
-  return null;
-}
-
+  if (!refreshToken) {
+    console.warn("⚠️ Refresh token ne postoji u localStorage!");
+    window.location.href = "/spotify_auth";
+    return null;
+  }
 
   const tokenTimestamp = parseInt(localStorage.getItem("token_timestamp") || "0");
-  const expiresIn = 3600 * 1000;  // 1 sat u ms
+  const expiresIn = 3600 * 1000; // 1h
   const now = Date.now();
 
   if (now - tokenTimestamp >= expiresIn) {
-    console.log("⏳ Token istekao, pokušavam osvježiti token sa:", refreshToken);
+    console.log("⏳ Token istekao, pokušavam osvježiti...");
 
     const response = await fetch("/refresh_token", {
       method: "POST",
@@ -109,7 +104,7 @@ if (!refreshToken) {
     });
 
     const data = await response.json();
-    console.log("🎧 Spotify odgovor:", data);
+    console.log("🔁 Odgovor servera:", data);
 
     if (response.ok) {
       localStorage.setItem("access_token", data.access_token);
@@ -124,11 +119,10 @@ if (!refreshToken) {
   return accessToken;
 }
 
-// Automatsko osvježavanje tokena svakih 55 minuta
+// 🔁 Automatsko osvježavanje tokena svakih 55 minuta
 if (localStorage.getItem("refresh_token")) {
   setInterval(async () => {
     console.log("🕒 Proaktivno provjeravam token...");
     await getValidToken();
   }, 3300000); // 55 minuta
 }
-
