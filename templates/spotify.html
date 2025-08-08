@@ -18,11 +18,20 @@
         <button onclick="togglePlay()" id="playPause">PAUSE</button>
         <button onclick="nextTrack()">&raquo;</button>
       </div>
-      <div class="volume-controls">
-        <button onclick="changeVolume(-0.1)">-</button>
-        <span>Volume</span>
-        <button onclick="changeVolume(0.1)">+</button>
-      </div>
+<div class="volume-controls">
+  <span>Volume</span>
+  <div class="volume-buttons">
+    <button onclick="setVolume(0.0)">0%</button>
+    <button onclick="setVolume(0.2)">20%</button>
+    <button onclick="setVolume(0.4)">40%</button>
+    <button onclick="setVolume(0.5)">50%</button>
+    <button onclick="setVolume(0.6)">60%</button>
+    <button onclick="setVolume(0.7)">70%</button>
+    <button onclick="setVolume(0.8)">80%</button>
+    <button onclick="setVolume(0.9)">90%</button>
+    <button onclick="setVolume(1.0)">100%</button>
+  </div>
+</div>
     </div>
 
     <div class="playlist-section">

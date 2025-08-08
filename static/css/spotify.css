@@ -81,3 +81,25 @@ body {
 #playlistList li:hover {
   background-color: #333;
 }
+
+.volume-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.volume-buttons button {
+  background-color: #404040;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.volume-buttons button:hover {
+  background-color: #1db954;
+}
