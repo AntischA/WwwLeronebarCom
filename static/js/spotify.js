@@ -79,10 +79,13 @@ async function getValidToken() {
   const accessToken = localStorage.getItem("access_token");
   const refreshToken = localStorage.getItem("refresh_token");
 
-  if (!refreshToken) {
-    console.warn("⚠️ Refresh token ne postoji u localStorage!");
-    return accessToken; // vrati stari token dok god postoji
-  }
+if (!refreshToken) {
+  console.warn("⚠️ Refresh token ne postoji u localStorage!");
+  // Pokreni autentikaciju ponovo
+  window.location.href = "/spotify_auth";
+  return null;
+}
+
 
   const tokenTimestamp = parseInt(localStorage.getItem("token_timestamp") || "0");
   const expiresIn = 3600 * 1000;  // 1 sat u ms

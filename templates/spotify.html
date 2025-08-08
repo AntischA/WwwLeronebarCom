@@ -27,6 +27,16 @@
 
 
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
+  <script>
+  const accessToken = localStorage.getItem("access_token");
+  const refreshToken = localStorage.getItem("refresh_token");
+
+  if (!accessToken || !refreshToken) {
+    // Ako tokeni ne postoje, redirektuj nazad na autorizaciju
+    window.location.href = "/spotify_auth";
+  }
+</script>
+
   <script src="{{ url_for('static', filename='js/spotify.js') }}"></script>
 </body>
 </html>
