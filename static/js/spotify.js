@@ -2,6 +2,15 @@
 let player;
 
 window.onSpotifyWebPlaybackSDKReady = async () => {
+  const accessToken = localStorage.getItem("access_token");
+  const refreshToken = localStorage.getItem("refresh_token");
+
+  if (!accessToken || !refreshToken) {
+    console.warn("⛔ Nema tokena. Redirektujem na /spotify_auth");
+    window.location.href = "/spotify_auth";
+    return;
+  }
+
   const token = await getValidToken();
   if (!token) return;
 
@@ -10,7 +19,6 @@ window.onSpotifyWebPlaybackSDKReady = async () => {
     getOAuthToken: cb => cb(token),
     volume: 0.5
   });
-
 
   // Prikaz statusa
   player.addListener("ready", ({ device_id }) => {
@@ -116,12 +124,11 @@ if (!refreshToken) {
   return accessToken;
 }
 
-
 // Automatsko osvježavanje tokena svakih 55 minuta
-const refreshToken = localStorage.getItem("refresh_token");
-if (refreshToken) {
+if (localStorage.getItem("refresh_token")) {
   setInterval(async () => {
     console.log("🕒 Proaktivno provjeravam token...");
     await getValidToken();
   }, 3300000); // 55 minuta
 }
+
