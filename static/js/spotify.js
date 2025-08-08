@@ -56,14 +56,13 @@ function previousTrack() {
   if (!player) return;
   player.previousTrack();
 }
-function changeVolume(amount) {
+
 function setVolume(value) {
   if (!player) return;
   player.setVolume(value).then(() => {
     console.log(`🔊 Volume set to ${value * 100}%`);
   });
 }
-
 
 async function getValidToken() {
   const accessToken = localStorage.getItem("access_token");
