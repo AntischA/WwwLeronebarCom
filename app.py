@@ -73,10 +73,9 @@ def spotify_callback():
 
     if response.status_code == 200:
         data = response.json()
-        return jsonify({
-            "access_token": data["access_token"],
-            "refresh_token": data["refresh_token"]
-        })
+        access_token = data["access_token"]
+        refresh_token = data["refresh_token"]
+        return render_template("callback.html", access_token=access_token, refresh_token=refresh_token)
     else:
         return f"Token greška: {response.text}", 400
 

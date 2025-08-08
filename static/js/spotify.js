@@ -28,15 +28,7 @@ window.onSpotifyWebPlaybackSDKReady = async () => {
       }
     });
 
-    // frontend na stranici koja se otvori nakon autorizacije
-fetch(window.location.href)
-  .then(res => res.json())
-  .then(data => {
-    localStorage.setItem("access_token", data.access_token);
-    localStorage.setItem("refresh_token", data.refresh_token);
-    localStorage.setItem("token_timestamp", Date.now());
-    window.location.href = "/spotify";  // preusmjeri na Spotify player
-  });
+
 
 
 
@@ -89,10 +81,10 @@ async function getValidToken() {
   const tokenTimestamp = parseInt(localStorage.getItem("token_timestamp") || "0");
 
   const expiresIn = 3600 * 1000;  // 1 sat u ms
-
   const now = Date.now();
+
   if (now - tokenTimestamp >= expiresIn) {
-    console.log("Token istekao, osvježavam...");
+    console.log("⏳ Token istekao, pokušavam osvježiti token sa:", refreshToken);
 
     const response = await fetch("/refresh_token", {
       method: "POST",
@@ -100,13 +92,15 @@ async function getValidToken() {
       body: JSON.stringify({ refresh_token: refreshToken })
     });
 
+    const data = await response.json();
+    console.log("🎧 Spotify odgovor:", data);
+
     if (response.ok) {
-      const data = await response.json();
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("token_timestamp", Date.now());
       return data.access_token;
     } else {
-      alert("Greška pri osvježavanju tokena.");
+      alert("⚠️ Greška pri osvježavanju tokena.");
       return null;
     }
   }
