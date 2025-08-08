@@ -6,12 +6,14 @@
   <link rel="stylesheet" href="/static/css/spotify.css">
 </head>
 <body>
-  <div class="container">
-
+  <div class="main_container">
     <div class="playlist-section">
       <h2>Moje Playliste</h2>
       <ul id="playlistList"></ul>
     </div>
+  <div class="container">
+
+
 
         <div class="player">
       <img id="albumImage" src="" alt="Album Cover">
@@ -23,7 +25,6 @@
   <button onclick="previousTrack()">⏮ Prethodna pjesma</button>
   <button onclick="togglePlay()" id="playPause">PAUSE</button>
   <button onclick="nextTrack()">Sljedeća pjesma ⏭</button>
-  <button onclick="toggleShuffle()" id="shuffleButton" class="active">🔀 Shuffle</button>
 </div>
 
 <div class="seek-bar">
@@ -46,7 +47,7 @@
 
 
   </div>
-
+  </div>
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="/static/js/spotify.js"></script>
 </body>

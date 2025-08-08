@@ -49,20 +49,7 @@ function playPlaylist(uri) {
   });
 }
 
-function toggleShuffle() {
-  getValidToken().then(token => {
-    isShuffling = !isShuffling;
-    fetch(`https://api.spotify.com/v1/me/player/shuffle?state=${isShuffling}&device_id=${deviceId}`, {
-      method: "PUT",
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
-    }).then(() => {
-      const btn = document.getElementById("shuffleButton");
-      btn.classList.toggle("active", isShuffling);
-    });
-  });
-}
+
 
 function seekToPosition(percent) {
   if (!player) return;

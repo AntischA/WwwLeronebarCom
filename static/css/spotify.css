@@ -8,6 +8,12 @@ body {
   justify-content: center;
 }
 
+.main_container {
+  display: flex;
+  gap: 40px;
+}
+
+
 .container {
   display: flex;
   gap: 40px;
@@ -18,7 +24,7 @@ body {
   padding: 30px;
   border-radius: 15px;
   text-align: center;
-  width: 300px;
+  width: 100%;
 }
 
 .player img {
@@ -109,12 +115,6 @@ body {
   font-size: 14px;
 }
 
-#shuffleButton.active {
-  background-color: #1db954;
-}
-#shuffleButton:not(.active) {
-  background-color: #404040;
-}
 
 .seek-bar {
   margin-top: 15px;
