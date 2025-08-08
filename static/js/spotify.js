@@ -78,8 +78,13 @@ function changeVolume(amount) {
 async function getValidToken() {
   const accessToken = localStorage.getItem("access_token");
   const refreshToken = localStorage.getItem("refresh_token");
-  const tokenTimestamp = parseInt(localStorage.getItem("token_timestamp") || "0");
 
+  if (!refreshToken) {
+    console.warn("⚠️ Refresh token ne postoji u localStorage!");
+    return accessToken; // vrati stari token dok god postoji
+  }
+
+  const tokenTimestamp = parseInt(localStorage.getItem("token_timestamp") || "0");
   const expiresIn = 3600 * 1000;  // 1 sat u ms
   const now = Date.now();
 
@@ -107,6 +112,7 @@ async function getValidToken() {
 
   return accessToken;
 }
+
 
 // Automatsko osvježavanje tokena svakih 55 minuta
 const refreshToken = localStorage.getItem("refresh_token");
