@@ -103,3 +103,28 @@ body {
 .volume-buttons button:hover {
   background-color: #1db954;
 }
+
+.controls button {
+  padding: 10px 20px;
+  font-size: 14px;
+}
+
+#shuffleButton.active {
+  background-color: #1db954;
+}
+#shuffleButton:not(.active) {
+  background-color: #404040;
+}
+
+.seek-bar {
+  margin-top: 15px;
+}
+
+.seek-bar input[type="range"] {
+  width: 100%;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #1db954;
+  outline: none;
+}

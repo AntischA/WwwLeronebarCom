@@ -1,6 +1,7 @@
 let player;
 let deviceId = null;
 let currentPlaylistUri = null;
+let isShuffling = true; // default: uključeno
 
 window.onSpotifyWebPlaybackSDKReady = async () => {
   const token = await getValidToken();
@@ -21,10 +22,14 @@ window.onSpotifyWebPlaybackSDKReady = async () => {
   player.addListener('player_state_changed', state => {
     if (!state) return;
     const current = state.track_window.current_track;
+    const progress = (state.position / state.duration) * 100;
+
     document.getElementById("trackName").textContent = current.name;
     document.getElementById("artistName").textContent = current.artists.map(a => a.name).join(", ");
     document.getElementById("albumImage").src = current.album.images[0].url;
     document.getElementById("playPause").textContent = state.paused ? "PLAY" : "PAUSE";
+    document.getElementById("seekSlider").value = progress;
+
   });
 
   player.connect();
@@ -40,6 +45,38 @@ function playPlaylist(uri) {
         "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify({ context_uri: uri })
+    });
+  });
+}
+
+function toggleShuffle() {
+  getValidToken().then(token => {
+    isShuffling = !isShuffling;
+    fetch(`https://api.spotify.com/v1/me/player/shuffle?state=${isShuffling}&device_id=${deviceId}`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    }).then(() => {
+      const btn = document.getElementById("shuffleButton");
+      btn.classList.toggle("active", isShuffling);
+    });
+  });
+}
+
+function seekToPosition(percent) {
+  if (!player) return;
+  player.getCurrentState().then(state => {
+    if (!state) return;
+    const duration = state.duration;
+    const positionMs = (percent / 100) * duration;
+    getValidToken().then(token => {
+      fetch(`https://api.spotify.com/v1/me/player/seek?position_ms=${Math.floor(positionMs)}&device_id=${deviceId}`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
     });
   });
 }
