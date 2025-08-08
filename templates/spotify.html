@@ -1,4 +1,3 @@
-<!-- spotify.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,33 +6,29 @@
   <link rel="stylesheet" href="/static/css/spotify.css">
 </head>
 <body>
-  <div class="player">
-    <img id="albumImage" src="" alt="Album Cover">
-    <div class="track-info">
-      <div id="trackName">Track Name</div>
-      <div id="artistName">Artist</div>
+  <div class="container">
+    <div class="player">
+      <img id="albumImage" src="" alt="Album Cover">
+      <div class="track-info">
+        <div id="trackName">Track Name</div>
+        <div id="artistName">Artist</div>
+      </div>
+      <div class="controls">
+        <button onclick="previousTrack()">&laquo;</button>
+        <button onclick="togglePlay()" id="playPause">PAUSE</button>
+        <button onclick="nextTrack()">&raquo;</button>
+      </div>
+      <div class="volume-controls">
+        <button onclick="changeVolume(-0.1)">-</button>
+        <span>Volume</span>
+        <button onclick="changeVolume(0.1)">+</button>
+      </div>
     </div>
-    <div class="controls">
-      <button onclick="previousTrack()">&laquo;</button>
-      <button onclick="togglePlay()" id="playPause">PAUSE</button>
-      <button onclick="nextTrack()">&raquo;</button>
+
+    <div class="playlist-section">
+      <h2>Moje Playliste</h2>
+      <ul id="playlistList"></ul>
     </div>
-    <div class="volume-controls">
-      <button onclick="changeVolume(-0.1)">-</button>
-      <span>Volume</span>
-      <button onclick="changeVolume(0.1)">+</button>
-    </div>
-  </div>
-
-  <div class="playlist-section">
-    <h2>Moje Playliste</h2>
-    <ul id="playlistList"></ul>
-
-    <h3>Kreiraj novu playlistu</h3>
-    <input type="text" id="newPlaylistName" placeholder="Naziv playliste">
-    <button onclick="createPlaylist()">Kreiraj</button>
-
-    <div id="playlistTracks"></div>
   </div>
 
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
