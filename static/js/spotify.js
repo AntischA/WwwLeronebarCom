@@ -107,3 +107,12 @@ async function getValidToken() {
 
   return accessToken;
 }
+
+// Automatsko osvježavanje tokena svakih 55 minuta
+const refreshToken = localStorage.getItem("refresh_token");
+if (refreshToken) {
+  setInterval(async () => {
+    console.log("🕒 Proaktivno provjeravam token...");
+    await getValidToken();
+  }, 3300000); // 55 minuta
+}
