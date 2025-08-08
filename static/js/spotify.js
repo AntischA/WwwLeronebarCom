@@ -35,7 +35,7 @@ window.onSpotifyWebPlaybackSDKReady = async () => {
   player.connect();
 };
 
-function playPlaylist(uri) {
+function playPlaylist(uri, autoPlay = false) {
   currentPlaylistUri = uri;
   getValidToken().then(token => {
     fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
@@ -45,9 +45,17 @@ function playPlaylist(uri) {
         "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify({ context_uri: uri })
+    }).then(() => {
+      if (autoPlay) {
+        // Sačekaj kratko da se učita playlist pre nego što pusti
+        setTimeout(() => {
+          togglePlay();
+        }, 1000); // 1 sekunda je obično dovoljno
+      }
     });
   });
 }
+
 
 
 
@@ -148,8 +156,8 @@ async function loadPlaylists(token) {
     }
   });
 
-  // ▶️ Automatski pusti prvu playlistu
+  // ▶️ Automatski pusti prvu playlistu i odmah klikni play
   if (firstPlaylistUri) {
-    playPlaylist(firstPlaylistUri);
+    playPlaylist(firstPlaylistUri, true);
   }
 }
