@@ -8,20 +8,21 @@
   <h2>Prijavljujem se...</h2>
 
   <script>
-    // Uzmi token iz Jinja template promenljivih
-    const accessToken = "{{ access_token }}";
-    const refreshToken = "{{ refresh_token }}";
+    const accessToken = "{{ access_token | safe }}";
+    const refreshToken = "{{ refresh_token | safe }}";
 
     console.log("🎟️ Primljen token:", accessToken);
     console.log("🔁 Refresh token:", refreshToken);
 
-    // Sačuvaj u localStorage
-    localStorage.setItem("access_token", accessToken);
-    localStorage.setItem("refresh_token", refreshToken);
-    localStorage.setItem("token_timestamp", Date.now());
+    if (accessToken && refreshToken) {
+      localStorage.setItem("access_token", accessToken);
+      localStorage.setItem("refresh_token", refreshToken);
+      localStorage.setItem("token_timestamp", Date.now());
 
-    // Preusmjeri na Spotify player
-    window.location.href = "/spotify";
+      window.location.href = "/spotify";
+    } else {
+      document.body.innerHTML = "<h3>❌ Greška: Tokeni nisu primljeni.</h3>";
+    }
   </script>
 </body>
 </html>
