@@ -1,40 +1,42 @@
+<!-- spotify.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Spotify Web Player</title>
-  <link rel="stylesheet" href="css/spotify.css">
+  <title>Spotify Player</title>
+  <link rel="stylesheet" href="/static/css/spotify.css">
 </head>
 <body>
-
   <div class="player">
     <img id="albumImage" src="" alt="Album Cover">
-
     <div class="track-info">
       <div id="trackName">Track Name</div>
       <div id="artistName">Artist</div>
     </div>
-
-    <div class="time-info">
-      <span id="currentTime">0:00</span>
-      <input type="range" id="seekBar" min="0" max="100" value="0">
-      <span id="duration">0:00</span>
-    </div>
-
     <div class="controls">
-      <button onclick="previousTrack()">⏮️</button>
-      <button onclick="togglePlay()" id="playPause">▶️</button>
-      <button onclick="nextTrack()">⏭️</button>
+      <button onclick="previousTrack()">&laquo;</button>
+      <button onclick="togglePlay()" id="playPause">PAUSE</button>
+      <button onclick="nextTrack()">&raquo;</button>
     </div>
-
     <div class="volume-controls">
-      <button onclick="changeVolume(-0.1)">🔉</button>
-      <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5" onchange="setVolume(this.value)">
-      <button onclick="changeVolume(0.1)">🔊</button>
+      <button onclick="changeVolume(-0.1)">-</button>
+      <span>Volume</span>
+      <button onclick="changeVolume(0.1)">+</button>
     </div>
   </div>
 
+  <div class="playlist-section">
+    <h2>Moje Playliste</h2>
+    <ul id="playlistList"></ul>
+
+    <h3>Kreiraj novu playlistu</h3>
+    <input type="text" id="newPlaylistName" placeholder="Naziv playliste">
+    <button onclick="createPlaylist()">Kreiraj</button>
+
+    <div id="playlistTracks"></div>
+  </div>
+
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
-  <script src="{{ url_for('static', filename='js/spotify.js') }}"></script>
+  <script src="/static/js/spotify.js"></script>
 </body>
 </html>
