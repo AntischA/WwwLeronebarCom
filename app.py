@@ -7,7 +7,7 @@ import requests
 
 CLIENT_ID = "1984f9c1fdff48d3b5ecc493152dc5c4"
 CLIENT_SECRET = "e82cf9f67fca4450a68a85ce6ab2f253"
-REDIRECT_URI = "http://127.0.0.1:8080/callback"
+REDIRECT_URI = "https://leronebar.com/callback"
 
 SPOTIFY_SCOPES = "streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state"
 
