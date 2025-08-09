@@ -8,10 +8,7 @@ let displayedOrder = [];       // trenutan prikaz u desnoj listi
 let customOrder = null;        // aktivni queue (redoslijed koji Next/Prev prate)
 let customIndex = -1;          // indeks u customOrder
 let currentTrackUri = null;    // pratimo trenutnu traku
-let autoFadeLock = false;      // sprječava višestruke triggere pred kraj iste pjesme
-let lastTrackUri = null;       // za reset locka kad krene nova pjesma
 
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 
 window.onSpotifyWebPlaybackSDKReady = async () => {
@@ -47,50 +44,11 @@ player.addListener('player_state_changed', state => {
     if (idx !== -1) customIndex = idx;
   }
   highlightAndCenterCurrentTrack(current.uri);
-
-  // --- AUTO FADE: reset lock kad krene nova pjesma
-  if (lastTrackUri !== current.uri) {
-    autoFadeLock = false;
-    lastTrackUri = current.uri;
-  }
-
-  // --- AUTO FADE: 3s prije kraja -> 1s fade down + odmah sljedeća
-  const remainingMs = state.duration - state.position;
-  if (!state.paused && remainingMs <= 3000 && !autoFadeLock) {
-    autoFadeLock = true;
-    autoFadeOutThenNext(); // vidi funkciju ispod
-  }
 });
 
   player.connect();
 };
 
-async function autoFadeOutThenNext() {
-  if (!player) return;
-  const startVol = await player.getVolume();
-  const minVol = 0.05;      // dno na koje stišavamo
-  const fadeMs = 1000;      // 1 sekunda
-  const steps = 12;
-  const interval = fadeMs / steps;
-
-  // Fade-out 1s
-  for (let i = 0; i <= steps; i++) {
-    const v = startVol - ((startVol - minVol) * (i / steps));
-    await player.setVolume(Math.max(minVol, v));
-    await sleep(interval);
-  }
-
-  // Odmah startaj sljedeću (po našem customOrder ako postoji)
-  if (customOrder && customIndex >= 0 && customIndex < customOrder.length - 1) {
-    await playByCustomIndex(customIndex + 1, /*doCrossfade=*/false);
-  } else if (player) {
-    // fallback na Spotify-jev next kad nema custom reda ili smo na kraju
-    await player.nextTrack();
-  }
-
-  // Bez fade-in: vrati instantno na originalni volumen
-  await player.setVolume(startVol);
-}
 
 
 
@@ -183,10 +141,10 @@ function renderTracks(tracksArray) {
     li.appendChild(textWrap);
 
     // klik na stavku svira prema trenutnom PRIKAZU
-    li.onclick = () => {
-      customOrder = displayedOrder.slice();
-      playByCustomIndex(idx, true); // s crossfade-om
-    };
+li.onclick = () => {
+  customOrder = displayedOrder.slice();
+  playByCustomIndex(idx);
+};
 
     // ⬇️ novo: ako je ovo trenutno svirajuća, odmah je označi
     if (item.uri === currentTrackUri) {
@@ -199,7 +157,7 @@ function renderTracks(tracksArray) {
   });
 }
 
-async function playByCustomIndex(index, doCrossfade = false) {
+async function playByCustomIndex(index) {
   if (!customOrder || index < 0 || index >= customOrder.length) return;
   const uris = customOrder.map(t => t.uri);
   customIndex = index;
@@ -207,50 +165,13 @@ async function playByCustomIndex(index, doCrossfade = false) {
   const token = await getValidToken();
   if (!token) return;
 
-  const startPlayback = () => fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+  await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
     body: JSON.stringify({ uris, offset: { position: index }, position_ms: 0 })
   });
-
-  if (doCrossfade) {
-    await crossfadeTo(startPlayback);
-  } else {
-    await startPlayback();
-  }
 }
 
-// Umesto dosadašnje crossfadeTo:
-async function crossfadeTo(startNextFn, opts = {}) {
-  if (!player) return;
-
-  const startVol = await player.getVolume();
-  const preMs   = opts.preMs   ?? 1000;         // koliko dugo stišavamo "kao" staru (2s)
-  const postMs  = Math.max(0, totalMs - preMs); // koliko dugo pojačavamo novu (3s)
-  const minVol  = opts.minVol  ?? 0.08;         // "dno" volumena pre switcha (tiho, ali ne 0)
-
-  const preSteps  = 10;                         // koraci za fade down
-  const postSteps = 100;                         // koraci za fade up
-  const preInt    = preMs  / preSteps;
-  const postInt   = postMs / postSteps;
-
-  // 1) Fade down (globalno) – subjektivno “stišavamo staru”
-  for (let i = 0; i <= preSteps; i++) {
-    const v = startVol - ( (startVol - minVol) * (i / preSteps) );
-    await player.setVolume(Math.max(minVol, v));
-    await sleep(preInt);
-  }
-
-  // 2) SWITCH odmah na sledeću (na niskom volumenu)
-  await startNextFn();
-
-  // 3) Fade in do prvobitnog volumena
-  for (let i = 0; i <= postSteps; i++) {
-    const v = minVol + ( (startVol - minVol) * (i / postSteps) );
-    await player.setVolume(Math.min(startVol, v));
-    await sleep(postInt);
-  }
-}
 
 
 
@@ -346,7 +267,7 @@ function togglePlay() {
 function nextTrack() {
   if (customOrder) {
     const next = Math.min(customOrder.length - 1, customIndex + 1);
-    playByCustomIndex(next, false);
+    playByCustomIndex(next);
   } else if (player) {
     player.nextTrack();
   }
@@ -355,7 +276,7 @@ function nextTrack() {
 function previousTrack() {
   if (customOrder) {
     const prev = Math.max(0, customIndex - 1);
-    playByCustomIndex(prev, false);
+    playByCustomIndex(prev);
   } else if (player) {
     player.previousTrack();
   }
