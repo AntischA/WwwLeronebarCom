@@ -4,7 +4,6 @@ let currentPlaylistUri = null;
 let currentTracks = [];        // {name, artists, uri, albumImage, originalIndex}
 let trackUriToLi = new Map();  // mapa za highlight i scroll
 let lastPlayingEl = null;
-let pinCurrentOnTop = false; // kad je true, ne centriramo – svirajuća stoji na vrhu
 
 
 window.onSpotifyWebPlaybackSDKReady = async () => {
@@ -157,55 +156,15 @@ function playTrackByOriginalIndex(originalIndex) {
   });
 }
 
-async function shuffleTrackList() {
-  // 1) Dohvati trenutno stanje playera (trenutna pjesma + pozicija)
-  const state = await player.getCurrentState();
-  if (!state || !state.track_window || !state.track_window.current_track) return;
-
-  const currentUri = state.track_window.current_track.uri;
-  const currentPosMs = state.position || 0;
-
-  // 2) Fisher–Yates shuffle kopije
-  const shuffled = currentTracks.slice();
-  for (let i = shuffled.length - 1; i > 0; i--) {
+function shuffleTrackList() {
+  // Fisher–Yates shuffle kopije (zadržavamo originalIndex zbog offset reprodukcije)
+  const copy = currentTracks.slice();
+  for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    [copy[i], copy[j]] = [copy[j], copy[i]];
   }
-
-  // 3) Premjesti trenutno svirajuću na index 0 (vrh liste)
-  const idx = shuffled.findIndex(t => t.uri === currentUri);
-  if (idx > 0) {
-    const [nowPlaying] = shuffled.splice(idx, 1);
-    shuffled.unshift(nowPlaying);
-  }
-
-  // 4) Render UI sa svirajućom na vrhu
-  pinCurrentOnTop = true;       // ne centriramo više – želimo da ostane na vrhu
-  renderTracks(shuffled);
-
-  // 5) Zamijeni Spotify queue istim tim poretkom (globalno, vidljivo i u Spotify aplikaciji)
-  const uris = shuffled.map(t => t.uri);
-  const token = await getValidToken();
-  if (!token) return;
-
-  // Ovo će: postaviti novi red (uris), prva pjesma je trenutna (offset:0), zadržati trenutnu poziciju u pjesmi
-  await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      uris: uris,
-      offset: { position: 0 },
-      position_ms: currentPosMs
-    })
-  });
-
-  // (Opcionalno) ako želiš da se odmah i nastavi sviranje (ako je bila pauza), pozovi togglePlay();
-  // player_state_changed će već obojiti prvu stavku kao "playing".
+  renderTracks(copy);
 }
-
 
 
 function seekToPosition(percent) {
@@ -225,20 +184,18 @@ function seekToPosition(percent) {
   });
 }
 
-
 function highlightAndCenterCurrentTrack(trackUri) {
   if (!trackUriToLi.has(trackUri)) return;
 
+  // skini prethodni highlight
   if (lastPlayingEl) lastPlayingEl.classList.remove("playing");
+
   const el = trackUriToLi.get(trackUri);
   el.classList.add("playing");
   lastPlayingEl = el;
 
-  // Ako NISMO u modu "drži trenutno na vrhu", centriraj u listi (staro ponašanje)
-  if (!pinCurrentOnTop) {
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
-  }
-  // Ako jesmo, ne radimo centriranje – već je na vrhu nakon shuffle-a.
+  // scroll-uj tako da je u sredini vidnog polja
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
 
