@@ -141,11 +141,17 @@ function renderTracks(tracksArray) {
     li.appendChild(img);
     li.appendChild(textWrap);
 
-    // klik na stavku svira prema trenutnom PRIKAZU (ne originalIndex)
+    // klik na stavku svira prema trenutnom PRIKAZU
     li.onclick = () => {
       customOrder = displayedOrder.slice();
       playByCustomIndex(idx, true); // s crossfade-om
     };
+
+    // ⬇️ novo: ako je ovo trenutno svirajuća, odmah je označi
+    if (item.uri === currentTrackUri) {
+      li.classList.add("playing");
+      lastPlayingEl = li;
+    }
 
     listEl.appendChild(li);
     trackUriToLi.set(item.uri, li);
@@ -183,8 +189,8 @@ async function crossfadeTo(startNextFn, opts = {}) {
   const postMs  = Math.max(0, totalMs - preMs); // koliko dugo pojačavamo novu (3s)
   const minVol  = opts.minVol  ?? 0.08;         // "dno" volumena pre switcha (tiho, ali ne 0)
 
-  const preSteps  = 20;                         // koraci za fade down
-  const postSteps = 30;                         // koraci za fade up
+  const preSteps  = 10;                         // koraci za fade down
+  const postSteps = 20;                         // koraci za fade up
   const preInt    = preMs  / preSteps;
   const postInt   = postMs / postSteps;
 
@@ -243,6 +249,14 @@ function shuffleTrackList() {
   // pozicioniraj customIndex na trenutnu traku, ako postoji; inače na početak
   const idx = customOrder.findIndex(t => t.uri === currentTrackUri);
   customIndex = (idx !== -1) ? idx : 0;
+
+  // ⬇️ novo: vrati highlight i centriraj trenutnu pjesmu u listi
+  if (currentTrackUri) {
+    // sačekaj render pa centriraj
+    requestAnimationFrame(() => {
+      highlightAndCenterCurrentTrack(currentTrackUri);
+    });
+  }
 }
 
 
