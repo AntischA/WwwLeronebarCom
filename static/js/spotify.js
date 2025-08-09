@@ -1,7 +1,10 @@
 let player;
 let deviceId = null;
 let currentPlaylistUri = null;
-let isShuffling = true; // default: uključeno
+let currentTracks = [];        // {name, artists, uri, albumImage, originalIndex}
+let trackUriToLi = new Map();  // mapa za highlight i scroll
+let lastPlayingEl = null;
+
 
 window.onSpotifyWebPlaybackSDKReady = async () => {
   const token = await getValidToken();
@@ -19,25 +22,30 @@ window.onSpotifyWebPlaybackSDKReady = async () => {
     loadPlaylists(token);
   });
 
-  player.addListener('player_state_changed', state => {
-    if (!state) return;
-    const current = state.track_window.current_track;
-    const progress = (state.position / state.duration) * 100;
+player.addListener('player_state_changed', state => {
+  if (!state) return;
+  const current = state.track_window.current_track;
+  const progress = (state.position / state.duration) * 100;
 
-    document.getElementById("trackName").textContent = current.name;
-    document.getElementById("artistName").textContent = current.artists.map(a => a.name).join(", ");
-    document.getElementById("albumImage").src = current.album.images[0].url;
-    document.getElementById("playPause").textContent = state.paused ? "PLAY" : "PAUSE";
-    document.getElementById("seekSlider").value = progress;
+  document.getElementById("trackName").textContent = current.name;
+  document.getElementById("artistName").textContent = current.artists.map(a => a.name).join(", ");
+  document.getElementById("albumImage").src = current.album.images[0].url;
+  document.getElementById("playPause").textContent = state.paused ? "PLAY" : "PAUSE";
+  document.getElementById("seekSlider").value = progress;
 
-  });
+  // ⬇️ novo: highlight + centriranje
+  highlightAndCenterCurrentTrack(current.uri);
+});
 
   player.connect();
 };
 
 function playPlaylist(uri, autoPlay = false) {
   currentPlaylistUri = uri;
+  const playlistId = uri.split(':').pop(); // "spotify:playlist:XYZ" -> "XYZ"
+
   getValidToken().then(token => {
+    // 1) pusti playlistu
     fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
       method: "PUT",
       headers: {
@@ -47,16 +55,116 @@ function playPlaylist(uri, autoPlay = false) {
       body: JSON.stringify({ context_uri: uri })
     }).then(() => {
       if (autoPlay) {
-        // Sačekaj kratko da se učita playlist pre nego što pusti
-        setTimeout(() => {
-          togglePlay();
-        }, 1000); // 1 sekunda je obično dovoljno
+        setTimeout(() => { togglePlay(); }, 1000);
       }
+    });
+
+    // 2) učitaj i prikaži pesme u desnoj koloni
+    loadPlaylistTracks(playlistId);
+  });
+}
+
+async function loadPlaylistTracks(playlistId) {
+  const token = await getValidToken();
+  if (!token) return;
+
+  let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
+  let items = [];
+
+  while (url) {
+    const res = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
+    const data = await res.json();
+    if (!data || !data.items) break;
+    items = items.concat(data.items);
+    url = data.next; // Spotify vraća full URL za sledeću stranicu ili null
+  }
+
+  // Normalizacija u naš format
+  currentTracks = items
+    .map((it, idx) => {
+      const t = it.track;
+      if (!t) return null;
+      return {
+        name: t.name,
+        artists: (t.artists || []).map(a => a.name).join(", "),
+        uri: t.uri,
+        albumImage: (t.album && t.album.images && t.album.images.length)
+          ? t.album.images[t.album.images.length - 1].url // najmanja slika
+          : "",
+        originalIndex: idx
+      };
+    })
+    .filter(Boolean);
+
+  renderTracks(currentTracks);
+}
+
+function renderTracks(tracksArray) {
+  const listEl = document.getElementById("tracksList");
+  listEl.innerHTML = "";
+  trackUriToLi.clear();
+
+  tracksArray.forEach(item => {
+    const li = document.createElement("li");
+    li.className = "track-item";
+
+    const img = document.createElement("img");
+    img.src = item.albumImage || "";
+    img.alt = "Cover";
+    img.className = "track-thumb";
+
+    const textWrap = document.createElement("div");
+    textWrap.className = "track-text";
+    const title = document.createElement("div");
+    title.className = "track-title";
+    title.textContent = item.name;
+    const artist = document.createElement("div");
+    artist.className = "track-artist";
+    artist.textContent = item.artists;
+
+    textWrap.appendChild(title);
+    textWrap.appendChild(artist);
+
+    li.appendChild(img);
+    li.appendChild(textWrap);
+
+    li.onclick = () => playTrackByOriginalIndex(item.originalIndex);
+
+    listEl.appendChild(li);
+    trackUriToLi.set(item.uri, li);
+  });
+}
+
+function playTrackByOriginalIndex(originalIndex) {
+  if (!currentPlaylistUri || originalIndex == null) return;
+
+  getValidToken().then(token => {
+    fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        context_uri: currentPlaylistUri,
+        offset: { position: originalIndex },
+        position_ms: 0
+      })
+    }).then(() => {
+      // ništa posebno – player_state_changed će odraditi highlight i scroll
     });
   });
 }
 
-
+function shuffleTrackList() {
+  // Fisher–Yates shuffle kopije (zadržavamo originalIndex zbog offset reprodukcije)
+  const copy = currentTracks.slice();
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  renderTracks(copy);
+}
 
 
 function seekToPosition(percent) {
@@ -75,6 +183,21 @@ function seekToPosition(percent) {
     });
   });
 }
+
+function highlightAndCenterCurrentTrack(trackUri) {
+  if (!trackUriToLi.has(trackUri)) return;
+
+  // skini prethodni highlight
+  if (lastPlayingEl) lastPlayingEl.classList.remove("playing");
+
+  const el = trackUriToLi.get(trackUri);
+  el.classList.add("playing");
+  lastPlayingEl = el;
+
+  // scroll-uj tako da je u sredini vidnog polja
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
 
 function togglePlay() {
   if (!player) return;
