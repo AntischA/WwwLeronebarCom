@@ -173,26 +173,36 @@ async function playByCustomIndex(index, doCrossfade = false) {
   }
 }
 
-async function crossfadeTo(startNextFn) {
+// Umesto dosadašnje crossfadeTo:
+async function crossfadeTo(startNextFn, opts = {}) {
   if (!player) return;
-  const startVol = await player.getVolume();
-  const steps = 25;
-  const interval = crossfadeMs / steps;
 
-  // Fade out
-  for (let i = steps; i >= 0; i--) {
-    await player.setVolume((startVol * i) / steps);
-    await sleep(interval);
+  const startVol = await player.getVolume();
+  const totalMs = opts.totalMs ?? crossfadeMs;  // npr 5000
+  const preMs   = opts.preMs   ?? 2000;         // koliko dugo stišavamo "kao" staru (2s)
+  const postMs  = Math.max(0, totalMs - preMs); // koliko dugo pojačavamo novu (3s)
+  const minVol  = opts.minVol  ?? 0.08;         // "dno" volumena pre switcha (tiho, ali ne 0)
+
+  const preSteps  = 20;                         // koraci za fade down
+  const postSteps = 30;                         // koraci za fade up
+  const preInt    = preMs  / preSteps;
+  const postInt   = postMs / postSteps;
+
+  // 1) Fade down (globalno) – subjektivno “stišavamo staru”
+  for (let i = 0; i <= preSteps; i++) {
+    const v = startVol - ( (startVol - minVol) * (i / preSteps) );
+    await player.setVolume(Math.max(minVol, v));
+    await sleep(preInt);
   }
 
-  // Pusti sledeću na 0
+  // 2) SWITCH odmah na sledeću (na niskom volumenu)
   await startNextFn();
-  await player.setVolume(0);
 
-  // Fade in
-  for (let i = 0; i <= steps; i++) {
-    await player.setVolume((startVol * i) / steps);
-    await sleep(interval);
+  // 3) Fade in do prvobitnog volumena
+  for (let i = 0; i <= postSteps; i++) {
+    const v = minVol + ( (startVol - minVol) * (i / postSteps) );
+    await player.setVolume(Math.min(startVol, v));
+    await sleep(postInt);
   }
 }
 
