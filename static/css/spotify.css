@@ -28,14 +28,15 @@ body{
 /* Glavni wrap: centriran, kontrolisana širina */
 .container{
   display: grid;
-  grid-template-columns: 280px minmax(560px, 820px) 360px; /* L | SREDINA | D */
+  grid-template-columns: 280px minmax(560px, 820px) 360px;
   grid-template-areas: "playlists player tracks";
   gap: var(--gutter);
   max-width: 1440px;
   padding: 32px 24px;
   margin: 0 auto;
-  align-items: stretch; /* sve kolone iste visine */
-  min-height: 100vh;    /* rastegni do dna */
+  align-items: stretch;
+  height: 100vh;        /* ⬅️ fiksna visina ekrana */
+  overflow: hidden;     /* ⬅️ spriječi rast zbog sadržaja */
 }
 
 /* Paneli */
@@ -47,7 +48,9 @@ body{
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
-  min-height: 0;               /* bitno da scroll radi unutar */
+  min-height: 0;     /* ⬅️ bitno da flex djeca smiju biti manja od sadržaja */
+  height: 100%;
+  overflow: hidden;  /* ⬅️ sav višak ide u unutrašnje scrolle */
 }
 
 /* Grid područja */
@@ -78,6 +81,14 @@ body{
   transition: background .2s ease, transform .08s ease;
 }
 #playlistList li:hover{ background:#333; transform: translateY(-1px); }
+
+#playlistList,
+#tracksList{
+  flex: 1;
+  min-height: 0;     /* ⬅️ da skrol radi ispravno u flex kontejneru */
+  overflow-y: auto;
+}
+
 
 /* ===== Player (sredina) ===== */
 .player{
@@ -269,6 +280,8 @@ body{
       "tracks";
     gap: 20px;
     padding: 20px 16px 28px;
+    height: 100vh;     /* ⬅️ i ovdje zaključano */
+    overflow: hidden;
   }
   .player{ padding: 20px; }
   .player img{ width: 100%; max-width: 520px; }
