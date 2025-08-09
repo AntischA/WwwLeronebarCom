@@ -1,238 +1,280 @@
-body {
-  background-color: #121212;
-  color: white;
-  font-family: 'Segoe UI', sans-serif;
+/* ===== Layout & global ===== */
+:root{
+  --bg:#121212;
+  --panel:#1e1e1e;
+  --accent:#1db954;
+  --muted:#404040;
+  --text:#ffffff;
+  --sub:#aaaaaa;
+
+  --radius:16px;
+  --shadow:0 6px 20px rgba(0,0,0,.25);
+  --gutter:32px;
+}
+
+*{box-sizing:border-box}
+
+html,body{
+  height:100%;
+}
+
+body{
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
   margin: 0;
-  padding: 40px;
-  display: flex;
-  justify-content: center;
-  height: 100%;
 }
 
-.main_container {
+/* Glavni wrap: centriran, kontrolisana širina */
+.container{
   display: grid;
-  grid-template-columns: 260px 1fr 360px; /* playliste | player | desna lista */
-  gap: 24px;
-  align-items: stretch; /* ⬅️ ovo rasteže sve kolone po visini */
-  height: 100vh; /* ili koliko ti treba da sve stane */
+  grid-template-columns: 280px minmax(560px, 820px) 360px; /* L | SREDINA | D */
+  grid-template-areas: "playlists player tracks";
+  gap: var(--gutter);
+  max-width: 1440px;
+  padding: 32px 24px;
+  margin: 0 auto;
+  align-items: stretch; /* sve kolone iste visine */
+  min-height: 100vh;    /* rastegni do dna */
 }
 
-/* svaki od tri panela da rastegne cijelu visinu */
+/* Paneli */
 .playlist-section,
 .player,
-.tracks-section {
+.tracks-section{
+  background: var(--panel);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 0;               /* bitno da scroll radi unutar */
 }
 
-.container {
-  display: flex;
-  gap: 40px;
-}
+/* Grid područja */
+.playlist-section{ grid-area: playlists; }
+.player{ grid-area: player; }
+.tracks-section{ grid-area: tracks; }
 
-.player {
-  background-color: #1e1e1e;
-  padding: 30px;
-  border-radius: 15px;
-  text-align: center;
-  width: 100%;
-}
-
-.player img {
-  width: 50%;
-  border-radius: 15px;
-  margin-bottom: 20px;
-}
-
-.controls button,
-.volume-controls button {
-  background-color: #1db954;
-  color: white;
-  border: none;
-  padding: 10px 18px;
-  margin: 5px;
-  border-radius: 30px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.track-info {
-  margin-bottom: 15px;
-}
-
-#trackName {
-  font-size: 20px;
-  font-weight: bold;
-}
-
-#artistName {
-  font-size: 16px;
-  color: #aaa;
-}
-
-.volume-controls {
-  margin-top: 15px;
-}
-
-.playlist-section {
-  background-color: #1e1e1e;
+/* ===== Playlists (lijevo) ===== */
+.playlist-section{
   padding: 20px;
-  border-radius: 15px;
-  width: 250px;
 }
-
-#playlistList {
+.playlist-section h2{
+  margin: 0 0 12px 0;
+}
+#playlistList{
   list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
+  overflow-y: auto;    /* interni skrol */
+  flex: 1;
 }
-
-#playlistList li {
+#playlistList li{
   margin: 8px 0;
-  padding: 8px 10px;
+  padding: 10px 12px;
   background-color: #292929;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
+  transition: background .2s ease, transform .08s ease;
+}
+#playlistList li:hover{ background:#333; transform: translateY(-1px); }
+
+/* ===== Player (sredina) ===== */
+.player{
+  padding: 28px;
+  align-items: center;     /* centriraj sadržaj */
+  justify-content: center; /* vertikalno */
 }
 
-#playlistList li:hover {
-  background-color: #333;
+.player img{
+  width: clamp(240px, 55%, 460px); /* responzivno ograničenje */
+  border-radius: 14px;
+  margin-bottom: 20px;
+  object-fit: cover;
+  box-shadow: var(--shadow);
 }
 
-.volume-buttons {
+.track-info{
+  margin-bottom: 12px;
+  text-align: center;
+}
+#trackName{
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+#artistName{
+  font-size: 15px;
+  color: var(--sub);
+}
+
+.controls{
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 10px;
+  gap: 10px;
   justify-content: center;
+  margin: 14px 0 6px;
 }
-
-.volume-buttons button {
-  background-color: #404040;
+.controls button,
+.volume-controls button,
+.tracks-header button{
+  background-color: var(--accent);
+  color: #fff;
   border: none;
-  padding: 6px 10px;
-  border-radius: 6px;
-  color: white;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 700;
   cursor: pointer;
-  font-size: 14px;
+  transition: transform .06s ease, filter .15s ease;
 }
+.controls button:active,
+.volume-controls button:active,
+.tracks-header button:active{ transform: translateY(1px); }
+.tracks-header button{ background: var(--muted); }
+.tracks-header button:hover{ filter: brightness(1.1); }
 
-.volume-buttons button:hover {
-  background-color: #1db954;
+.seek-bar{
+  width: 100%;
+  max-width: 720px;
+  margin: 14px auto 10px;
 }
-
-.controls button {
-  padding: 10px 20px;
-  font-size: 14px;
-}
-
-
-.seek-bar {
-  margin-top: 15px;
-}
-
-.seek-bar input[type="range"] {
+.seek-bar input[type="range"]{
   width: 100%;
   appearance: none;
   height: 6px;
   border-radius: 3px;
-  background: #1db954;
+  background: var(--accent);
   outline: none;
 }
 
-
-/* Desna kolona (lista pesama) */
-.tracks-section {
-  background-color: #1e1e1e;
-  border-radius: 15px;
-  padding: 16px;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
+.volume-controls{
+  margin-top: 10px;
+  width: 100%;
+  max-width: 720px;
 }
+.volume-buttons{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.volume-buttons button{
+  background-color: var(--muted);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.volume-buttons button:hover{ filter: brightness(1.15); }
 
-.tracks-header {
+/* ===== Desna lista (tracks) ===== */
+.tracks-section{
+  padding: 16px;
+  min-width: 0;
+}
+.tracks-header{
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   margin-bottom: 12px;
 }
-
-.tracks-header h2 {
+.tracks-header h2{
   margin: 0;
   font-size: 18px;
 }
 
-.tracks-header button {
-  background-color: #404040;
-  color: #fff;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.tracks-header button:hover {
-  background-color: #1db954;
-}
-
-/* Lista pesama – skrolabilna */
-#tracksList {
+#tracksList{
   list-style: none;
   margin: 0;
   padding: 0;
-  overflow-y: auto;
+  overflow-y: auto; /* interni skrol */
   flex: 1;
 }
 
-.track-item {
+.track-item{
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
+  transition: background .15s ease;
 }
+.track-item:hover{ background:#2a2a2a; }
 
-.track-item:hover {
-  background-color: #2a2a2a;
-}
-
-.track-thumb {
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
+.track-thumb{
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
   object-fit: cover;
-  background-color: #333;
+  background:#333;
+  flex: 0 0 44px;
 }
 
-.track-text {
+.track-text{
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
-
-.track-title {
+.track-title{
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.track-artist {
+.track-artist{
   font-size: 12px;
-  color: #aaa;
+  color: var(--sub);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Trenutno svirajuća pesma – plavi highlight */
-.track-item.playing {
-  background-color: #1f3b70;   /* plava pozadina */
-  outline: 1px solid #3a7bd5;  /* blagi plavi obrub */
+/* Trenutna */
+.track-item.playing{
+  background-color:#1f3b70;
+  outline:1px solid #3a7bd5;
 }
+
+/* ===== Scrollbar (suptilno) ===== */
+#playlistList::-webkit-scrollbar,
+#tracksList::-webkit-scrollbar{ width: 8px; }
+#playlistList::-webkit-scrollbar-thumb,
+#tracksList::-webkit-scrollbar-thumb{
+  background:#2f2f2f; border-radius: 8px;
+}
+
+/* ===== Responsive ===== */
+
+/* Tablet: 2 kolone (playlists | player), tracks ispod preko cijele širine */
+@media (max-width: 1200px){
+  .container{
+    grid-template-columns: 240px 1fr;
+    grid-template-areas:
+      "playlists player"
+      "tracks tracks";
+  }
+  .tracks-section{ min-height: 360px; }
+}
+
+/* Mobilno: 1 kolona – player prvi (u fokusu) */
+@media (max-width: 760px){
+  .container{
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "player"
+      "playlists"
+      "tracks";
+    gap: 20px;
+    padding: 20px 16px 28px;
+  }
+  .player{ padding: 20px; }
+  .player img{ width: 100%; max-width: 520px; }
+  .tracks-section, .playlist-section{ padding: 14px; }
+  .controls{ gap: 8px; }
+}
+
+/* Sitni UI peglinzi */
+.controls button{ padding: 10px 18px; font-size: 14px; }
