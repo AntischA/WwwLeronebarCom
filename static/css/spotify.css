@@ -13,10 +13,18 @@ body {
   display: grid;
   grid-template-columns: 260px 1fr 360px; /* playliste | player | desna lista */
   gap: 24px;
-  align-items: start;
-  height: 100%;
+  align-items: stretch; /* ⬅️ ovo rasteže sve kolone po visini */
+  height: 100vh; /* ili koliko ti treba da sve stane */
 }
 
+/* svaki od tri panela da rastegne cijelu visinu */
+.playlist-section,
+.player,
+.tracks-section {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
 
 .container {
   display: flex;
@@ -32,7 +40,7 @@ body {
 }
 
 .player img {
-  width: 100%;
+  width: 50%;
   border-radius: 15px;
   margin-bottom: 20px;
 }

@@ -8,7 +8,6 @@ let displayedOrder = [];       // trenutan prikaz u desnoj listi
 let customOrder = null;        // aktivni queue (redoslijed koji Next/Prev prate)
 let customIndex = -1;          // indeks u customOrder
 let currentTrackUri = null;    // pratimo trenutnu traku
-let crossfadeMs = 5000;        // 5s crossfade
 let autoFadeLock = false;      // sprječava višestruke triggere pred kraj iste pjesme
 let lastTrackUri = null;       // za reset locka kad krene nova pjesma
 
@@ -226,13 +225,12 @@ async function crossfadeTo(startNextFn, opts = {}) {
   if (!player) return;
 
   const startVol = await player.getVolume();
-  const totalMs = opts.totalMs ?? crossfadeMs;  // npr 5000
-  const preMs   = opts.preMs   ?? 2000;         // koliko dugo stišavamo "kao" staru (2s)
+  const preMs   = opts.preMs   ?? 1000;         // koliko dugo stišavamo "kao" staru (2s)
   const postMs  = Math.max(0, totalMs - preMs); // koliko dugo pojačavamo novu (3s)
   const minVol  = opts.minVol  ?? 0.08;         // "dno" volumena pre switcha (tiho, ali ne 0)
 
   const preSteps  = 10;                         // koraci za fade down
-  const postSteps = 20;                         // koraci za fade up
+  const postSteps = 100;                         // koraci za fade up
   const preInt    = preMs  / preSteps;
   const postInt   = postMs / postSteps;
 
@@ -255,26 +253,6 @@ async function crossfadeTo(startNextFn, opts = {}) {
 }
 
 
-function playTrackByOriginalIndex(originalIndex) {
-  if (!currentPlaylistUri || originalIndex == null) return;
-
-  getValidToken().then(token => {
-    fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        context_uri: currentPlaylistUri,
-        offset: { position: originalIndex },
-        position_ms: 0
-      })
-    }).then(() => {
-      // ništa posebno – player_state_changed će odraditi highlight i scroll
-    });
-  });
-}
 
 function shuffleTrackList() {
   const copy = currentTracks.slice();
