@@ -9,6 +9,8 @@ let customOrder = null;        // aktivni queue (redoslijed koji Next/Prev prate
 let customIndex = -1;          // indeks u customOrder
 let currentTrackUri = null;    // pratimo trenutnu traku
 let crossfadeMs = 5000;        // 5s crossfade
+let autoFadeLock = false;      // sprječava višestruke triggere pred kraj iste pjesme
+let lastTrackUri = null;       // za reset locka kad krene nova pjesma
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -40,18 +42,58 @@ player.addListener('player_state_changed', state => {
   document.getElementById("playPause").textContent = state.paused ? "PLAY" : "PAUSE";
   document.getElementById("seekSlider").value = progress;
 
-  // NEW:
   currentTrackUri = current.uri;
   if (customOrder) {
     const idx = customOrder.findIndex(t => t.uri === current.uri);
     if (idx !== -1) customIndex = idx;
   }
-  // ⬇️ novo: highlight + centriranje
   highlightAndCenterCurrentTrack(current.uri);
+
+  // --- AUTO FADE: reset lock kad krene nova pjesma
+  if (lastTrackUri !== current.uri) {
+    autoFadeLock = false;
+    lastTrackUri = current.uri;
+  }
+
+  // --- AUTO FADE: 3s prije kraja -> 1s fade down + odmah sljedeća
+  const remainingMs = state.duration - state.position;
+  if (!state.paused && remainingMs <= 3000 && !autoFadeLock) {
+    autoFadeLock = true;
+    autoFadeOutThenNext(); // vidi funkciju ispod
+  }
 });
 
   player.connect();
 };
+
+async function autoFadeOutThenNext() {
+  if (!player) return;
+  const startVol = await player.getVolume();
+  const minVol = 0.05;      // dno na koje stišavamo
+  const fadeMs = 1000;      // 1 sekunda
+  const steps = 12;
+  const interval = fadeMs / steps;
+
+  // Fade-out 1s
+  for (let i = 0; i <= steps; i++) {
+    const v = startVol - ((startVol - minVol) * (i / steps));
+    await player.setVolume(Math.max(minVol, v));
+    await sleep(interval);
+  }
+
+  // Odmah startaj sljedeću (po našem customOrder ako postoji)
+  if (customOrder && customIndex >= 0 && customIndex < customOrder.length - 1) {
+    await playByCustomIndex(customIndex + 1, /*doCrossfade=*/false);
+  } else if (player) {
+    // fallback na Spotify-jev next kad nema custom reda ili smo na kraju
+    await player.nextTrack();
+  }
+
+  // Bez fade-in: vrati instantno na originalni volumen
+  await player.setVolume(startVol);
+}
+
+
 
 function playPlaylist(uri, autoPlay = false) {
   currentPlaylistUri = uri;
@@ -326,7 +368,7 @@ function togglePlay() {
 function nextTrack() {
   if (customOrder) {
     const next = Math.min(customOrder.length - 1, customIndex + 1);
-    playByCustomIndex(next, true); // crossfade
+    playByCustomIndex(next, false);
   } else if (player) {
     player.nextTrack();
   }
@@ -335,7 +377,7 @@ function nextTrack() {
 function previousTrack() {
   if (customOrder) {
     const prev = Math.max(0, customIndex - 1);
-    playByCustomIndex(prev, true); // crossfade unazad
+    playByCustomIndex(prev, false);
   } else if (player) {
     player.previousTrack();
   }
