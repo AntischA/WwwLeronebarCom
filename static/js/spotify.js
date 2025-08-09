@@ -4,6 +4,13 @@ let currentPlaylistUri = null;
 let currentTracks = [];        // {name, artists, uri, albumImage, originalIndex}
 let trackUriToLi = new Map();  // mapa za highlight i scroll
 let lastPlayingEl = null;
+let displayedOrder = [];       // trenutan prikaz u desnoj listi
+let customOrder = null;        // aktivni queue (redoslijed koji Next/Prev prate)
+let customIndex = -1;          // indeks u customOrder
+let currentTrackUri = null;    // pratimo trenutnu traku
+let crossfadeMs = 5000;        // 5s crossfade
+
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 
 window.onSpotifyWebPlaybackSDKReady = async () => {
@@ -33,6 +40,12 @@ player.addListener('player_state_changed', state => {
   document.getElementById("playPause").textContent = state.paused ? "PLAY" : "PAUSE";
   document.getElementById("seekSlider").value = progress;
 
+  // NEW:
+  currentTrackUri = current.uri;
+  if (customOrder) {
+    const idx = customOrder.findIndex(t => t.uri === current.uri);
+    if (idx !== -1) customIndex = idx;
+  }
   // ⬇️ novo: highlight + centriranje
   highlightAndCenterCurrentTrack(current.uri);
 });
@@ -100,11 +113,12 @@ async function loadPlaylistTracks(playlistId) {
 }
 
 function renderTracks(tracksArray) {
+  displayedOrder = tracksArray.slice(); // zapamti trenutan prikaz
   const listEl = document.getElementById("tracksList");
   listEl.innerHTML = "";
   trackUriToLi.clear();
 
-  tracksArray.forEach(item => {
+  displayedOrder.forEach((item, idx) => {
     const li = document.createElement("li");
     li.className = "track-item";
 
@@ -124,16 +138,64 @@ function renderTracks(tracksArray) {
 
     textWrap.appendChild(title);
     textWrap.appendChild(artist);
-
     li.appendChild(img);
     li.appendChild(textWrap);
 
-    li.onclick = () => playTrackByOriginalIndex(item.originalIndex);
+    // klik na stavku svira prema trenutnom PRIKAZU (ne originalIndex)
+    li.onclick = () => {
+      customOrder = displayedOrder.slice();
+      playByCustomIndex(idx, true); // s crossfade-om
+    };
 
     listEl.appendChild(li);
     trackUriToLi.set(item.uri, li);
   });
 }
+
+async function playByCustomIndex(index, doCrossfade = false) {
+  if (!customOrder || index < 0 || index >= customOrder.length) return;
+  const uris = customOrder.map(t => t.uri);
+  customIndex = index;
+
+  const token = await getValidToken();
+  if (!token) return;
+
+  const startPlayback = () => fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+    body: JSON.stringify({ uris, offset: { position: index }, position_ms: 0 })
+  });
+
+  if (doCrossfade) {
+    await crossfadeTo(startPlayback);
+  } else {
+    await startPlayback();
+  }
+}
+
+async function crossfadeTo(startNextFn) {
+  if (!player) return;
+  const startVol = await player.getVolume();
+  const steps = 25;
+  const interval = crossfadeMs / steps;
+
+  // Fade out
+  for (let i = steps; i >= 0; i--) {
+    await player.setVolume((startVol * i) / steps);
+    await sleep(interval);
+  }
+
+  // Pusti sledeću na 0
+  await startNextFn();
+  await player.setVolume(0);
+
+  // Fade in
+  for (let i = 0; i <= steps; i++) {
+    await player.setVolume((startVol * i) / steps);
+    await sleep(interval);
+  }
+}
+
 
 function playTrackByOriginalIndex(originalIndex) {
   if (!currentPlaylistUri || originalIndex == null) return;
@@ -157,13 +219,20 @@ function playTrackByOriginalIndex(originalIndex) {
 }
 
 function shuffleTrackList() {
-  // Fisher–Yates shuffle kopije (zadržavamo originalIndex zbog offset reprodukcije)
   const copy = currentTracks.slice();
+
+  // Fisher-Yates shuffle
   for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
-  renderTracks(copy);
+
+  renderTracks(copy);          // prikaži izmiješani poredak
+  customOrder = copy.slice();  // postavi novi queue
+
+  // pozicioniraj customIndex na trenutnu traku, ako postoji; inače na početak
+  const idx = customOrder.findIndex(t => t.uri === currentTrackUri);
+  customIndex = (idx !== -1) ? idx : 0;
 }
 
 
@@ -204,12 +273,21 @@ function togglePlay() {
   player.togglePlay();
 }
 function nextTrack() {
-  if (!player) return;
-  player.nextTrack();
+  if (customOrder) {
+    const next = Math.min(customOrder.length - 1, customIndex + 1);
+    playByCustomIndex(next, true); // crossfade
+  } else if (player) {
+    player.nextTrack();
+  }
 }
+
 function previousTrack() {
-  if (!player) return;
-  player.previousTrack();
+  if (customOrder) {
+    const prev = Math.max(0, customIndex - 1);
+    playByCustomIndex(prev, true); // crossfade unazad
+  } else if (player) {
+    player.previousTrack();
+  }
 }
 
 function setVolume(value) {
