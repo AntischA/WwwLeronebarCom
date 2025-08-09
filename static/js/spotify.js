@@ -237,26 +237,53 @@ function playTrackByOriginalIndex(originalIndex) {
 function shuffleTrackList() {
   const copy = currentTracks.slice();
 
-  // Fisher-Yates shuffle
+  // Fisher–Yates
   for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
 
-  renderTracks(copy);          // prikaži izmiješani poredak
-  customOrder = copy.slice();  // postavi novi queue
+  renderTracks(copy);
+  customOrder = copy.slice();
 
-  // pozicioniraj customIndex na trenutnu traku, ako postoji; inače na početak
   const idx = customOrder.findIndex(t => t.uri === currentTrackUri);
   customIndex = (idx !== -1) ? idx : 0;
 
-  // ⬇️ novo: vrati highlight i centriraj trenutnu pjesmu u listi
   if (currentTrackUri) {
-    // sačekaj render pa centriraj
     requestAnimationFrame(() => {
       highlightAndCenterCurrentTrack(currentTrackUri);
     });
   }
+
+  // ⬇️ KLJUČNI KORAK: reprogramiraj queue na novi poredak,
+  // ostajući na istoj pesmi i istoj poziciji.
+  applyCustomQueueAtCurrentTrack({ preservePosition: true });
+}
+
+async function applyCustomQueueAtCurrentTrack({ preservePosition = true } = {}) {
+  if (!customOrder || customIndex < 0) return;
+
+  const token = await getValidToken();
+  if (!token) return;
+
+  const uris = customOrder.map(t => t.uri);
+
+  let position_ms = 0;
+  if (preservePosition && player) {
+    const st = await player.getCurrentState();
+    if (st) position_ms = st.position || 0;
+  }
+
+  // Ovime Spotify-ju "uvaljujemo" novi queue (na istoj pesmi i istoj poziciji).
+  await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+    body: JSON.stringify({
+      uris,
+      offset: { position: customIndex },
+      position_ms
+    })
+  });
 }
 
 
