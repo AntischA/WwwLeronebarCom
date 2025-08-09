@@ -225,7 +225,6 @@ function seekToPosition(percent) {
   });
 }
 
-let lastPlayingEl = null;
 
 function highlightAndCenterCurrentTrack(trackUri) {
   if (!trackUriToLi.has(trackUri)) return;
