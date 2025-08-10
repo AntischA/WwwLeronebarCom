@@ -48,7 +48,7 @@ body{
   padding:20px 16px; border-radius:12px; font-weight:800;
   transition:transform .06s ease, filter .12s ease;
   white-space:nowrap;
-  min-width:120px;          /* spriječi “skok” kad pređe na Pause */
+  min-width:120px;
   flex:0 0 auto;
 }
 .btn:active{ transform:translateY(1px) }
@@ -78,26 +78,26 @@ body{
 .radio-head{ display:flex; align-items:center; gap:10px; }
 .radio-title{ font-weight:800; letter-spacing:.2px; font-size:1.02rem; }
 
-/* — kontrole ostaju UVIJEK u jednom redu na širim ekranima — */
+/* kontrole u jednom redu */
 .radio-controls{
   display:flex;
   align-items:center;
   gap:12px;
-  flex-wrap:nowrap;       /* NE prelamaj */
+  flex-wrap:nowrap;
   min-width:0;
 }
 
-/* blok glasnoće se rasteže i drži slider u istom redu */
+/* glasnoća se rasteže */
 .vol{
   display:flex; align-items:center; gap:10px;
   color:var(--sub); font-size:.95rem;
-  flex:1 1 auto;           /* zauzmi sav preostali prostor */
+  flex:1 1 auto;
   min-width:0;
-  white-space:nowrap;      /* % label i slider na jednoj liniji */
+  white-space:nowrap;
 }
 .vol span{
   display:inline-block;
-  width:4ch;               /* npr. “100%” – stalna širina */
+  width:4ch;
   text-align:right;
 }
 
@@ -106,13 +106,11 @@ body{
   flex:1 1 auto;
   width:100%;
   max-width:100%;
-  height:50px;                     /* veća “zona” za prst */
+  height:50px;
   background:transparent;
   -webkit-appearance:none;
   appearance:none;
 }
-
-/* WebKit */
 .vol input[type="range"]::-webkit-slider-runnable-track{
   height:50px; border-radius:10px; background:#203055;
 }
@@ -121,8 +119,6 @@ body{
   width:40px; height:40px; border-radius:50%;
   background:#e8eef7; margin-top:5px; border:2px solid #0f1f39;
 }
-
-/* Firefox */
 .vol input[type="range"]::-moz-range-track{
   height:14px; border-radius:10px; background:#203055;
 }
@@ -140,11 +136,25 @@ body{
 .ticker span{ display:inline-block; padding-left:100%; animation:ticker 12s linear infinite; }
 @keyframes ticker{ from{ transform:translateX(0);} to{ transform:translateX(-100%);} }
 
+/* DRUGI RED: lijevo kolona (Spotify gore + Playliste dolje), desno Pjesme */
 .content-grid{
   display:grid;
   grid-template-columns: 1fr 1fr;
   gap:var(--gap-lg);
   align-items:stretch;
+  min-height:0;
+}
+.left-col{
+  display:flex;
+  flex-direction:column;
+  gap:var(--gap-lg);
+  min-height:0;
+}
+.left-col .radio-card{ /* Spotify kartica u lijevoj koloni */
+  flex:0 0 auto;
+}
+.left-col .panel{       /* Playliste ispod Spotify-a */
+  flex:1 1 auto;
   min-height:0;
 }
 
@@ -199,7 +209,7 @@ body{
 @media (max-width: 800px){
   .radios-grid{ grid-template-columns: 1fr; }
 }
-/* Ako baš bude ultra usko, dopusti prijelom da se ne “reže” */
+/* Ultra usko – dopusti prijelom */
 @media (max-width: 560px){
   .radio-controls{ flex-wrap:wrap; }
   .vol{ width:100%; }
@@ -209,7 +219,7 @@ body{
 <body>
   <div class="page">
 
-    <!-- RED 1 -->
+    <!-- RED 1: Tri radijske kartice (RD + Naxi + Naxi 2) -->
     <section class="radios-grid">
 
       <article class="radio-card" id="rd-card">
@@ -247,40 +257,66 @@ body{
         </audio>
       </article>
 
-      <article class="radio-card" id="sp-card">
+      <!-- NOVI: identičan Naxi player s istim streamom -->
+      <article class="radio-card" id="nx2-card">
         <div class="radio-head">
-          <div class="radio-title">🎵 Spotify — Player</div>
+          <div class="radio-title">📻 Naxi Radio — Live</div>
         </div>
         <div class="radio-controls">
-          <button id="playPause" class="btn alt">▶ Play</button>
+          <button id="nx2-play" class="btn alt">▶ Play</button>
           <div class="vol">
-            <span id="sp-vol-label">90%</span>
-            <input id="sp-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+            <span id="nx2-vol-label">90%</span>
+            <input id="nx2-vol" type="range" min="0" max="1" step="0.01" value="0.9">
           </div>
         </div>
-        <div class="ticker"><span>Odaberi playlistu ispod pa klikni Play.</span></div>
-
-        <div class="sr-only">
-          <img id="albumImage" alt="">
-          <div id="trackName"></div>
-          <div id="artistName"></div>
-          <input type="range" id="seekSlider" value="0" min="0" max="100" step="1">
-        </div>
+        <div class="ticker"><span id="nx2-now">Spajam se na Naxi Radio…</span></div>
+        <audio id="nx2-audio" preload="none">
+          <source src="https://naxi128ssl.streaming.rs:9152/;" type="audio/mpeg">
+          <source src="https://naxi64ssl.streaming.rs:9162/;" type="audio/mpeg">
+        </audio>
       </article>
 
     </section>
 
-    <!-- RED 2 -->
+    <!-- RED 2: Lijevo (Spotify gore + Playliste dolje), Desno (Pjesme) -->
     <section class="content-grid">
-      <article class="panel">
-        <h3>📚 Moje playliste</h3>
-        <ul id="playlistList" class="list"></ul>
-      </article>
 
+      <div class="left-col">
+        <!-- Spotify player (premješten ovdje iz prvog reda) -->
+        <article class="radio-card" id="sp-card">
+          <div class="radio-head">
+            <div class="radio-title">🎵 Spotify — Player</div>
+          </div>
+          <div class="radio-controls">
+            <button id="playPause" class="btn alt">▶ Play</button>
+            <div class="vol">
+              <span id="sp-vol-label">90%</span>
+              <input id="sp-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+            </div>
+          </div>
+          <div class="ticker"><span>Odaberi playlistu ispod pa klikni Play.</span></div>
+
+          <div class="sr-only">
+            <img id="albumImage" alt="">
+            <div id="trackName"></div>
+            <div id="artistName"></div>
+            <input type="range" id="seekSlider" value="0" min="0" max="100" step="1">
+          </div>
+        </article>
+
+        <!-- Playliste (isto lijevi stupac, ispod Spotify-a) -->
+        <article class="panel">
+          <h3>📚 Moje playliste</h3>
+          <ul id="playlistList" class="list"></ul>
+        </article>
+      </div>
+
+      <!-- Desno: Pjesme u playlisti (ostaje isto mjesto) -->
       <article class="panel">
         <h3>🎼 Pjesme u playlisti</h3>
         <ul id="tracksList" class="list"></ul>
       </article>
+
     </section>
   </div>
 
@@ -308,17 +344,34 @@ body{
   let playlistsMeta = [];
   let playlistUriToIndex = new Map();
 
-  /* UI helperi */
-  const cards   = { rd: document.getElementById('rd-card'), nx: document.getElementById('nx-card'), sp: document.getElementById('sp-card') };
-  const buttons = { rd: document.getElementById('rd-play'), nx: document.getElementById('nx-play'), sp: document.getElementById('playPause') };
-  const audios  = { rd: document.getElementById('rd-audio'), nx: document.getElementById('nx-audio') };
+  /* UI helperi – dodan nx2 */
+  const cards   = {
+    rd: document.getElementById('rd-card'),
+    nx: document.getElementById('nx-card'),
+    nx2: document.getElementById('nx2-card'),
+    sp: document.getElementById('sp-card')
+  };
+  const buttons = {
+    rd: document.getElementById('rd-play'),
+    nx: document.getElementById('nx-play'),
+    nx2: document.getElementById('nx2-play'),
+    sp: document.getElementById('playPause')
+  };
+  const audios  = {
+    rd: document.getElementById('rd-audio'),
+    nx: document.getElementById('nx-audio'),
+    nx2: document.getElementById('nx2-audio')
+  };
 
   function setButtonLabel(btn, playing){ btn.textContent = playing ? '⏸ Pause' : '▶ Play'; }
-  function setActiveCard(name){ Object.keys(cards).forEach(k => cards[k].classList.toggle('is-active', k === name)); }
+  function setActiveCard(name){
+    Object.keys(cards).forEach(k => cards[k].classList.toggle('is-active', k === name));
+  }
   function pauseAllRadios(){
     Object.values(audios).forEach(a => { try{ a.pause(); }catch(e){} });
     setButtonLabel(buttons.rd, false);
     setButtonLabel(buttons.nx, false);
+    setButtonLabel(buttons.nx2, false);
   }
   function anyRadioPlaying(){ return Object.values(audios).some(a => !a.paused && !a.ended); }
 
@@ -648,6 +701,7 @@ body{
   function syncAllVolumeLabels(){
     syncLabel(document.getElementById('rd-vol'), document.getElementById('rd-vol-label'));
     syncLabel(document.getElementById('nx-vol'), document.getElementById('nx-vol-label'));
+    syncLabel(document.getElementById('nx2-vol'), document.getElementById('nx2-vol-label'));
     syncLabel(document.getElementById('sp-vol'), document.getElementById('sp-vol-label'));
   }
 
@@ -713,8 +767,9 @@ body{
       setActiveCard(cardKey);
       if (player && player.pause) player.pause();
       Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
-      if (b === buttons.rd) setButtonLabel(buttons.nx, false);
-      if (b === buttons.nx) setButtonLabel(buttons.rd, false);
+
+      // poništi ostale radio gumbe
+      ['rd','nx','nx2'].forEach(k => { if (buttons[k] !== b) setButtonLabel(buttons[k], false); });
       setButtonLabel(buttons.sp, false);
     });
 
@@ -740,8 +795,9 @@ body{
     return { playOnlyThis, setNow, audio:a, button:b };
   }
 
-  const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', nowId:'rd-now', label:'rd' });
-  const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', nowId:'nx-now', label:'nx' });
+  const RD  = makeRadio({ audioId:'rd-audio',  playId:'rd-play',  volId:'rd-vol',  nowId:'rd-now',  label:'rd' });
+  const NX  = makeRadio({ audioId:'nx-audio',  playId:'nx-play',  volId:'nx-vol',  nowId:'nx-now',  label:'nx' });
+  const NX2 = makeRadio({ audioId:'nx2-audio', playId:'nx2-play', volId:'nx2-vol', nowId:'nx2-now', label:'nx2' });
 
   // Spotify gumb
   document.getElementById('playPause').addEventListener('click', async () => {
