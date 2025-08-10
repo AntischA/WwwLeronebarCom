@@ -272,11 +272,24 @@
     const token = await getValidToken();
     if (!token) return;
 
-    player = new Spotify.Player({
-      name: 'Lerone Web Player',
-      getOAuthToken: cb => cb(token),
-      volume: 0.5
-    });
+player = new Spotify.Player({
+  name: 'Lerone Web Player',
+  getOAuthToken: async (cb) => {
+    try {
+      // uzmi važeći (refrešaj ako je blizu isteka)
+      let t = await getValidToken();
+      // ako ga SDK traži nakon 401 i ti mu vratiš isti, dobit ćeš "same token twice"
+      if (!t || t === lastProvidedToken) {
+        t = await refreshAccessToken();   // prisilno refrešaj
+      }
+      lastProvidedToken = t;
+      cb(t);
+    } catch (e) {
+      console.error('getOAuthToken error', e);
+    }
+  },
+  volume: 0.5
+});
 
     player.addListener('ready', ({ device_id }) => {
       deviceId = device_id;
@@ -485,36 +498,43 @@
     player.togglePlay();
   }
 
-  async function getValidToken() {
-    const accessToken = localStorage.getItem("access_token");
-    const refreshToken = localStorage.getItem("refresh_token");
-    if (!refreshToken) {
-      window.location.href = "/spotify_auth";
-      return null;
-    }
-    const ts = parseInt(localStorage.getItem("token_timestamp") || "0");
-    if (Date.now() - ts >= 3600 * 1000) {
-      const res = await fetch("/refresh_token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: refreshToken })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        localStorage.setItem("access_token", data.access_token);
-        localStorage.setItem("token_timestamp", Date.now());
-        return data.access_token;
-      } else {
-        alert("Greška pri osvježavanju tokena.");
-        return null;
-      }
-    }
-    return accessToken;
-  }
+async function refreshAccessToken() {
+  const refreshToken = localStorage.getItem("refresh_token");
+  if (!refreshToken) { window.location.href = "/spotify_auth"; return null; }
 
-  if (localStorage.getItem("refresh_token")) {
-    setInterval(getValidToken, 3300000);
+  const res = await fetch("/refresh_token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refreshToken })
+  });
+  const data = await res.json();
+
+  if (res.ok && data.access_token) {
+    localStorage.setItem("access_token", data.access_token);
+    localStorage.setItem("token_timestamp", Date.now());
+    return data.access_token;
+  } else {
+    console.error("Refresh failed", data);
+    return null;
   }
+}
+
+// osvježi ako je stariji od 55 min (ne čekaj punih 60)
+async function getValidToken() {
+  const accessToken = localStorage.getItem("access_token");
+  const refreshToken = localStorage.getItem("refresh_token");
+  if (!refreshToken) { window.location.href = "/spotify_auth"; return null; }
+
+  const ts = parseInt(localStorage.getItem("token_timestamp") || "0", 10);
+  const maxAge = 55 * 60 * 1000; // 55 min
+
+  if (!accessToken || (Date.now() - ts) >= maxAge) {
+    return await refreshAccessToken();
+  }
+  return accessToken;
+}
+
+
 
   async function loadPlaylists(token) {
     const res = await fetch("https://api.spotify.com/v1/me/playlists", {
