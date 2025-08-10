@@ -228,22 +228,7 @@ async function applyCustomQueueAtCurrentTrack({ preservePosition = true } = {}) 
 }
 
 
-function seekToPosition(percent) {
-  if (!player) return;
-  player.getCurrentState().then(state => {
-    if (!state) return;
-    const duration = state.duration;
-    const positionMs = (percent / 100) * duration;
-    getValidToken().then(token => {
-      fetch(`https://api.spotify.com/v1/me/player/seek?position_ms=${Math.floor(positionMs)}&device_id=${deviceId}`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-    });
-  });
-}
+
 
 function highlightAndCenterCurrentTrack(trackUri) {
   if (!trackUriToLi.has(trackUri)) return;
@@ -263,30 +248,6 @@ function highlightAndCenterCurrentTrack(trackUri) {
 function togglePlay() {
   if (!player) return;
   player.togglePlay();
-}
-function nextTrack() {
-  if (customOrder) {
-    const next = Math.min(customOrder.length - 1, customIndex + 1);
-    playByCustomIndex(next);
-  } else if (player) {
-    player.nextTrack();
-  }
-}
-
-function previousTrack() {
-  if (customOrder) {
-    const prev = Math.max(0, customIndex - 1);
-    playByCustomIndex(prev);
-  } else if (player) {
-    player.previousTrack();
-  }
-}
-
-function setVolume(value) {
-  if (!player) return;
-  player.setVolume(value).then(() => {
-    console.log(`🔊 Volume set to ${value * 100}%`);
-  });
 }
 
 async function getValidToken() {
