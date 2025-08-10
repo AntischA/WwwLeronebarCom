@@ -89,6 +89,10 @@ def home():
 def prikaz_kalkulator():
     return render_template('kalkulator.html')
 
+@app.route('/dalmacija')
+def prikaz_dalmacija():
+    return render_template('dalmacija.html')
+
 @app.route('/spotify')
 def prikaz_spotify():
     return render_template('spotify.html')
