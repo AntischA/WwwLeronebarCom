@@ -30,15 +30,46 @@
     }
 
     /* Stranica zauzima visinu prozora; drugi red puni ostatak */
-    .page{
-      max-width:1280px;
-      margin:0 auto;
-      padding:22px var(--gap);
-      display:grid;
-      grid-template-rows:auto 1fr;  /* ⬅️ drugi red raste do dna */
-      gap:var(--gap-lg);
-      min-height:100svh;            /* ⬅️ ključ za ispunu visine */
-    }
+.page{
+  max-width:1280px;
+  margin:0 auto;
+  padding:22px var(--gap);
+  display:grid;
+  grid-template-rows:auto 1fr; /* red 2 dobiva fiksnu preostalu visinu */
+  gap:var(--gap-lg);
+
+  /* ključno: visina stranice = visina prozora */
+  height: 100dvh;     /* moderni mobilni (dinamični viewport) */
+  min-height: 100svh; /* fallback */
+}
+
+/* 2) Osiguraj da grid i djeca smiju “skratiti” visinu, inače se šire */
+.content-grid { min-height: 0; }
+.content-grid > * { min-height: 0; }
+
+/* 3) Panel NE smije širiti grid – sakrij preljev, a skrol daj listi */
+.panel{
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+
+  height:100%;
+  min-height:0;      /* ⬅️ dopušta da se skupi */
+  overflow:hidden;   /* ⬅️ onemogući da sadržaj gura panel */
+}
+
+/* 4) Lista zauzima sav preostali prostor i skrola se */
+.list{
+  list-style:none;
+  margin:0;
+  padding:0;
+  flex: 1 1 auto;
+  min-height: 0;     /* ⬅️ kritično da flex dijete smije biti manje od sadržaja */
+  overflow-y: auto;  /* ⬅️ skrol samo unutar liste */
+}
 
     .btn{
       appearance:none; border:0; cursor:pointer;
@@ -86,22 +117,6 @@
       gap:var(--gap-lg);
       align-items:stretch;
       min-height:0;   /* ⬅️ dozvoli da djeca preuzmu 100% visine reda */
-    }
-    .panel{
-      background:var(--card);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:16px;
-      display:flex; flex-direction:column;
-      height:100%;    /* ⬅️ ispuni visinu ćelije */
-      min-height:0;   /* ⬅️ omogući skrol u djeci */
-    }
-    .panel h3{ margin:0 0 10px 0; font-size:1.02rem; letter-spacing:.2px; }
-
-    .list{
-      list-style:none; margin:0; padding:0;
-      overflow:auto; flex:1;      /* ⬅️ skrol unutar panela */
-      min-height:0;
     }
     .list li{
       background:#17213b; margin:8px 0; padding:10px 12px; border-radius:10px;
