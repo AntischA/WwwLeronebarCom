@@ -252,7 +252,7 @@ body{
         </audio>
       </article>
 
-      <!-- Treći: TOP Radio – identičan UI kao ostali, s direktnim streamom -->
+      <!-- Treći: TOP Radio – preko VAŠEG proxyja -->
       <article class="radio-card" id="tp-card">
         <div class="radio-head">
           <div class="radio-title">📻 TOP Radio — Live</div>
@@ -266,8 +266,8 @@ body{
         </div>
         <div class="ticker"><span id="tp-now">TOP Radio – spremno</span></div>
         <audio id="tp-audio" preload="none" crossorigin="anonymous">
-          <!-- 🔁 Ako ovo ne radi kod tebe, pošalji mi točan MP3/AAC URL ili ga ovdje zamijeni -->
-          <source src="https://stream.topradio.hr/listen_top_radio_256_mp3" type="audio/mpeg">
+          <!-- PROXY audio stream (vidi backend) -->
+          <source src="/proxy/topradio" type="audio/mpeg">
         </audio>
       </article>
 
@@ -379,7 +379,7 @@ body{
     playPlaylist(nextUri, true);
   }
 
-  /* ============= SPOTIFY ============= */
+  /* ============= Spotify ============= */
   window.onSpotifyWebPlaybackSDKReady = async () => {
     const token = await getValidToken();
     if (!token) return;
@@ -404,7 +404,6 @@ body{
       loadPlaylists(); // bez autoplay
       syncAllVolumeLabels();
 
-      // ako netko klikne Play prerano, pokušaj auto-krenuti s prvom učitanom listom
       document.getElementById('playPause').addEventListener('click', async () => {
         pauseAllRadios();
         const st = await player.getCurrentState();
@@ -415,8 +414,6 @@ body{
             await playByCustomIndex(customIndex >= 0 ? customIndex : 0);
           } else if (currentPlaylistUri || (playlistsMeta[0]?.uri)) {
             await playPlaylist(currentPlaylistUri || playlistsMeta[0].uri, true);
-          } else {
-            // još se sve učitava — strpljenje :)
           }
         } else {
           player.togglePlay();
@@ -456,8 +453,10 @@ body{
         document.getElementById("artistName").textContent = current.artists.map(a => a.name).join(", ");
         document.getElementById("albumImage").src = current.album.images[0]?.url || '';
         currentTrackUri = current.uri;
+
         const spNow = document.getElementById('sp-now');
         if (spNow) spNow.textContent = `Sada svira: ${current.name} — ${current.artists.map(a => a.name).join(", ")}`;
+
         if (customOrder) {
           const idx = customOrder.findIndex(t => t.uri === current.uri);
           if (idx !== -1) customIndex = idx;
@@ -630,7 +629,7 @@ body{
     el.scrollIntoView({ block: "center", behavior: "smooth" });
   }
 
-  /* ===== Radio logika + volumeni ===== */
+  /* ===== Radio logika + “now playing” za TOP Radio (preko proxyja) ===== */
   function percent(val){ return Math.round((val||0)*100) + '%'; }
   function syncLabel(rangeEl, labelEl){ if (rangeEl && labelEl){ labelEl.textContent = percent(rangeEl.valueAsNumber); } }
   function syncAllVolumeLabels(){
@@ -640,9 +639,26 @@ body{
     syncLabel(document.getElementById('sp-vol'), document.getElementById('sp-vol-label'));
   }
 
+  function startNowPolling(el, url){
+    let stop = false, timer = null;
+    async function poll(){
+      if (stop) return;
+      try{
+        const r = await fetch(url, { cache:'no-store' });
+        if (r.ok){
+          const txt = (await r.text()).trim();
+          if (txt) el.textContent = txt;
+        }
+      }catch(e){}
+      timer = setTimeout(poll, 15000);
+    }
+    poll();
+    return () => { stop = true; if (timer) clearTimeout(timer); };
+  }
+
   const allRadios = [];
 
-  function makeRadio({ audioId, playId, volId, nowId, label }) {
+  function makeRadio({ audioId, playId, volId, nowId, label, nowPollUrl }) {
     const a  = document.getElementById(audioId);
     const b  = document.getElementById(playId);
     const vr = document.getElementById(volId);
@@ -652,6 +668,7 @@ body{
     allRadios.push(a);
 
     let retries = 0, maxRetries = 5;
+    let stopNow = null;
     const setNow = t => { if (nw) nw.textContent = t; };
 
     async function playOnlyThis() {
@@ -697,9 +714,7 @@ body{
 
     a.addEventListener('playing', () => {
       retries = 0;
-      if (label === 'tp') { /* ticker će se ažurirati ispod */ }
-      else setNow('Sviramo najbolje hitove 🎵');
-
+      if (!nowPollUrl) setNow('Sviramo najbolje hitove 🎵'); // RD i Naxi
       setButtonLabel(b, true);
       setActiveCard(cardKey);
       if (player && player.pause) player.pause();
@@ -707,6 +722,9 @@ body{
 
       ['rd','nx','tp'].forEach(k => { if (buttons[k] !== b) setButtonLabel(buttons[k], false); });
       setButtonLabel(buttons.sp, false);
+
+      // pokreni “now playing” polling (samo za TOP Radio)
+      if (nowPollUrl && nw && !stopNow) stopNow = startNowPolling(nw, nowPollUrl);
     });
 
     a.addEventListener('pause', () => {
@@ -717,6 +735,7 @@ body{
         const spIsPlaying = st ? !st.paused : false;
         if (!otherRadioPlaying && !spIsPlaying) setActiveCard(null);
       });
+      if (stopNow) { stopNow(); stopNow = null; }
     });
 
     a.addEventListener('ended', () => {
@@ -726,6 +745,7 @@ body{
         const spIsPlaying = st ? !st.paused : false;
         if (!radioJosSvira && !spIsPlaying) setActiveCard(null);
       });
+      if (stopNow) { stopNow(); stopNow = null; }
     });
 
     return { playOnlyThis, setNow, audio:a, button:b };
@@ -733,30 +753,11 @@ body{
 
   const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', nowId:'rd-now', label:'rd' });
   const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', nowId:'nx-now', label:'nx' });
-  const TP = makeRadio({ audioId:'tp-audio', playId:'tp-play', volId:'tp-vol', nowId:'tp-now', label:'tp' });
-
-  // TOP Radio “now playing” (ako njihov endpoint dozvoli CORS)
-  async function pollTopNow(){
-    try{
-      // imaju dva txt-a – probaj redom
-      const urls = [
-        'https://stream.topradio.hr/player/info/listen_top_radio_256_mp3_.txt',
-        'https://stream.topradio.hr/player/info/listen_top_radio_256_mp3_h.txt'
-      ];
-      for (const u of urls){
-        try{
-          const r = await fetch(u, { cache:'no-store' });
-          if (r.ok){
-            const text = (await r.text()).trim();
-            if (text) { const el = document.getElementById('tp-now'); if (el) el.textContent = text; return; }
-          }
-        }catch(_){}
-      }
-    }catch(_){}
-  }
-  // povremeno osvježi (ako propadne zbog CORS-a, samo neće promijeniti tekst)
-  setInterval(pollTopNow, 15000);
-  pollTopNow();
+  // TOP Radio – koristi proxy za now playing txt
+  const TP = makeRadio({
+    audioId:'tp-audio', playId:'tp-play', volId:'tp-vol', nowId:'tp-now', label:'tp',
+    nowPollUrl:'/proxy/topradio_now'
+  });
 
   // Spotify glasnoća + label
   const spVol = document.getElementById('sp-vol');
