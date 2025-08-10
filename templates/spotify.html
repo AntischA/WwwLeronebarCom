@@ -2,7 +2,7 @@
 <html lang="hr">
 <head>
   <meta charset="UTF-8" />
-  <title>Spotify + 3 Radio Playera</title>
+  <title>Spotify + 6 Radio Playera</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
@@ -214,7 +214,7 @@ body{
 <body>
   <div class="page">
 
-    <!-- RED 1: RD + Naxi + Otvoreni -->
+    <!-- RED 1: RD + Naxi + Otvoreni + Bravo + Naxi Fresh + Naxi Mix -->
     <section class="radios-grid">
 
       <article class="radio-card" id="rd-card">
@@ -252,7 +252,6 @@ body{
         </audio>
       </article>
 
-      <!-- Treći: Otvoreni Radio – direktni HTTPS stream -->
       <article class="radio-card" id="ot-card">
         <div class="radio-head">
           <div class="radio-title">📻 Otvoreni Radio — Live</div>
@@ -264,9 +263,72 @@ body{
             <input id="ot-vol" type="range" min="0" max="1" step="0.01" value="0.9">
           </div>
         </div>
-        <div class="ticker"><span id="ot-now">Otvoreni Radio – spremno</span></div>
+        <div class="ticker"><span id="ot-now">Otvoreni Radio — uživo 🎶</span></div>
         <audio id="ot-audio" preload="none" crossorigin="anonymous">
           <source src="https://stream2.otvoreni.hr/otvoreni" type="audio/mpeg">
+        </audio>
+      </article>
+
+      <!-- NOVI: Bravo Radio -->
+      <article class="radio-card" id="br-card">
+        <div class="radio-head">
+          <div class="radio-title">📻 Bravo Radio — Live</div>
+        </div>
+        <div class="radio-controls">
+          <button id="br-play" class="btn alt">▶ Play</button>
+          <div class="vol">
+            <span id="br-vol-label">90%</span>
+            <input id="br-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+          </div>
+        </div>
+        <div class="ticker"><span id="br-now">Bravo — spremno</span></div>
+        <audio id="br-audio" preload="none" crossorigin="anonymous">
+          <!-- ⚠ Ako imaš točan HTTPS MP3 URL, zamijeni ovaj ispod -->
+          <source src="https://streaming.br.hr/stream/bravo" type="audio/mpeg">
+        </audio>
+      </article>
+
+      <!-- NOVI: Naxi Fresh -->
+      <article class="radio-card" id="nf-card">
+        <div class="radio-head">
+          <div class="radio-title">📻 Naxi Fresh — Live</div>
+        </div>
+        <div class="radio-controls">
+          <button id="nf-play" class="btn alt">▶ Play</button>
+          <div class="vol">
+            <span id="nf-vol-label">90%</span>
+            <input id="nf-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+          </div>
+        </div>
+        <div class="ticker"><span id="nf-now">Naxi Fresh — spremno</span></div>
+        <audio id="nf-audio" preload="none" crossorigin="anonymous">
+          <!-- Prvo pokušaj lokalni HTTPS proxy (preporučeno na HTTPS stranici) -->
+          <source src="/proxy/naxi-fresh" type="audio/mpeg">
+          <!-- Fallback: javni HTTP stream (blokira se na HTTPS stranici) -->
+          <!-- Izvor: liveradio.ie listing -->
+          <source src="http://naxidigital-fresh128.streaming.rs:8210/" type="audio/mpeg">
+        </audio>
+      </article>
+
+      <!-- NOVI: Naxi Mix -->
+      <article class="radio-card" id="nm-card">
+        <div class="radio-head">
+          <div class="radio-title">📻 Naxi Mix — Live</div>
+        </div>
+        <div class="radio-controls">
+          <button id="nm-play" class="btn alt">▶ Play</button>
+          <div class="vol">
+            <span id="nm-vol-label">90%</span>
+            <input id="nm-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+          </div>
+        </div>
+        <div class="ticker"><span id="nm-now">Naxi Mix — spremno</span></div>
+        <audio id="nm-audio" preload="none" crossorigin="anonymous">
+          <!-- Prvo pokušaj lokalni HTTPS proxy -->
+          <source src="/proxy/naxi-mix" type="audio/mpeg">
+          <!-- Fallback: javni HTTP stream (blokira se na HTTPS stranici) -->
+          <!-- Izvor: liveradio.ie listing -->
+          <source src="http://naxidigital-mix128.streaming.rs:8220/" type="audio/mpeg">
         </audio>
       </article>
 
@@ -338,32 +400,39 @@ body{
   let playlistsMeta = [];
   let playlistUriToIndex = new Map();
 
-  /* UI helperi – RD, Naxi, Otvoreni, Spotify */
+  /* UI helperi – RD, Naxi, Otvoreni, Bravo, Naxi Fresh, Naxi Mix, Spotify */
   const cards = {
     rd: document.getElementById('rd-card'),
     nx: document.getElementById('nx-card'),
     ot: document.getElementById('ot-card'),
+    br: document.getElementById('br-card'),
+    nf: document.getElementById('nf-card'),
+    nm: document.getElementById('nm-card'),
     sp: document.getElementById('sp-card')
   };
   const buttons = {
     rd: document.getElementById('rd-play'),
     nx: document.getElementById('nx-play'),
     ot: document.getElementById('ot-play'),
+    br: document.getElementById('br-play'),
+    nf: document.getElementById('nf-play'),
+    nm: document.getElementById('nm-play'),
     sp: document.getElementById('playPause')
   };
   const audios  = {
     rd: document.getElementById('rd-audio'),
     nx: document.getElementById('nx-audio'),
-    ot: document.getElementById('ot-audio')
+    ot: document.getElementById('ot-audio'),
+    br: document.getElementById('br-audio'),
+    nf: document.getElementById('nf-audio'),
+    nm: document.getElementById('nm-audio')
   };
 
   function setButtonLabel(btn, playing){ if(!btn) return; btn.textContent = playing ? '⏸ Pause' : '▶ Play'; }
   function setActiveCard(name){ Object.keys(cards).forEach(k => cards[k].classList.toggle('is-active', k === name)); }
   function pauseAllRadios(){
     Object.values(audios).forEach(a => { try{ a.pause(); }catch(e){} });
-    setButtonLabel(buttons.rd, false);
-    setButtonLabel(buttons.nx, false);
-    setButtonLabel(buttons.ot, false);
+    Object.keys(buttons).forEach(k => { if (k !== 'sp') setButtonLabel(buttons[k], false); });
   }
   function anyRadioPlaying(){ return Object.values(audios).some(a => !a.paused && !a.ended); }
 
@@ -545,8 +614,8 @@ body{
 
       textWrap.appendChild(title);
       textWrap.appendChild(artist);
-      li.appendChild(img);
       li.appendChild(textWrap);
+      li.appendChild(img);
 
       li.onclick = () => {
         customOrder = displayedOrder.slice();
@@ -634,6 +703,9 @@ body{
     syncLabel(document.getElementById('rd-vol'), document.getElementById('rd-vol-label'));
     syncLabel(document.getElementById('nx-vol'), document.getElementById('nx-vol-label'));
     syncLabel(document.getElementById('ot-vol'), document.getElementById('ot-vol-label'));
+    syncLabel(document.getElementById('br-vol'), document.getElementById('br-vol-label'));
+    syncLabel(document.getElementById('nf-vol'), document.getElementById('nf-vol-label'));
+    syncLabel(document.getElementById('nm-vol'), document.getElementById('nm-vol-label'));
     syncLabel(document.getElementById('sp-vol'), document.getElementById('sp-vol-label'));
   }
 
@@ -658,7 +730,7 @@ body{
         setButtonLabel(b, true);
         setActiveCard(cardKey);
       } catch (e) {
-        setNow('Klikni “Play” (autoplay blokiran).');
+        setNow('Klikni “Play” (autoplay blokiran) ili treba HTTPS proxy.');
         console.warn(`[${label}] play error`, e);
       }
     }
@@ -669,7 +741,7 @@ body{
         const delay = Math.min(1500 * retries, 7000);
         setTimeout(() => { a.load(); a.play().catch(()=>{}); }, delay);
       } else {
-        setNow('Ne može se spojiti. Provjeri stream URL.');
+        setNow('Ne može se spojiti. Potreban je ispravan URL ili HTTPS proxy.');
       }
     }
 
@@ -690,15 +762,15 @@ body{
 
     a.addEventListener('playing', () => {
       retries = 0;
-      if (label === 'ot') setNow('Otvoreni Radio — uživo 🎶');
-      else setNow('Sviramo najbolje hitove 🎵');
+      setNow('Sviramo najbolje hitove 🎵');
 
       setButtonLabel(b, true);
       setActiveCard(cardKey);
       if (player && player.pause) player.pause();
       Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
 
-      ['rd','nx','ot'].forEach(k => { if (buttons[k] !== b) setButtonLabel(buttons[k], false); });
+      // poništi ostale radio gumbe
+      Object.entries(buttons).forEach(([k, btn]) => { if (k !== 'sp' && btn !== b) setButtonLabel(btn, false); });
       setButtonLabel(buttons.sp, false);
     });
 
@@ -727,6 +799,9 @@ body{
   const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', nowId:'rd-now', label:'rd' });
   const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', nowId:'nx-now', label:'nx' });
   const OT = makeRadio({ audioId:'ot-audio', playId:'ot-play', volId:'ot-vol', nowId:'ot-now', label:'ot' });
+  const BR = makeRadio({ audioId:'br-audio', playId:'br-play', volId:'br-vol', nowId:'br-now', label:'br' });
+  const NF = makeRadio({ audioId:'nf-audio', playId:'nf-play', volId:'nf-vol', nowId:'nf-now', label:'nf' });
+  const NM = makeRadio({ audioId:'nm-audio', playId:'nm-play', volId:'nm-vol', nowId:'nm-now', label:'nm' });
 
   // Spotify glasnoća + label
   const spVol = document.getElementById('sp-vol');
