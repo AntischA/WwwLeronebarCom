@@ -181,7 +181,6 @@
       <article class="radio-card" id="rd-card">
         <div class="radio-head">
           <div class="radio-title">🎧 Radio Dalmacija — Live</div>
-          <div id="rd-status" class="radio-status">Spremno</div>
         </div>
         <div class="radio-controls">
           <button id="rd-play" class="btn alt">▶ Play</button>
@@ -199,7 +198,6 @@
       <article class="radio-card" id="nx-card">
         <div class="radio-head">
           <div class="radio-title">📻 Naxi Radio — Live</div>
-          <div id="nx-status" class="radio-status">Spremno</div>
         </div>
         <div class="radio-controls">
           <button id="nx-play" class="btn alt">▶ Play</button>
@@ -218,7 +216,6 @@
       <article class="radio-card" id="sp-card">
         <div class="radio-head">
           <div class="radio-title">🎵 Spotify — Player</div>
-          <div id="sp-status" class="radio-status">Spremno</div>
         </div>
         <div class="radio-controls">
           <button id="playPause" class="btn alt">▶ Play</button>
@@ -651,7 +648,6 @@
         if (player && player.pause) await player.pause();
         setButtonLabel(buttons.sp, false);
 
-        setStatus('Pokušavam reproducirati…');
         await a.play();
         setButtonLabel(b, true);
         setActiveCard(cardKey);
@@ -688,7 +684,6 @@
 
     a.addEventListener('playing', () => {
       retries = 0;
-      setStatus('Reproduciram ✅');
       setNow('Sviramo najbolje hitove 🎵');
       setButtonLabel(b, true);
       setActiveCard(cardKey);
