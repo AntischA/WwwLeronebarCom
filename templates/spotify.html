@@ -196,19 +196,6 @@ body{
 
 .sr-only{ display:none !important; }
 
-/* Ugradbeni (iframe) radio player */
-.embed-wrap{
-  width:100%;
-  height:140px;              /* po potrebi povisi/smanji */
-  background:#0f1526;
-  border-radius:12px;
-  overflow:hidden;
-  box-shadow:inset 0 0 0 1px #0d1530;
-}
-.embed-wrap iframe{
-  width:100%; height:100%; border:0;
-}
-
 /* Responsive */
 @media (max-width: 1100px){
   .radios-grid{ grid-template-columns: repeat(2,1fr); }
@@ -227,7 +214,7 @@ body{
 <body>
   <div class="page">
 
-    <!-- RED 1: RD + Naxi + TOP Radio (iframe) -->
+    <!-- RED 1: RD + Naxi + TOP Radio (audio) -->
     <section class="radios-grid">
 
       <article class="radio-card" id="rd-card">
@@ -241,7 +228,7 @@ body{
             <input id="rd-vol" type="range" min="0" max="1" step="0.01" value="0.9">
           </div>
         </div>
-        <div class="ticker"><span id="rd-now">Spajam se na Radio Dalmaciju…</span></div>
+        <div class="ticker"><span id="rd-now">Sviramo najbolje hitove 🎵</span></div>
         <audio id="rd-audio" preload="none">
           <source src="https://shoutcast.pondi.hr:9000/;" type="audio/aac">
         </audio>
@@ -258,26 +245,30 @@ body{
             <input id="nx-vol" type="range" min="0" max="1" step="0.01" value="0.9">
           </div>
         </div>
-        <div class="ticker"><span id="nx-now">Spajam se na Naxi Radio…</span></div>
+        <div class="ticker"><span id="nx-now">Sviramo najbolje hitove 🎵</span></div>
         <audio id="nx-audio" preload="none">
           <source src="https://naxi128ssl.streaming.rs:9152/;" type="audio/mpeg">
           <source src="https://naxi64ssl.streaming.rs:9162/;" type="audio/mpeg">
         </audio>
       </article>
 
-      <!-- Treći: TOP Radio – ugrađeni službeni player -->
+      <!-- Treći: TOP Radio – identičan UI kao ostali, s direktnim streamom -->
       <article class="radio-card" id="tp-card">
         <div class="radio-head">
           <div class="radio-title">📻 TOP Radio — Live</div>
         </div>
-        <div class="embed-wrap">
-          <iframe
-            src="https://stream.topradio.hr/player/player.html?stream=0"
-            allow="autoplay"
-            title="TOP Radio player">
-          </iframe>
+        <div class="radio-controls">
+          <button id="tp-play" class="btn alt">▶ Play</button>
+          <div class="vol">
+            <span id="tp-vol-label">90%</span>
+            <input id="tp-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+          </div>
         </div>
-        <div class="ticker"><span>TOP Radio – ugrađeni player</span></div>
+        <div class="ticker"><span id="tp-now">TOP Radio – spremno</span></div>
+        <audio id="tp-audio" preload="none" crossorigin="anonymous">
+          <!-- 🔁 Ako ovo ne radi kod tebe, pošalji mi točan MP3/AAC URL ili ga ovdje zamijeni -->
+          <source src="https://stream.topradio.hr/listen_top_radio_256_mp3" type="audio/mpeg">
+        </audio>
       </article>
 
     </section>
@@ -348,7 +339,7 @@ body{
   let playlistsMeta = [];
   let playlistUriToIndex = new Map();
 
-  /* UI helperi – RD, Naxi, TOP(iframe), Spotify */
+  /* UI helperi – RD, Naxi, TOP, Spotify */
   const cards = {
     rd: document.getElementById('rd-card'),
     nx: document.getElementById('nx-card'),
@@ -358,11 +349,13 @@ body{
   const buttons = {
     rd: document.getElementById('rd-play'),
     nx: document.getElementById('nx-play'),
+    tp: document.getElementById('tp-play'),
     sp: document.getElementById('playPause')
   };
   const audios  = {
     rd: document.getElementById('rd-audio'),
-    nx: document.getElementById('nx-audio')
+    nx: document.getElementById('nx-audio'),
+    tp: document.getElementById('tp-audio')
   };
 
   function setButtonLabel(btn, playing){ if(!btn) return; btn.textContent = playing ? '⏸ Pause' : '▶ Play'; }
@@ -371,6 +364,7 @@ body{
     Object.values(audios).forEach(a => { try{ a.pause(); }catch(e){} });
     setButtonLabel(buttons.rd, false);
     setButtonLabel(buttons.nx, false);
+    setButtonLabel(buttons.tp, false);
   }
   function anyRadioPlaying(){ return Object.values(audios).some(a => !a.paused && !a.ended); }
 
@@ -409,6 +403,25 @@ body{
       if (spVol) { try { player.setVolume(spVol.valueAsNumber); } catch(e) {} }
       loadPlaylists(); // bez autoplay
       syncAllVolumeLabels();
+
+      // ako netko klikne Play prerano, pokušaj auto-krenuti s prvom učitanom listom
+      document.getElementById('playPause').addEventListener('click', async () => {
+        pauseAllRadios();
+        const st = await player.getCurrentState();
+        const nothingLoaded = !st || !st.track_window || !st.track_window.current_track;
+
+        if (nothingLoaded) {
+          if (customOrder && customOrder.length){
+            await playByCustomIndex(customIndex >= 0 ? customIndex : 0);
+          } else if (currentPlaylistUri || (playlistsMeta[0]?.uri)) {
+            await playPlaylist(currentPlaylistUri || playlistsMeta[0].uri, true);
+          } else {
+            // još se sve učitava — strpljenje :)
+          }
+        } else {
+          player.togglePlay();
+        }
+      });
     });
 
     player.addListener('authentication_error', ({message}) => console.warn('auth_error', message));
@@ -424,7 +437,7 @@ body{
       if (!paused){ pauseAllRadios(); setActiveCard('sp'); }
       else if (!anyRadioPlaying()) setActiveCard(null);
 
-      // automatski nastavi na sljedeću playlistu nakon kraja
+      // kraj playliste? pređi na sljedeću
       const atQueueEnd =
         !prevPaused && paused &&
         state.track_window.next_tracks.length === 0 &&
@@ -434,20 +447,17 @@ body{
         state.position < 1000;
 
       prevPaused = paused;
-
       if (atQueueEnd) { playNextPlaylist(); return; }
 
+      // update UI + “sada svira”
       const current = state.track_window.current_track;
       if (current){
         document.getElementById("trackName").textContent = current.name;
         document.getElementById("artistName").textContent = current.artists.map(a => a.name).join(", ");
         document.getElementById("albumImage").src = current.album.images[0]?.url || '';
         currentTrackUri = current.uri;
-
-        // ticker “trenutno svira”
         const spNow = document.getElementById('sp-now');
         if (spNow) spNow.textContent = `Sada svira: ${current.name} — ${current.artists.map(a => a.name).join(", ")}`;
-
         if (customOrder) {
           const idx = customOrder.findIndex(t => t.uri === current.uri);
           if (idx !== -1) customIndex = idx;
@@ -620,88 +630,13 @@ body{
     el.scrollIntoView({ block: "center", behavior: "smooth" });
   }
 
-  function togglePlay() { if (!player) return; player.togglePlay(); }
-
-  async function refreshAccessToken() {
-    const refreshToken = localStorage.getItem("refresh_token");
-    if (!refreshToken) { window.location.href = "/spotify_auth"; return null; }
-
-    const res = await fetch("/refresh_token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: refreshToken })
-    });
-    const data = await res.json();
-
-    if (res.ok && data.access_token) {
-      localStorage.setItem("access_token", data.access_token);
-      localStorage.setItem("token_timestamp", Date.now());
-      return data.access_token;
-    } else {
-      console.error("Refresh failed", data);
-      return null;
-    }
-  }
-
-  async function getValidToken() {
-    const accessToken = localStorage.getItem("access_token");
-    const refreshToken = localStorage.getItem("refresh_token");
-    if (!refreshToken) { window.location.href = "/spotify_auth"; return null; }
-
-    const ts = parseInt(localStorage.getItem("token_timestamp") || "0", 10);
-    const maxAge = 55 * 60 * 1000;
-
-    if (!accessToken || (Date.now() - ts) >= maxAge) {
-      return await refreshAccessToken();
-    }
-    return accessToken;
-  }
-
-  async function loadPlaylists() {
-    const token = await getValidToken();
-    if (!token) return;
-
-    const res = await fetch("https://api.spotify.com/v1/me/playlists", {
-      headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    const data = await res.json();
-    const list = document.getElementById("playlistList");
-    list.innerHTML = "";
-
-    const sortedPlaylists = (data.items || []).sort((a, b) =>
-      a.name.localeCompare(b.name, 'hr', { sensitivity: 'base' })
-    );
-
-    playlistsMeta = [];
-    playlistUriToIndex.clear();
-
-    sortedPlaylists.forEach((pl, index) => {
-      const li = document.createElement("li");
-      li.textContent = pl.name;
-      li.style.cursor = "pointer";
-      li.onclick = () => playPlaylist(pl.uri, true);
-      list.appendChild(li);
-
-      const meta = { uri: pl.uri, id: pl.id, name: pl.name, li };
-      playlistsMeta.push(meta);
-      playlistUriToIndex.set(pl.uri, index);
-    });
-
-    // Učitaj i izmiješaj prvu – bez automatskog sviranja
-    if (playlistsMeta.length) {
-      currentPlaylistUri = playlistsMeta[0].uri;
-      setActivePlaylist(currentPlaylistUri);
-      await loadPlaylistTracks(playlistsMeta[0].id);
-    }
-  }
-
   /* ===== Radio logika + volumeni ===== */
   function percent(val){ return Math.round((val||0)*100) + '%'; }
   function syncLabel(rangeEl, labelEl){ if (rangeEl && labelEl){ labelEl.textContent = percent(rangeEl.valueAsNumber); } }
   function syncAllVolumeLabels(){
     syncLabel(document.getElementById('rd-vol'), document.getElementById('rd-vol-label'));
     syncLabel(document.getElementById('nx-vol'), document.getElementById('nx-vol-label'));
+    syncLabel(document.getElementById('tp-vol'), document.getElementById('tp-vol-label'));
     syncLabel(document.getElementById('sp-vol'), document.getElementById('sp-vol-label'));
   }
 
@@ -762,14 +697,15 @@ body{
 
     a.addEventListener('playing', () => {
       retries = 0;
-      setNow('Sviramo najbolje hitove 🎵');
+      if (label === 'tp') { /* ticker će se ažurirati ispod */ }
+      else setNow('Sviramo najbolje hitove 🎵');
+
       setButtonLabel(b, true);
       setActiveCard(cardKey);
       if (player && player.pause) player.pause();
       Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
 
-      // poništi drugi radio gumb
-      ['rd','nx'].forEach(k => { const btn = buttons[k]; if (btn && btn !== b) setButtonLabel(btn, false); });
+      ['rd','nx','tp'].forEach(k => { if (buttons[k] !== b) setButtonLabel(buttons[k], false); });
       setButtonLabel(buttons.sp, false);
     });
 
@@ -797,29 +733,30 @@ body{
 
   const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', nowId:'rd-now', label:'rd' });
   const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', nowId:'nx-now', label:'nx' });
+  const TP = makeRadio({ audioId:'tp-audio', playId:'tp-play', volId:'tp-vol', nowId:'tp-now', label:'tp' });
 
-  // TOP Radio (iframe): klik na karticu -> pauziraj sve ostalo (best-effort)
-  const tpCard = document.getElementById('tp-card');
-  if (tpCard){
-    tpCard.addEventListener('click', async () => {
-      pauseAllRadios();
-      if (player && player.pause) await player.pause();
-      setActiveCard('tp');
-    });
+  // TOP Radio “now playing” (ako njihov endpoint dozvoli CORS)
+  async function pollTopNow(){
+    try{
+      // imaju dva txt-a – probaj redom
+      const urls = [
+        'https://stream.topradio.hr/player/info/listen_top_radio_256_mp3_.txt',
+        'https://stream.topradio.hr/player/info/listen_top_radio_256_mp3_h.txt'
+      ];
+      for (const u of urls){
+        try{
+          const r = await fetch(u, { cache:'no-store' });
+          if (r.ok){
+            const text = (await r.text()).trim();
+            if (text) { const el = document.getElementById('tp-now'); if (el) el.textContent = text; return; }
+          }
+        }catch(_){}
+      }
+    }catch(_){}
   }
-
-  // Spotify gumb
-  document.getElementById('playPause').addEventListener('click', async () => {
-    pauseAllRadios();
-    const st = await player.getCurrentState();
-    const nothingLoaded = !st || !st.track_window || !st.track_window.current_track;
-
-    if (nothingLoaded && customOrder && customOrder.length) {
-      await playByCustomIndex(customIndex >= 0 ? customIndex : 0);
-    } else {
-      togglePlay();
-    }
-  });
+  // povremeno osvježi (ako propadne zbog CORS-a, samo neće promijeniti tekst)
+  setInterval(pollTopNow, 15000);
+  pollTopNow();
 
   // Spotify glasnoća + label
   const spVol = document.getElementById('sp-vol');
@@ -831,14 +768,81 @@ body{
     });
   }
 
-  // init volumeni
-  function percent(val){ return Math.round((val||0)*100) + '%'; }
-  function syncLabel(rangeEl, labelEl){ if (rangeEl && labelEl){ labelEl.textContent = percent(rangeEl.valueAsNumber); } }
-  function syncAllVolumeLabels(){
-    syncLabel(document.getElementById('rd-vol'), document.getElementById('rd-vol-label'));
-    syncLabel(document.getElementById('nx-vol'), document.getElementById('nx-vol-label'));
-    syncLabel(document.getElementById('sp-vol'), document.getElementById('sp-vol-label'));
+  /* ====== Spotify auth helperi ====== */
+  async function refreshAccessToken() {
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (!refreshToken) { window.location.href = "/spotify_auth"; return null; }
+
+    const res = await fetch("/refresh_token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.access_token) {
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("token_timestamp", Date.now());
+      return data.access_token;
+    } else {
+      console.error("Refresh failed", data);
+      return null;
+    }
   }
+
+  async function getValidToken() {
+    const accessToken = localStorage.getItem("access_token");
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (!refreshToken) { window.location.href = "/spotify_auth"; return null; }
+
+    const ts = parseInt(localStorage.getItem("token_timestamp") || "0", 10);
+    const maxAge = 55 * 60 * 1000;
+    if (!accessToken || (Date.now() - ts) >= maxAge) {
+      return await refreshAccessToken();
+    }
+    return accessToken;
+  }
+
+  async function loadPlaylists() {
+    const token = await getValidToken();
+    if (!token) return;
+
+    const res = await fetch("https://api.spotify.com/v1/me/playlists", {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+
+    const data = await res.json();
+    const list = document.getElementById("playlistList");
+    list.innerHTML = "";
+
+    const sortedPlaylists = (data.items || []).sort((a, b) =>
+      a.name.localeCompare(b.name, 'hr', { sensitivity: 'base' })
+    );
+
+    playlistsMeta = [];
+    playlistUriToIndex.clear();
+
+    sortedPlaylists.forEach((pl, index) => {
+      const li = document.createElement("li");
+      li.textContent = pl.name;
+      li.style.cursor = "pointer";
+      li.onclick = () => playPlaylist(pl.uri, true);
+      list.appendChild(li);
+
+      const meta = { uri: pl.uri, id: pl.id, name: pl.name, li };
+      playlistsMeta.push(meta);
+      playlistUriToIndex.set(pl.uri, index);
+    });
+
+    // Učitaj i izmiješaj prvu – bez automatskog sviranja
+    if (playlistsMeta.length) {
+      currentPlaylistUri = playlistsMeta[0].uri;
+      setActivePlaylist(currentPlaylistUri);
+      await loadPlaylistTracks(playlistsMeta[0].id);
+    }
+  }
+
+  // init volumeni
   syncAllVolumeLabels();
   </script>
 </body>
