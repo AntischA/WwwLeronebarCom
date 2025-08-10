@@ -1,173 +1,342 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hr">
 <head>
   <meta charset="UTF-8" />
-  <title>Spotify + Radio Dalmacija + Naxi Player</title>
+  <title>Spotify + 3 Radio Playera</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- (Opcionalno) tvoj postojeći CSS; naš novi CSS ispod sve preuzima -->
   <link rel="stylesheet" href="/static/css/spotify.css" />
+
+  <!-- ===== NOVI GLOBALNI CSS ===== -->
   <style>
+    :root{
+      --bg:#0b1020;
+      --card:#11182a;
+      --soft:#0f1526;
+      --text:#e8eef7;
+      --sub:#a7b2c6;
+      --accent:#10b981;
+      --accent-2:#1db954; /* spotify zelena */
+      --danger:#ef4444;
+      --radius:16px;
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+      --gap:18px;
+      --gap-lg:22px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 600px at 30% -10%, #17213f 0%, #0b1020 55%, #0b1020 100%);
+      color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial;
+    }
+
+    .page{
+      max-width:1280px;
+      margin:0 auto;
+      padding:22px var(--gap);
+      display:grid;
+      grid-template-rows:auto auto auto;
+      gap:var(--gap-lg);
+    }
+
+    /* Spotify mini traka (samo naslov + Play) */
+    .spotify-bar{
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:14px var(--gap);
+      display:flex;
+      align-items:center;
+      gap:14px;
+      justify-content:space-between;
+    }
+    .spotify-bar h2{ margin:0; font-size:1.05rem; letter-spacing:.2px; }
+    .btn{
+      appearance:none; border:0; cursor:pointer;
+      background:var(--accent-2); color:#062d16;
+      padding:10px 16px; border-radius:12px; font-weight:800;
+      transition:transform .06s ease, filter .12s ease;
+    }
+    .btn:active{ transform:translateY(1px) }
+    .btn.alt{ background:var(--accent); color:#04281f }
+
+    /* Red 1: 3 radio kartice */
+    .radios-grid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:var(--gap-lg);
+    }
     .radio-card{
-      background:#111827;color:#e2e8f0;border-radius:16px;padding:14px;margin-bottom:18px;
-      box-shadow:0 8px 24px rgba(0,0,0,.25)
+      background:linear-gradient(180deg, var(--card), var(--soft));
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:16px;
+      display:flex; flex-direction:column; gap:10px;
+      min-height:160px;
     }
-    .radio-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-    .radio-title{font-weight:700;font-size:1.05rem;letter-spacing:.2px}
-    .radio-status{font-size:.9rem;opacity:.85;margin-left:auto}
-    .radio-controls button{
-      border:0;border-radius:10px;padding:8px 12px;cursor:pointer;background:#10b981;color:#052e26;font-weight:700
+    .radio-head{
+      display:flex; align-items:center; gap:10px;
     }
-    .radio-controls button.is-muted{background:#334155;color:#e2e8f0}
-    .radio-controls input[type="range"]{width:160px}
-    .radio-marquee{overflow:hidden;white-space:nowrap;
-      -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 10%,#000 90%,transparent 100%);
-      mask-image:linear-gradient(90deg,transparent 0,#000 10%,#000 90%,transparent 100%);margin-top:6px}
-    .radio-marquee span{display:inline-block;padding-left:100%;animation:marq 12s linear infinite}
-    @keyframes marq{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+    .radio-title{
+      font-weight:800; letter-spacing:.2px; font-size:1.02rem;
+    }
+    .radio-status{
+      margin-left:auto; font-size:.9rem; color:var(--sub);
+    }
+    .radio-controls{
+      display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    }
+    .vol{
+      display:flex; align-items:center; gap:8px; color:var(--sub); font-size:.9rem;
+    }
+    .vol input[type="range"]{ width:180px; }
+
+    .ticker{
+      overflow:hidden; white-space:nowrap;
+      -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%);
+      mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%);
+      font-size:.95rem; color:#dfe8f7;
+    }
+    .ticker span{ display:inline-block; padding-left:100%; animation:ticker 12s linear infinite; }
+    @keyframes ticker{ from{ transform:translateX(0);} to{ transform:translateX(-100%);} }
+
+    /* Red 2: Playlists (lijevo) i Tracks (desno) */
+    .content-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:var(--gap-lg);
+      align-items:stretch;
+    }
+    .panel{
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:16px;
+      display:flex; flex-direction:column; min-height:340px;
+    }
+    .panel h3{ margin:0 0 10px 0; font-size:1.02rem; letter-spacing:.2px; }
+    .list{
+      list-style:none; margin:0; padding:0; overflow:auto; flex:1;
+    }
+    .list li{
+      background:#17213b; margin:8px 0; padding:10px 12px; border-radius:10px;
+      cursor:pointer; transition:filter .12s ease, transform .06s ease;
+    }
+    .list li:hover{ filter:brightness(1.07); transform:translateY(-1px); }
+
+    /* Tracks lista stil (kompaktno) */
+    .track-item{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; }
+    .track-item:hover{ background:#1a2747; }
+    .track-thumb{ width:44px;height:44px;border-radius:6px;object-fit:cover;background:#24345e;flex:0 0 44px; }
+    .track-text{ min-width:0; }
+    .track-title{ font-weight:700; font-size:.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .track-artist{ color:var(--sub); font-size:.82rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .track-item.playing{ outline:1px solid #3a7bd5; background:#15294f; }
+
+    /* Skrivene stvari koje spotify.js i dalje koristi */
+    .sr-only{ display:none !important; }
+
+    /* Scrollbar suptilno */
+    .list::-webkit-scrollbar{ width:8px }
+    .list::-webkit-scrollbar-thumb{ background:#1f2c4c; border-radius:8px }
+
+    /* Responsivno: tablet = 2 radio kolone, mob = 1 */
+    @media (max-width: 1100px){
+      .radios-grid{ grid-template-columns: repeat(2,1fr); }
+      .content-grid{ grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px){
+      .radios-grid{ grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
+  <div class="page">
 
-  <div class="container">
-    <div class="playlist-section">
-      <h2>Moje Playliste</h2>
-      <ul id="playlistList"></ul>
+    <!-- Spotify mini panel: samo naslov + Play -->
+    <section class="spotify-bar">
+      <h2>🎵 Spotify – Player</h2>
+      <button id="playPause" class="btn">PLAY</button>
+      <!-- Skrivene mete koje spotify.js očekuje -->
+      <div class="sr-only">
+        <img id="albumImage" alt="">
+        <div id="trackName"></div>
+        <div id="artistName"></div>
+        <input type="range" id="seekSlider" value="0" min="0" max="100" step="1">
+      </div>
+    </section>
 
-      <!-- RADIO DALMACIJA -->
-      <section class="radio-card" id="radioDalmacija">
-        <div class="radio-row" style="justify-content:space-between;">
+    <!-- RED 1: 3 RADIO PLAYERA (isti izgled) -->
+    <section class="radios-grid">
+
+      <!-- Radio Dalmacija -->
+      <article class="radio-card" id="rd-card">
+        <div class="radio-head">
           <div class="radio-title">🎧 Radio Dalmacija — Live</div>
-          <div class="radio-status" id="rdStatus">Spremno</div>
+          <div id="rd-status" class="radio-status">Spremno</div>
         </div>
-        <div class="radio-controls radio-row" style="margin-top:10px;">
-          <button id="rdPlay">▶︎ Play</button>
-          <button id="rdPause" class="is-muted">⏸︎ Pauza</button>
-          <label>Glasnoća: <input id="rdVolume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
-          <button id="rdMute" class="is-muted">🔇 Mute</button>
+        <div class="radio-controls">
+          <button id="rd-play" class="btn alt">▶ Play</button>
+          <div class="vol">
+            <span>Glasnoća</span>
+            <input id="rd-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+          </div>
         </div>
-        <div class="radio-marquee"><span id="rdNow">Spajam se na Radio Dalmaciju…</span></div>
-        <!-- HTTPS AAC stream -->
-        <audio id="rdAudio" preload="none">
+        <div class="ticker"><span id="rd-now">Spajam se na Radio Dalmaciju…</span></div>
+        <audio id="rd-audio" preload="none">
           <source src="https://shoutcast.pondi.hr:9000/;" type="audio/aac">
-          Tvoj browser ne podržava HTML5 audio.
         </audio>
-      </section>
+      </article>
 
-      <!-- NAXI RADIO -->
-      <section class="radio-card" id="naxiRadio">
-        <div class="radio-row" style="justify-content:space-between;">
+      <!-- Naxi Radio -->
+      <article class="radio-card" id="nx-card">
+        <div class="radio-head">
           <div class="radio-title">📻 Naxi Radio — Live</div>
-          <div class="radio-status" id="nxStatus">Spremno</div>
+          <div id="nx-status" class="radio-status">Spremno</div>
         </div>
-        <div class="radio-controls radio-row" style="margin-top:10px;">
-          <button id="nxPlay">▶︎ Play</button>
-          <button id="nxPause" class="is-muted">⏸︎ Pauza</button>
-          <label>Glasnoća: <input id="nxVolume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
-          <button id="nxMute" class="is-muted">🔇 Mute</button>
+        <div class="radio-controls">
+          <button id="nx-play" class="btn alt">▶ Play</button>
+          <div class="vol">
+            <span>Glasnoća</span>
+            <input id="nx-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+          </div>
         </div>
-        <div class="radio-marquee"><span id="nxNow">Spajam se na Naxi Radio…</span></div>
-        <!-- HTTPS MP3 128kbps + fallback 64kbps | BEZ crossorigin -->
-        <audio id="nxAudio" preload="none">
+        <div class="ticker"><span id="nx-now">Spajam se na Naxi Radio…</span></div>
+        <audio id="nx-audio" preload="none">
           <source src="https://naxi128ssl.streaming.rs:9152/;" type="audio/mpeg">
           <source src="https://naxi64ssl.streaming.rs:9162/;" type="audio/mpeg">
-          Tvoj browser ne podržava HTML5 audio.
         </audio>
-      </section>
-    </div>
+      </article>
 
-    <!-- SPOTIFY PLAYER -->
-    <div class="player">
-      <img id="albumImage" src="" alt="Album Cover">
-      <div class="track-info">
-        <div id="trackName">Track Name</div>
-        <div id="artistName">Artist</div>
-      </div>
-      <div class="controls">
-        <button onclick="previousTrack()">⏮ Prethodna pjesma</button>
-        <button onclick="togglePlay()" id="playPause">PAUSE</button>
-        <button onclick="nextTrack()">Sljedeća pjesma ⏭</button>
-      </div>
-      <div class="seek-bar">
-        <input type="range" id="seekSlider" value="0" min="0" max="100" step="1" oninput="seekToPosition(this.value)">
-      </div>
-      <div class="volume-controls">
-        <div class="volume-buttons">
-          <button onclick="setVolume(0.0)">0%</button>
-          <button onclick="setVolume(0.2)">20%</button>
-          <button onclick="setVolume(0.5)">50%</button>
-          <button onclick="setVolume(0.6)">60%</button>
-          <button onclick="setVolume(0.7)">70%</button>
-          <button onclick="setVolume(0.8)">80%</button>
-          <button onclick="setVolume(0.9)">90%</button>
-          <button onclick="setVolume(1.0)">100%</button>
+      <!-- Custom Radio (3. slot) -->
+      <article class="radio-card" id="cx-card">
+        <div class="radio-head">
+          <div class="radio-title">📡 Custom Radio — Tvoj URL</div>
+          <div id="cx-status" class="radio-status">Nema URL-a</div>
         </div>
-      </div>
-    </div>
+        <div class="radio-controls" style="gap:8px; flex-wrap:wrap;">
+          <input id="cx-url" type="text" placeholder="https://example.com/stream.mp3"
+                 style="flex:1 1 260px; background:#0e162b; color:var(--text); border:1px solid #1f2c4c; border-radius:10px; padding:10px 12px;">
+          <button id="cx-set" class="btn">Postavi</button>
+          <button id="cx-play" class="btn alt">▶ Play</button>
+          <div class="vol">
+            <span>Glasnoća</span>
+            <input id="cx-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+          </div>
+        </div>
+        <div class="ticker"><span id="cx-now">Unesi URL pa klikni Postavi.</span></div>
+        <audio id="cx-audio" preload="none"></audio>
+      </article>
 
-    <div class="tracks-section">
-      <div class="tracks-header">
-        <h2>Pjesme u playlisti</h2>
-        <button id="uiShuffle" onclick="shuffleTrackList()">Izmiješaj prikaz</button>
-      </div>
-      <ul id="tracksList"></ul>
-    </div>
+    </section>
+
+    <!-- RED 2: Playliste (lijevo) i Pjesme (desno) -->
+    <section class="content-grid">
+
+      <!-- Moje Playliste -->
+      <article class="panel">
+        <h3>📚 Moje playliste</h3>
+        <ul id="playlistList" class="list"></ul>
+      </article>
+
+      <!-- Pjesme u playlisti -->
+      <article class="panel">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+          <h3>🎼 Pjesme u playlisti</h3>
+          <button id="uiShuffle" onclick="shuffleTrackList()" class="btn">Izmiješaj prikaz</button>
+        </div>
+        <ul id="tracksList" class="list"></ul>
+      </article>
+
+    </section>
   </div>
 
-  <!-- Spotify -->
+  <!-- Spotify SDK + tvoj kod -->
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="/static/js/spotify.js"></script>
 
-  <!-- Radio kontrola (za oba playera) -->
+  <!-- ===== Radio logika (Play + Volume, bez Pause/Mute) ===== -->
   <script>
-    function setupRadio({audioId, playId, pauseId, muteId, volumeId, statusId, nowId, label}) {
-      const audio  = document.getElementById(audioId);
-      const playB  = document.getElementById(playId);
-      const pauseB = document.getElementById(pauseId);
-      const muteB  = document.getElementById(muteId);
-      const vol    = document.getElementById(volumeId);
-      const status = document.getElementById(statusId);
-      const nowEl  = document.getElementById(nowId);
+    // Kolekcija svih audio elemenata da samo jedan svira
+    const allRadios = [];
 
-      let retryCount = 0, maxRetries = 5;
-      const setStatus = t => status.textContent = t;
-      const setNow    = t => nowEl.textContent = t;
+    function makeRadio({ audioId, playId, volId, statusId, nowId, label }) {
+      const a  = document.getElementById(audioId);
+      const b  = document.getElementById(playId);
+      const vr = document.getElementById(volId);
+      const st = document.getElementById(statusId);
+      const nw = document.getElementById(nowId);
 
-      async function start(){
-        try{ setStatus('Pokušavam reproducirati…'); await audio.play(); setStatus('Reproduciram ✅'); document.dispatchEvent(new CustomEvent(label+':playing')); }
-        catch(e){ setStatus('Klikni “Play” (autoplay blokiran).'); console.warn(`[${label}] play error`, e); }
+      allRadios.push(a);
+
+      let retries = 0, maxRetries = 5;
+      const setStatus = t => st.textContent = t;
+      const setNow    = t => nw.textContent = t;
+
+      async function play() {
+        try {
+          // zaustavi sve ostale
+          allRadios.forEach(x => { if (x !== a) x.pause(); });
+          setStatus('Pokušavam reproducirati…');
+          await a.play();
+          setStatus('Reproduciram ✅');
+        } catch (e) {
+          setStatus('Klikni “Play” (autoplay blokiran).');
+          console.warn(`[${label}] play error`, e);
+        }
       }
-      function stop(){ audio.pause(); setStatus('Pauzirano ⏸'); document.dispatchEvent(new CustomEvent(label+':paused')); }
 
-      function scheduleReconnect(){
-        if(retryCount < maxRetries){
-          retryCount++; const delay = Math.min(1500*retryCount, 7000);
-          setTimeout(()=>{ audio.load(); audio.play().catch(()=>{}); }, delay);
-        } else setStatus('Ne može se spojiti. Provjeri dostupnost streama.');
+      function reconnect() {
+        if (retries < maxRetries) {
+          retries++;
+          const delay = Math.min(1500 * retries, 7000);
+          setTimeout(() => { a.load(); a.play().catch(()=>{}); }, delay);
+        } else {
+          setStatus('Ne može se spojiti. Provjeri stream URL.');
+        }
       }
 
-      audio.addEventListener('error',   ()=>{ setStatus('Greška na streamu. Pokušavam ponovo…'); scheduleReconnect(); });
-      audio.addEventListener('stalled', ()=>{ setStatus('Veza je zastala… pokušavam ponovo.');   scheduleReconnect(); });
-      audio.addEventListener('playing', ()=>{ retryCount=0; setStatus('Reproduciram ✅'); setNow('Sviramo najbolje hitove 🎵'); });
+      a.addEventListener('error',   () => { setStatus('Greška na streamu. Pokušavam ponovo…'); reconnect(); });
+      a.addEventListener('stalled', () => { setStatus('Veza je zastala… pokušavam ponovo.');   reconnect(); });
+      a.addEventListener('playing', () => { retries = 0; setStatus('Reproduciram ✅'); setNow('Sviramo najbolje hitove 🎵'); });
 
-      playB.addEventListener('click', start);
-      pauseB.addEventListener('click', stop);
-      muteB.addEventListener('click', ()=>{ audio.muted=!audio.muted; muteB.textContent = audio.muted ? '🔊 Unmute' : '🔇 Mute'; });
-      vol.addEventListener('input', ()=>{ audio.volume = vol.valueAsNumber; });
+      b.addEventListener('click', play);
+      vr.addEventListener('input', () => { a.volume = vr.valueAsNumber; });
 
-      return audio;
+      return { play, setStatus, setNow, audio:a };
     }
 
-    const rdAudio = setupRadio({
-      audioId:'rdAudio', playId:'rdPlay', pauseId:'rdPause', muteId:'rdMute',
-      volumeId:'rdVolume', statusId:'rdStatus', nowId:'rdNow', label:'rd'
-    });
-    const nxAudio = setupRadio({
-      audioId:'nxAudio', playId:'nxPlay', pauseId:'nxPause', muteId:'nxMute',
-      volumeId:'nxVolume', statusId:'nxStatus', nowId:'nxNow', label:'nx'
-    });
+    // Init 2 radija
+    const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', statusId:'rd-status', nowId:'rd-now', label:'RD' });
+    const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', statusId:'nx-status', nowId:'nx-now', label:'NAXI' });
 
-    // Ne dozvoli da oba sviraju istovremeno
-    rdAudio.addEventListener('play', ()=> nxAudio.pause());
-    nxAudio.addEventListener('play', ()=> rdAudio.pause());
+    // Custom radio (3. slot)
+    (function(){
+      const a  = document.getElementById('cx-audio');
+      const setBtn = document.getElementById('cx-set');
+      const urlIn  = document.getElementById('cx-url');
+      const st = document.getElementById('cx-status');
+      const nw = document.getElementById('cx-now');
+
+      const CX = makeRadio({ audioId:'cx-audio', playId:'cx-play', volId:'cx-vol', statusId:'cx-status', nowId:'cx-now', label:'CUSTOM' });
+
+      setBtn.addEventListener('click', () => {
+        const url = urlIn.value.trim();
+        if (!url) { st.textContent = 'Nema URL-a'; return; }
+        a.src = url; // postavi direktno src (može biti .mp3, .aac ili .m3u8)
+        st.textContent = 'URL postavljen • Spremno';
+        nw.textContent = 'Spreman za reprodukciju.';
+      });
+    })();
+
+    // (Opcionalno) Ako želiš: pauziraj Spotify kad krene bilo koji radio
+    // document.getElementById('rd-audio').addEventListener('play', ()=> player && player.pause());
+    // document.getElementById('nx-audio').addEventListener('play', ()=> player && player.pause());
+    // document.getElementById('cx-audio').addEventListener('play', ()=> player && player.pause());
   </script>
 </body>
 </html>
