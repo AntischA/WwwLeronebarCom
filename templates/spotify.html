@@ -18,6 +18,8 @@
       --shadow:0 10px 30px rgba(0,0,0,.35);
       --gap:18px;
       --gap-lg:22px;
+      --active-1:#16324a;
+      --active-2:#0f1f39;
     }
 
     *{box-sizing:border-box}
@@ -29,47 +31,17 @@
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial;
     }
 
-    /* Stranica zauzima visinu prozora; drugi red puni ostatak */
-.page{
-  max-width:1280px;
-  margin:0 auto;
-  padding:22px var(--gap);
-  display:grid;
-  grid-template-rows:auto 1fr; /* red 2 dobiva fiksnu preostalu visinu */
-  gap:var(--gap-lg);
-
-  /* ključno: visina stranice = visina prozora */
-  height: 100dvh;     /* moderni mobilni (dinamični viewport) */
-  min-height: 100svh; /* fallback */
-}
-
-/* 2) Osiguraj da grid i djeca smiju “skratiti” visinu, inače se šire */
-.content-grid { min-height: 0; }
-.content-grid > * { min-height: 0; }
-
-/* 3) Panel NE smije širiti grid – sakrij preljev, a skrol daj listi */
-.panel{
-  background:var(--card);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  padding:16px;
-  display:flex;
-  flex-direction:column;
-
-  height:100%;
-  min-height:0;      /* ⬅️ dopušta da se skupi */
-  overflow:hidden;   /* ⬅️ onemogući da sadržaj gura panel */
-}
-
-/* 4) Lista zauzima sav preostali prostor i skrola se */
-.list{
-  list-style:none;
-  margin:0;
-  padding:0;
-  flex: 1 1 auto;
-  min-height: 0;     /* ⬅️ kritično da flex dijete smije biti manje od sadržaja */
-  overflow-y: auto;  /* ⬅️ skrol samo unutar liste */
-}
+    /* Stranica visine prozora; drugi red puni ostatak */
+    .page{
+      max-width:1280px;
+      margin:0 auto;
+      padding:22px var(--gap);
+      display:grid;
+      grid-template-rows:auto 1fr; /* red 2 ima preostalu visinu */
+      gap:var(--gap-lg);
+      height: 100dvh;
+      min-height: 100svh;
+    }
 
     .btn{
       appearance:none; border:0; cursor:pointer;
@@ -93,10 +65,20 @@
       padding:16px;
       display:flex; flex-direction:column; gap:10px;
       min-height:160px;
+      transition: background .2s ease, outline-color .2s ease, box-shadow .2s ease;
+      outline:2px solid transparent;
     }
+    /* Aktivna kartica (svira) */
+    .radio-card.is-active{
+      background:linear-gradient(180deg, var(--active-1), var(--active-2));
+      outline-color: var(--accent);
+      box-shadow:0 12px 34px rgba(16,185,129,.25);
+    }
+
     .radio-head{ display:flex; align-items:center; gap:10px; }
     .radio-title{ font-weight:800; letter-spacing:.2px; font-size:1.02rem; }
     .radio-status{ margin-left:auto; font-size:.9rem; color:var(--sub); }
+
     .radio-controls{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
     .vol{ display:flex; align-items:center; gap:8px; color:var(--sub); font-size:.9rem; }
     .vol input[type="range"]{ width:180px; }
@@ -116,7 +98,31 @@
       grid-template-columns: 1fr 1fr;
       gap:var(--gap-lg);
       align-items:stretch;
-      min-height:0;   /* ⬅️ dozvoli da djeca preuzmu 100% visine reda */
+      min-height:0; /* djeca mogu zauzeti 100% visine reda */
+    }
+
+    /* Paneli drugog reda */
+    .panel{
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:16px;
+      display:flex; flex-direction:column;
+      height:100%;
+      min-height:0;
+      overflow:hidden; /* spriječi da sadržaj širi panel */
+    }
+    .panel h3{
+      margin:0 0 10px 0; font-size:1.02rem; letter-spacing:.2px;
+      position:sticky; top:0; background:var(--card); z-index:1; padding-bottom:8px;
+    }
+
+    /* Liste skrolaju unutar panela */
+    .list{
+      list-style:none; margin:0; padding:0;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
     }
     .list li{
       background:#17213b; margin:8px 0; padding:10px 12px; border-radius:10px;
@@ -241,6 +247,27 @@
   let customIndex = -1;
   let currentTrackUri = null;
 
+  /* ====== POMOĆNE ZA UI STANJE GUMBA I AKTIVNIH KARTICA ====== */
+  const cards   = { rd: document.getElementById('rd-card'), nx: document.getElementById('nx-card'), sp: document.getElementById('sp-card') };
+  const buttons = { rd: document.getElementById('rd-play'), nx: document.getElementById('nx-play'), sp: document.getElementById('playPause') };
+  const audios  = { rd: document.getElementById('rd-audio'), nx: document.getElementById('nx-audio') };
+
+  function setButtonLabel(btn, playing){
+    btn.textContent = playing ? '⏸ Pause' : '▶ Play';
+  }
+  function setActiveCard(name){
+    Object.keys(cards).forEach(k => cards[k].classList.toggle('is-active', k === name));
+  }
+  function pauseAllRadios(){
+    Object.values(audios).forEach(a => { try{ a.pause(); }catch(e){} });
+    setButtonLabel(buttons.rd, false);
+    setButtonLabel(buttons.nx, false);
+  }
+  function anyRadioPlaying(){
+    return Object.values(audios).some(a => !a.paused && !a.ended);
+  }
+
+  /* ================== SPOTIFY ================== */
   window.onSpotifyWebPlaybackSDKReady = async () => {
     const token = await getValidToken();
     if (!token) return;
@@ -253,28 +280,39 @@
 
     player.addListener('ready', ({ device_id }) => {
       deviceId = device_id;
-      console.log('🎶 Player spreman, ID:', device_id);
       const spVol = document.getElementById('sp-vol');
       if (spVol) { try { player.setVolume(spVol.valueAsNumber); } catch(e) {} }
       loadPlaylists(token);
     });
 
+    // Prati play/pause i ažuriraj gumb + aktivnu karticu
     player.addListener('player_state_changed', state => {
       if (!state) return;
-      const current = state.track_window.current_track;
-      const progress = (state.position / state.duration) * 100;
 
-      document.getElementById("trackName").textContent = current.name;
-      document.getElementById("artistName").textContent = current.artists.map(a => a.name).join(", ");
-      document.getElementById("albumImage").src = current.album.images[0].url;
-      document.getElementById("seekSlider").value = progress;
+      const paused = state.paused;
+      setButtonLabel(buttons.sp, !paused);
 
-      currentTrackUri = current.uri;
-      if (customOrder) {
-        const idx = customOrder.findIndex(t => t.uri === current.uri);
-        if (idx !== -1) customIndex = idx;
+      if (!paused){
+        // Ako Spotify svira: ugasi radije i označi Spotify karticu
+        pauseAllRadios();
+        setActiveCard('sp');
+      }else{
+        // Ako je Spotify pauziran, a radio ne svira – makni highlight
+        if (!anyRadioPlaying()) setActiveCard(null);
       }
-      highlightAndCenterCurrentTrack(current.uri);
+
+      const current = state.track_window.current_track;
+      if (current){
+        document.getElementById("trackName").textContent = current.name;
+        document.getElementById("artistName").textContent = current.artists.map(a => a.name).join(", ");
+        document.getElementById("albumImage").src = current.album.images[0]?.url || '';
+        currentTrackUri = current.uri;
+        if (customOrder) {
+          const idx = customOrder.findIndex(t => t.uri === current.uri);
+          if (idx !== -1) customIndex = idx;
+        }
+        highlightAndCenterCurrentTrack(current.uri);
+      }
     });
 
     player.connect();
@@ -518,6 +556,7 @@
       const vr = document.getElementById(volId);
       const st = document.getElementById(statusId);
       const nw = document.getElementById(nowId);
+      const cardKey = (label||'').toLowerCase(); // 'rd' | 'nx'
 
       allRadios.push(a);
 
@@ -525,12 +564,19 @@
       const setStatus = t => st.textContent = t;
       const setNow    = t => nw.textContent = t;
 
-      async function play() {
+      async function playOnlyThis() {
         try {
-          allRadios.forEach(x => { if (x !== a) x.pause(); });
+          // ugasi sve ostale radije
+          Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
+          // ugasi Spotify da se ne miješa
+          if (window.player && player.pause) await player.pause();
+          setButtonLabel(buttons.sp, false);
+
           setStatus('Pokušavam reproducirati…');
           await a.play();
-          setStatus('Reproduciram ✅');
+          // UI: ovaj gumb -> Pause, kartica aktivna
+          setButtonLabel(b, true);
+          setActiveCard(cardKey);
         } catch (e) {
           setStatus('Klikni “Play” (autoplay blokiran).');
           console.warn(`[${label}] play error`, e);
@@ -547,22 +593,57 @@
         }
       }
 
-      a.addEventListener('error',   () => { setStatus('Greška na streamu. Pokušavam ponovo…'); reconnect(); });
-      a.addEventListener('stalled', () => { setStatus('Veza je zastala… pokušavam ponovo.');   reconnect(); });
-      a.addEventListener('playing', () => { retries = 0; setStatus('Reproduciram ✅'); setNow('Sviramo najbolje hitove 🎵'); });
+      // Klik: toggle (Play ↔ Pause)
+      b.addEventListener('click', () => {
+        if (a.paused) {
+          playOnlyThis();
+        } else {
+          a.pause();
+        }
+      });
 
-      b.addEventListener('click', play);
+      // Glasnoća
       vr && vr.addEventListener('input', () => { a.volume = vr.valueAsNumber; });
 
-      return { play, setStatus, setNow, audio:a };
+      // Događaji
+      a.addEventListener('error',   () => { setStatus('Greška na streamu. Pokušavam ponovo…'); reconnect(); });
+      a.addEventListener('stalled', () => { setStatus('Veza je zastala… pokušavam ponovo.');   reconnect(); });
+
+      a.addEventListener('playing', () => {
+        retries = 0;
+        setStatus('Reproduciram ✅');
+        setNow('Sviramo najbolje hitove 🎵');
+        setButtonLabel(b, true);
+        setActiveCard(cardKey);
+        // ugasi Spotify i drugi radio za svaki slučaj
+        if (window.player && player.pause) player.pause();
+        Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
+        if (b === buttons.rd) setButtonLabel(buttons.nx, false);
+        if (b === buttons.nx) setButtonLabel(buttons.rd, false);
+        setButtonLabel(buttons.sp, false);
+      });
+
+      a.addEventListener('pause', () => {
+        setButtonLabel(b, false);
+        // ako ništa drugo ne svira, makni highlight
+        const otherRadioPlaying = Object.values(audios).some(x => x !== a && !x.paused && !x.ended);
+        // Spotify playing?
+        const checkSpotify = (window.player && player.getCurrentState) ? player.getCurrentState() : null;
+        Promise.resolve(checkSpotify).then(st => {
+          const spIsPlaying = st ? !st.paused : false;
+          if (!otherRadioPlaying && !spIsPlaying) setActiveCard(null);
+        });
+      });
+
+      return { playOnlyThis, setStatus, setNow, audio:a, button:b };
     }
 
-    const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', statusId:'rd-status', nowId:'rd-now', label:'RD' });
-    const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', statusId:'nx-status', nowId:'nx-now', label:'NAXI' });
+    const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', statusId:'rd-status', nowId:'rd-now', label:'rd' });
+    const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', statusId:'nx-status', nowId:'nx-now', label:'nx' });
 
-    // Spotify Play: pauziraj radije i togglaj Spotify
+    // Spotify Play: pauziraj radije i togglaj Spotify (label i aktivna kartica rješava se u state_changed)
     document.getElementById('playPause').addEventListener('click', () => {
-      allRadios.forEach(a => a.pause());
+      pauseAllRadios();
       togglePlay();
     });
 
