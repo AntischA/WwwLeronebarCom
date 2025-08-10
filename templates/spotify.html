@@ -263,11 +263,16 @@ window.onSpotifyWebPlaybackSDKReady = async () => {
     volume: 0.5
   });
 
-  player.addListener('ready', ({ device_id }) => {
-    deviceId = device_id;
-    console.log('🎶 Player spreman, ID:', device_id);
-    loadPlaylists(token);
-  });
+player.addListener('ready', ({ device_id }) => {
+  deviceId = device_id;
+  console.log('🎶 Player spreman, ID:', device_id);
+  const spVol = document.getElementById('sp-vol');
+  if (spVol) {
+  try { player.setVolume(spVol.valueAsNumber); } catch(e) {}
+}
+  loadPlaylists(token);
+});
+
 
 player.addListener('player_state_changed', state => {
   if (!state) return;
@@ -277,7 +282,6 @@ player.addListener('player_state_changed', state => {
   document.getElementById("trackName").textContent = current.name;
   document.getElementById("artistName").textContent = current.artists.map(a => a.name).join(", ");
   document.getElementById("albumImage").src = current.album.images[0].url;
-  document.getElementById("playPause").textContent = state.paused ? "PLAY" : "PAUSE";
   document.getElementById("seekSlider").value = progress;
 
   currentTrackUri = current.uri;
@@ -614,10 +618,22 @@ async function loadPlaylists(token) {
     const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', statusId:'rd-status', nowId:'rd-now', label:'RD' });
     const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', statusId:'nx-status', nowId:'nx-now', label:'NAXI' });
 
-    // Kad klikneš Spotify Play, pauziraj radio playere (da se ne miješaju)
+    // Spotify Play: pauziraj radije i togglaj Spotify
     document.getElementById('playPause').addEventListener('click', () => {
       allRadios.forEach(a => a.pause());
+      togglePlay();
     });
+
+    // Spotify glasnoća (0–1), identično kao na radijima
+    const spVol = document.getElementById('sp-vol');
+    if (spVol) {
+      spVol.addEventListener('input', () => {
+        if (window.player && player.setVolume) {
+          player.setVolume(spVol.valueAsNumber);
+        }
+      });
+    }
+
   </script>
 </body>
 </html>
