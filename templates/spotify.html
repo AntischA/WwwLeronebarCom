@@ -4,118 +4,91 @@
   <meta charset="UTF-8" />
   <title>Spotify + Radio Dalmacija + Naxi Player</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Tvoji postojeći Spotify stilovi -->
   <link rel="stylesheet" href="/static/css/spotify.css" />
-
-  <!-- Stil za Radio kartice (RD i Naxi) -->
   <style>
-    /* RD i Naxi kartice koriste isti vizuelni stil */
-    .radio-card {
-      background: #111827; color: #e2e8f0;
-      border-radius: 16px; padding: 14px; margin-bottom: 18px;
-      box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    .radio-card{
+      background:#111827;color:#e2e8f0;border-radius:16px;padding:14px;margin-bottom:18px;
+      box-shadow:0 8px 24px rgba(0,0,0,.25)
     }
-    .radio-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-    .radio-title { font-weight:700; font-size:1.05rem; letter-spacing:.2px; }
-    .radio-status { font-size:.9rem; opacity:.85; margin-left:auto; }
-    .radio-controls button {
-      border:0; border-radius:10px; padding:8px 12px; cursor:pointer;
-      background:#10b981; color:#052e26; font-weight:700;
+    .radio-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .radio-title{font-weight:700;font-size:1.05rem;letter-spacing:.2px}
+    .radio-status{font-size:.9rem;opacity:.85;margin-left:auto}
+    .radio-controls button{
+      border:0;border-radius:10px;padding:8px 12px;cursor:pointer;background:#10b981;color:#052e26;font-weight:700
     }
-    .radio-controls button.is-muted { background:#334155; color:#e2e8f0; }
-    .radio-controls input[type="range"] { width:160px; }
-    .radio-marquee { overflow:hidden; white-space:nowrap;
-      mask-image:linear-gradient(90deg,transparent 0,#000 10%,#000 90%,transparent 100%);
+    .radio-controls button.is-muted{background:#334155;color:#e2e8f0}
+    .radio-controls input[type="range"]{width:160px}
+    .radio-marquee{overflow:hidden;white-space:nowrap;
       -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 10%,#000 90%,transparent 100%);
-      margin-top:6px;
-    }
-    .radio-marquee span { display:inline-block; padding-left:100%; animation:marq-scroll 12s linear infinite; }
-    @keyframes marq-scroll { from{ transform:translateX(0);} to{ transform:translateX(-100%);} }
+      mask-image:linear-gradient(90deg,transparent 0,#000 10%,#000 90%,transparent 100%);margin-top:6px}
+    .radio-marquee span{display:inline-block;padding-left:100%;animation:marq 12s linear infinite}
+    @keyframes marq{from{transform:translateX(0)}to{transform:translateX(-100%)}}
   </style>
 </head>
 <body>
 
   <div class="container">
-
-    <!-- PLAYLISTE -->
     <div class="playlist-section">
       <h2>Moje Playliste</h2>
       <ul id="playlistList"></ul>
 
-      <!-- RADIO DALMACIJA – KARTICA -->
+      <!-- RADIO DALMACIJA -->
       <section class="radio-card" id="radioDalmacija">
         <div class="radio-row" style="justify-content:space-between;">
           <div class="radio-title">🎧 Radio Dalmacija — Live</div>
           <div class="radio-status" id="rdStatus">Spremno</div>
         </div>
-
         <div class="radio-controls radio-row" style="margin-top:10px;">
           <button id="rdPlay">▶︎ Play</button>
           <button id="rdPause" class="is-muted">⏸︎ Pauza</button>
-          <label>Glasnoća:
-            <input id="rdVolume" type="range" min="0" max="1" step="0.01" value="0.9">
-          </label>
+          <label>Glasnoća: <input id="rdVolume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
           <button id="rdMute" class="is-muted">🔇 Mute</button>
         </div>
-
-        <div class="radio-marquee">
-          <span id="rdNow">Spajam se na Radio Dalmaciju…</span>
-        </div>
-
-        <!-- Direktni HTTPS stream (HE-AAC) -->
-        <audio id="rdAudio" preload="none" crossorigin="anonymous">
+        <div class="radio-marquee"><span id="rdNow">Spajam se na Radio Dalmaciju…</span></div>
+        <!-- HTTPS AAC stream -->
+        <audio id="rdAudio" preload="none">
           <source src="https://shoutcast.pondi.hr:9000/;" type="audio/aac">
           Tvoj browser ne podržava HTML5 audio.
         </audio>
       </section>
 
-      <!-- NAXI RADIO – KARTICA -->
+      <!-- NAXI RADIO -->
       <section class="radio-card" id="naxiRadio">
         <div class="radio-row" style="justify-content:space-between;">
           <div class="radio-title">📻 Naxi Radio — Live</div>
           <div class="radio-status" id="nxStatus">Spremno</div>
         </div>
-
         <div class="radio-controls radio-row" style="margin-top:10px;">
           <button id="nxPlay">▶︎ Play</button>
           <button id="nxPause" class="is-muted">⏸︎ Pauza</button>
-          <label>Glasnoća:
-            <input id="nxVolume" type="range" min="0" max="1" step="0.01" value="0.9">
-          </label>
+          <label>Glasnoća: <input id="nxVolume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
           <button id="nxMute" class="is-muted">🔇 Mute</button>
         </div>
-
-        <div class="radio-marquee">
-          <span id="nxNow">Spajam se na Naxi Radio…</span>
-        </div>
-
-        <!-- Direktni HTTPS stream (MP3 128 kbps). Alternativa: 64 kbps na https://naxi64.streaming.rs:9162/; -->
-        <audio id="nxAudio" preload="none" crossorigin="anonymous">
-          <source src="https://naxi128.streaming.rs:9152/;" type="audio/mpeg">
-          <!-- <source src="https://naxi64.streaming.rs:9162/;" type="audio/mpeg"> -->
+        <div class="radio-marquee"><span id="nxNow">Spajam se na Naxi Radio…</span></div>
+        <!-- HTTPS MP3 128kbps + fallback 64kbps | BEZ crossorigin -->
+        <audio id="nxAudio" preload="none">
+          <source src="https://naxi128ssl.streaming.rs:9152/;" type="audio/mpeg">
+          <source src="https://naxi64ssl.streaming.rs:9162/;" type="audio/mpeg">
           Tvoj browser ne podržava HTML5 audio.
         </audio>
       </section>
     </div>
 
-    <!-- SPOTIFY PLAYER (postojeći markup) -->
+    <!-- SPOTIFY PLAYER -->
     <div class="player">
       <img id="albumImage" src="" alt="Album Cover">
       <div class="track-info">
         <div id="trackName">Track Name</div>
         <div id="artistName">Artist</div>
       </div>
-
       <div class="controls">
         <button onclick="previousTrack()">⏮ Prethodna pjesma</button>
         <button onclick="togglePlay()" id="playPause">PAUSE</button>
         <button onclick="nextTrack()">Sljedeća pjesma ⏭</button>
       </div>
-
       <div class="seek-bar">
         <input type="range" id="seekSlider" value="0" min="0" max="100" step="1" oninput="seekToPosition(this.value)">
       </div>
-
       <div class="volume-controls">
         <div class="volume-buttons">
           <button onclick="setVolume(0.0)">0%</button>
@@ -137,17 +110,15 @@
       </div>
       <ul id="tracksList"></ul>
     </div>
-
   </div>
 
-  <!-- Spotify SDK + tvoj JS -->
+  <!-- Spotify -->
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="/static/js/spotify.js"></script>
 
-  <!-- Kontrola za oba radio playera (nezavisno od Spotify koda) -->
+  <!-- Radio kontrola (za oba playera) -->
   <script>
-    // Helper za kreiranje kontrolera za jedan <audio>
-    function setupRadioControls({audioId, playId, pauseId, muteId, volumeId, statusId, nowId, label}) {
+    function setupRadio({audioId, playId, pauseId, muteId, volumeId, statusId, nowId, label}) {
       const audio  = document.getElementById(audioId);
       const playB  = document.getElementById(playId);
       const pauseB = document.getElementById(pauseId);
@@ -157,65 +128,46 @@
       const nowEl  = document.getElementById(nowId);
 
       let retryCount = 0, maxRetries = 5;
+      const setStatus = t => status.textContent = t;
+      const setNow    = t => nowEl.textContent = t;
 
-      const setStatus = (t)=> status.textContent = t;
-      const setNow    = (t)=> nowEl.textContent = t;
+      async function start(){
+        try{ setStatus('Pokušavam reproducirati…'); await audio.play(); setStatus('Reproduciram ✅'); document.dispatchEvent(new CustomEvent(label+':playing')); }
+        catch(e){ setStatus('Klikni “Play” (autoplay blokiran).'); console.warn(`[${label}] play error`, e); }
+      }
+      function stop(){ audio.pause(); setStatus('Pauzirano ⏸'); document.dispatchEvent(new CustomEvent(label+':paused')); }
 
-      async function start() {
-        try {
-          setStatus('Pokušavam reproducirati…');
-          await audio.play();
-          setStatus('Reproduciram ✅');
-          document.dispatchEvent(new CustomEvent(label + ':playing'));
-        } catch (e) {
-          setStatus('Klikni “Play” (autoplay blokiran).');
-          console.warn(`[${label}] play error`, e);
-        }
+      function scheduleReconnect(){
+        if(retryCount < maxRetries){
+          retryCount++; const delay = Math.min(1500*retryCount, 7000);
+          setTimeout(()=>{ audio.load(); audio.play().catch(()=>{}); }, delay);
+        } else setStatus('Ne može se spojiti. Provjeri dostupnost streama.');
       }
 
-      function stop() {
-        audio.pause();
-        setStatus('Pauzirano ⏸');
-        document.dispatchEvent(new CustomEvent(label + ':paused'));
-      }
-
-      function scheduleReconnect() {
-        if (retryCount < maxRetries) {
-          retryCount++;
-          const delay = Math.min(1500 * retryCount, 7000);
-          setTimeout(() => { audio.load(); audio.play().catch(()=>{}); }, delay);
-        } else {
-          setStatus('Ne može se spojiti. Provjeri dostupnost streama.');
-        }
-      }
-
-      audio.addEventListener('error',   () => { setStatus('Greška na streamu. Pokušavam ponovo…'); scheduleReconnect(); });
-      audio.addEventListener('stalled', () => { setStatus('Veza je zastala… pokušavam ponovo.');   scheduleReconnect(); });
-      audio.addEventListener('playing', () => { retryCount = 0; setStatus('Reproduciram ✅'); setNow('Sviramo najbolje hitove 🎵'); });
+      audio.addEventListener('error',   ()=>{ setStatus('Greška na streamu. Pokušavam ponovo…'); scheduleReconnect(); });
+      audio.addEventListener('stalled', ()=>{ setStatus('Veza je zastala… pokušavam ponovo.');   scheduleReconnect(); });
+      audio.addEventListener('playing', ()=>{ retryCount=0; setStatus('Reproduciram ✅'); setNow('Sviramo najbolje hitove 🎵'); });
 
       playB.addEventListener('click', start);
       pauseB.addEventListener('click', stop);
-      muteB.addEventListener('click', () => {
-        audio.muted = !audio.muted;
-        muteB.textContent = audio.muted ? '🔊 Unmute' : '🔇 Mute';
-      });
-      vol.addEventListener('input', () => { audio.volume = vol.valueAsNumber; });
+      muteB.addEventListener('click', ()=>{ audio.muted=!audio.muted; muteB.textContent = audio.muted ? '🔊 Unmute' : '🔇 Mute'; });
+      vol.addEventListener('input', ()=>{ audio.volume = vol.valueAsNumber; });
+
+      return audio;
     }
 
-    // Inicijalizuj oba
-    setupRadioControls({
+    const rdAudio = setupRadio({
       audioId:'rdAudio', playId:'rdPlay', pauseId:'rdPause', muteId:'rdMute',
       volumeId:'rdVolume', statusId:'rdStatus', nowId:'rdNow', label:'rd'
     });
-
-    setupRadioControls({
+    const nxAudio = setupRadio({
       audioId:'nxAudio', playId:'nxPlay', pauseId:'nxPause', muteId:'nxMute',
       volumeId:'nxVolume', statusId:'nxStatus', nowId:'nxNow', label:'nx'
     });
 
-    // Ako želiš: pauziraj Spotify čim neki radio krene (uhvati event u svom spotify.js)
-    document.addEventListener('rd:playing', () => {/* opcionalno pauziraj Spotify */});
-    document.addEventListener('nx:playing', () => {/* opcionalno pauziraj Spotify */});
+    // Ne dozvoli da oba sviraju istovremeno
+    rdAudio.addEventListener('play', ()=> nxAudio.pause());
+    nxAudio.addEventListener('play', ()=> rdAudio.pause());
   </script>
 </body>
 </html>
