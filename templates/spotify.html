@@ -648,6 +648,7 @@
         if (player && player.pause) await player.pause();
         setButtonLabel(buttons.sp, false);
 
+        setStatus('Pokušavam reproducirati…');
         await a.play();
         setButtonLabel(b, true);
         setActiveCard(cardKey);
