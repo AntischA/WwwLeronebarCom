@@ -37,7 +37,7 @@
       margin:0 auto;
       padding:22px var(--gap);
       display:grid;
-      grid-template-rows:auto 1fr; /* red 2 ima preostalu visinu */
+      grid-template-rows:auto 1fr;
       gap:var(--gap-lg);
       height: 100dvh;
       min-height: 100svh;
@@ -52,7 +52,7 @@
     .btn:active{ transform:translateY(1px) }
     .btn.alt{ background:var(--accent); color:#04281f }
 
-    /* Red 1: 3 kartice (2 radija + Spotify) */
+    /* Red 1: 3 kartice */
     .radios-grid{
       display:grid;
       grid-template-columns: repeat(3, 1fr);
@@ -68,7 +68,6 @@
       transition: background .2s ease, outline-color .2s ease, box-shadow .2s ease;
       outline:2px solid transparent;
     }
-    /* Aktivna kartica (svira) */
     .radio-card.is-active{
       background:linear-gradient(180deg, var(--active-1), var(--active-2));
       outline-color: var(--accent);
@@ -92,16 +91,15 @@
     .ticker span{ display:inline-block; padding-left:100%; animation:ticker 12s linear infinite; }
     @keyframes ticker{ from{ transform:translateX(0);} to{ transform:translateX(-100%);} }
 
-    /* Red 2: mreža koja ispuni preostalu visinu */
+    /* Red 2 */
     .content-grid{
       display:grid;
       grid-template-columns: 1fr 1fr;
       gap:var(--gap-lg);
       align-items:stretch;
-      min-height:0; /* djeca mogu zauzeti 100% visine reda */
+      min-height:0;
     }
 
-    /* Paneli drugog reda */
     .panel{
       background:var(--card);
       border-radius:var(--radius);
@@ -110,14 +108,13 @@
       display:flex; flex-direction:column;
       height:100%;
       min-height:0;
-      overflow:hidden; /* spriječi da sadržaj širi panel */
+      overflow:hidden;
     }
     .panel h3{
       margin:0 0 10px 0; font-size:1.02rem; letter-spacing:.2px;
       position:sticky; top:0; background:var(--card); z-index:1; padding-bottom:8px;
     }
 
-    /* Liste skrolaju unutar panela */
     .list{
       list-style:none; margin:0; padding:0;
       flex: 1 1 auto;
@@ -130,7 +127,6 @@
     }
     .list li:hover{ filter:brightness(1.07); transform:translateY(-1px); }
 
-    /* Tracks lista stil (kompaktno) */
     .track-item{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; }
     .track-item:hover{ background:#1a2747; }
     .track-thumb{ width:44px;height:44px;border-radius:6px;object-fit:cover;background:#24345e;flex:0 0 44px; }
@@ -141,7 +137,6 @@
 
     .sr-only{ display:none !important; }
 
-    /* Responsive */
     @media (max-width: 1100px){
       .radios-grid{ grid-template-columns: repeat(2,1fr); }
       .content-grid{ grid-template-columns: 1fr; }
@@ -247,55 +242,45 @@
   let customIndex = -1;
   let currentTrackUri = null;
 
-  /* ====== POMOĆNE ZA UI STANJE GUMBA I AKTIVNIH KARTICA ====== */
+  let lastProvidedToken = null;
+
+  /* UI helperi */
   const cards   = { rd: document.getElementById('rd-card'), nx: document.getElementById('nx-card'), sp: document.getElementById('sp-card') };
   const buttons = { rd: document.getElementById('rd-play'), nx: document.getElementById('nx-play'), sp: document.getElementById('playPause') };
   const audios  = { rd: document.getElementById('rd-audio'), nx: document.getElementById('nx-audio') };
 
-  function setButtonLabel(btn, playing){
-    btn.textContent = playing ? '⏸ Pause' : '▶ Play';
-  }
-  function setActiveCard(name){
-    Object.keys(cards).forEach(k => cards[k].classList.toggle('is-active', k === name));
-  }
+  function setButtonLabel(btn, playing){ btn.textContent = playing ? '⏸ Pause' : '▶ Play'; }
+  function setActiveCard(name){ Object.keys(cards).forEach(k => cards[k].classList.toggle('is-active', k === name)); }
   function pauseAllRadios(){
     Object.values(audios).forEach(a => { try{ a.pause(); }catch(e){} });
     setButtonLabel(buttons.rd, false);
     setButtonLabel(buttons.nx, false);
   }
-  function anyRadioPlaying(){
-    return Object.values(audios).some(a => !a.paused && !a.ended);
-  }
+  function anyRadioPlaying(){ return Object.values(audios).some(a => !a.paused && !a.ended); }
 
-  /* ================== SPOTIFY ================== */
+  /* ============= SPOTIFY ============= */
   window.onSpotifyWebPlaybackSDKReady = async () => {
     const token = await getValidToken();
     if (!token) return;
 
-player = new Spotify.Player({
-  name: 'Lerone Web Player',
-  getOAuthToken: async (cb) => {
-    try {
-      // uzmi važeći (refrešaj ako je blizu isteka)
-      let t = await getValidToken();
-      // ako ga SDK traži nakon 401 i ti mu vratiš isti, dobit ćeš "same token twice"
-      if (!t || t === lastProvidedToken) {
-        t = await refreshAccessToken();   // prisilno refrešaj
-      }
-      lastProvidedToken = t;
-      cb(t);
-    } catch (e) {
-      console.error('getOAuthToken error', e);
-    }
-  },
-  volume: 0.5
-});
+    player = new Spotify.Player({
+      name: 'Lerone Web Player',
+      getOAuthToken: async (cb) => {
+        try {
+          let t = await getValidToken();
+          if (!t || t === lastProvidedToken) t = await refreshAccessToken();
+          lastProvidedToken = t;
+          cb(t);
+        } catch (e) { console.error('getOAuthToken error', e); }
+      },
+      volume: 0.5
+    });
 
     player.addListener('ready', ({ device_id }) => {
       deviceId = device_id;
       const spVol = document.getElementById('sp-vol');
       if (spVol) { try { player.setVolume(spVol.valueAsNumber); } catch(e) {} }
-      loadPlaylists(token);
+      loadPlaylists(); // samo učitaj & izmiješaj – bez autoplay
     });
 
     player.addListener('authentication_error', ({message}) => console.warn('auth_error', message));
@@ -303,7 +288,6 @@ player = new Spotify.Player({
     player.addListener('initialization_error', ({message}) => console.warn('init_error', message));
     player.addListener('playback_error',       ({message}) => console.warn('playback_error', message));
 
-    // Prati play/pause i ažuriraj gumb + aktivnu karticu
     player.addListener('player_state_changed', state => {
       if (!state) return;
 
@@ -311,11 +295,9 @@ player = new Spotify.Player({
       setButtonLabel(buttons.sp, !paused);
 
       if (!paused){
-        // Ako Spotify svira: ugasi radije i označi Spotify karticu
         pauseAllRadios();
         setActiveCard('sp');
       }else{
-        // Ako je Spotify pauziran, a radio ne svira – makni highlight
         if (!anyRadioPlaying()) setActiveCard(null);
       }
 
@@ -340,17 +322,21 @@ player = new Spotify.Player({
     currentPlaylistUri = uri;
     const playlistId = uri.split(':').pop();
 
-    getValidToken().then(token => {
-      fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+    getValidToken().then(async token => {
+      // Klik na playlistu -> pokreni sviranje te playliste odmah
+      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({ context_uri: uri })
-      }).then(() => {
-        if (autoPlay) setTimeout(() => { togglePlay(); }, 1000);
       });
+
+      if (autoPlay) {
+        // ako nakon kratkog čekanja i dalje stoji pauza -> pokreni
+        setTimeout(async () => {
+          const st = await player.getCurrentState();
+          if (st && st.paused) player.togglePlay();
+        }, 800);
+      }
 
       loadPlaylistTracks(playlistId);
     });
@@ -383,7 +369,7 @@ player = new Spotify.Player({
       };
     }).filter(Boolean);
 
-    // 🔀 AUTOMATSKO MJEŠANJE SVAKI PUT KAD SE UČITA PLAYLISTA
+    // auto shuffle
     shuffleTrackList();
   }
 
@@ -498,50 +484,47 @@ player = new Spotify.Player({
     el.scrollIntoView({ block: "center", behavior: "smooth" });
   }
 
-  function togglePlay() {
-    if (!player) return;
-    player.togglePlay();
+  function togglePlay() { if (!player) return; player.togglePlay(); }
+
+  async function refreshAccessToken() {
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (!refreshToken) { window.location.href = "/spotify_auth"; return null; }
+
+    const res = await fetch("/refresh_token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.access_token) {
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("token_timestamp", Date.now());
+      return data.access_token;
+    } else {
+      console.error("Refresh failed", data);
+      return null;
+    }
   }
 
-async function refreshAccessToken() {
-  const refreshToken = localStorage.getItem("refresh_token");
-  if (!refreshToken) { window.location.href = "/spotify_auth"; return null; }
+  async function getValidToken() {
+    const accessToken = localStorage.getItem("access_token");
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (!refreshToken) { window.location.href = "/spotify_auth"; return null; }
 
-  const res = await fetch("/refresh_token", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: refreshToken })
-  });
-  const data = await res.json();
+    const ts = parseInt(localStorage.getItem("token_timestamp") || "0", 10);
+    const maxAge = 55 * 60 * 1000;
 
-  if (res.ok && data.access_token) {
-    localStorage.setItem("access_token", data.access_token);
-    localStorage.setItem("token_timestamp", Date.now());
-    return data.access_token;
-  } else {
-    console.error("Refresh failed", data);
-    return null;
+    if (!accessToken || (Date.now() - ts) >= maxAge) {
+      return await refreshAccessToken();
+    }
+    return accessToken;
   }
-}
 
-// osvježi ako je stariji od 55 min (ne čekaj punih 60)
-async function getValidToken() {
-  const accessToken = localStorage.getItem("access_token");
-  const refreshToken = localStorage.getItem("refresh_token");
-  if (!refreshToken) { window.location.href = "/spotify_auth"; return null; }
+  async function loadPlaylists() {
+    const token = await getValidToken();
+    if (!token) return;
 
-  const ts = parseInt(localStorage.getItem("token_timestamp") || "0", 10);
-  const maxAge = 55 * 60 * 1000; // 55 min
-
-  if (!accessToken || (Date.now() - ts) >= maxAge) {
-    return await refreshAccessToken();
-  }
-  return accessToken;
-}
-
-
-
-  async function loadPlaylists(token) {
     const res = await fetch("https://api.spotify.com/v1/me/playlists", {
       headers: { "Authorization": `Bearer ${token}` }
     });
@@ -560,13 +543,16 @@ async function getValidToken() {
       const li = document.createElement("li");
       li.textContent = pl.name;
       li.style.cursor = "pointer";
-      li.onclick = () => playPlaylist(pl.uri);
+      li.onclick = () => playPlaylist(pl.uri); // klik pokreće sviranje
       list.appendChild(li);
       if (index === 0) firstPlaylistUri = pl.uri;
     });
 
+    // ⬇️ Samo učitaj i izmiješaj prvu – BEZ automatskog sviranja
     if (firstPlaylistUri) {
-      playPlaylist(firstPlaylistUri, true);
+      currentPlaylistUri = firstPlaylistUri;
+      const firstPlaylistId = firstPlaylistUri.split(':').pop();
+      await loadPlaylistTracks(firstPlaylistId);
     }
   }
   </script>
@@ -591,15 +577,12 @@ async function getValidToken() {
 
       async function playOnlyThis() {
         try {
-          // ugasi sve ostale radije
           Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
-          // ugasi Spotify da se ne miješa
           if (window.player && player.pause) await player.pause();
           setButtonLabel(buttons.sp, false);
 
           setStatus('Pokušavam reproducirati…');
           await a.play();
-          // UI: ovaj gumb -> Pause, kartica aktivna
           setButtonLabel(b, true);
           setActiveCard(cardKey);
         } catch (e) {
@@ -618,19 +601,12 @@ async function getValidToken() {
         }
       }
 
-      // Klik: toggle (Play ↔ Pause)
       b.addEventListener('click', () => {
-        if (a.paused) {
-          playOnlyThis();
-        } else {
-          a.pause();
-        }
+        if (a.paused) playOnlyThis(); else a.pause();
       });
 
-      // Glasnoća
       vr && vr.addEventListener('input', () => { a.volume = vr.valueAsNumber; });
 
-      // Događaji
       a.addEventListener('error',   () => { setStatus('Greška na streamu. Pokušavam ponovo…'); reconnect(); });
       a.addEventListener('stalled', () => { setStatus('Veza je zastala… pokušavam ponovo.');   reconnect(); });
 
@@ -640,7 +616,6 @@ async function getValidToken() {
         setNow('Sviramo najbolje hitove 🎵');
         setButtonLabel(b, true);
         setActiveCard(cardKey);
-        // ugasi Spotify i drugi radio za svaki slučaj
         if (window.player && player.pause) player.pause();
         Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
         if (b === buttons.rd) setButtonLabel(buttons.nx, false);
@@ -650,13 +625,20 @@ async function getValidToken() {
 
       a.addEventListener('pause', () => {
         setButtonLabel(b, false);
-        // ako ništa drugo ne svira, makni highlight
         const otherRadioPlaying = Object.values(audios).some(x => x !== a && !x.paused && !x.ended);
-        // Spotify playing?
         const checkSpotify = (window.player && player.getCurrentState) ? player.getCurrentState() : null;
         Promise.resolve(checkSpotify).then(st => {
           const spIsPlaying = st ? !st.paused : false;
           if (!otherRadioPlaying && !spIsPlaying) setActiveCard(null);
+        });
+      });
+
+      a.addEventListener('ended', () => {
+        setButtonLabel(b, false);
+        const radioJosSvira = Object.values(audios).some(x => !x.paused && !x.ended);
+        Promise.resolve(player?.getCurrentState?.()).then(st => {
+          const spIsPlaying = st ? !st.paused : false;
+          if (!radioJosSvira && !spIsPlaying) setActiveCard(null);
         });
       });
 
@@ -666,10 +648,21 @@ async function getValidToken() {
     const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', statusId:'rd-status', nowId:'rd-now', label:'rd' });
     const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', statusId:'nx-status', nowId:'nx-now', label:'nx' });
 
-    // Spotify Play: pauziraj radije i togglaj Spotify (label i aktivna kartica rješava se u state_changed)
-    document.getElementById('playPause').addEventListener('click', () => {
+    // Spotify Play:
+    // - ugasi radije
+    // - ako još ništa nije učitano u player (nema current tracka), pusti 1. iz customOrder
+    // - inače togglaj play/pause
+    document.getElementById('playPause').addEventListener('click', async () => {
       pauseAllRadios();
-      togglePlay();
+
+      const st = await player.getCurrentState();
+      const nothingLoaded = !st || !st.track_window || !st.track_window.current_track;
+
+      if (nothingLoaded && customOrder && customOrder.length) {
+        await playByCustomIndex(customIndex >= 0 ? customIndex : 0);
+      } else {
+        togglePlay();
+      }
     });
 
     // Spotify glasnoća (0–1), identično kao na radijima
