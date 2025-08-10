@@ -79,8 +79,35 @@
     .radio-status{ margin-left:auto; font-size:.9rem; color:var(--sub); }
 
     .radio-controls{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-    .vol{ display:flex; align-items:center; gap:8px; color:var(--sub); font-size:.9rem; }
-    .vol input[type="range"]{ width:180px; }
+    .vol{
+      display:flex; align-items:center; gap:10px; color:var(--sub); font-size:.95rem;
+    }
+
+    /* Touch-friendly range (viši track, veći thumb) */
+    .vol input[type="range"]{
+      width:240px;
+      height:36px;           /* veća “zona” za prst */
+      background:transparent;
+      -webkit-appearance:none;
+      appearance:none;
+    }
+    /* WebKit */
+    .vol input[type="range"]::-webkit-slider-runnable-track{
+      height:14px; border-radius:10px; background:#203055;
+    }
+    .vol input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      width:26px; height:26px; border-radius:50%;
+      background:#e8eef7; margin-top:-6px; border:2px solid #0f1f39;
+    }
+    /* Firefox */
+    .vol input[type="range"]::-moz-range-track{
+      height:14px; border-radius:10px; background:#203055;
+    }
+    .vol input[type="range"]::-moz-range-thumb{
+      width:26px; height:26px; border-radius:50%;
+      background:#e8eef7; border:2px solid #0f1f39;
+    }
 
     .ticker{
       overflow:hidden; white-space:nowrap;
@@ -160,7 +187,7 @@
         <div class="radio-controls">
           <button id="rd-play" class="btn alt">▶ Play</button>
           <div class="vol">
-            <span>Glasnoća</span>
+            <span id="rd-vol-label">90%</span>
             <input id="rd-vol" type="range" min="0" max="1" step="0.01" value="0.9">
           </div>
         </div>
@@ -178,7 +205,7 @@
         <div class="radio-controls">
           <button id="nx-play" class="btn alt">▶ Play</button>
           <div class="vol">
-            <span>Glasnoća</span>
+            <span id="nx-vol-label">90%</span>
             <input id="nx-vol" type="range" min="0" max="1" step="0.01" value="0.9">
           </div>
         </div>
@@ -197,7 +224,7 @@
         <div class="radio-controls">
           <button id="playPause" class="btn alt">▶ Play</button>
           <div class="vol">
-            <span>Glasnoća</span>
+            <span id="sp-vol-label">90%</span>
             <input id="sp-vol" type="range" min="0" max="1" step="0.01" value="0.9">
           </div>
         </div>
@@ -281,6 +308,8 @@
       const spVol = document.getElementById('sp-vol');
       if (spVol) { try { player.setVolume(spVol.valueAsNumber); } catch(e) {} }
       loadPlaylists(); // samo učitaj & izmiješaj – bez autoplay
+      // inicijalne vrijednosti labela
+      syncAllVolumeLabels();
     });
 
     player.addListener('authentication_error', ({message}) => console.warn('auth_error', message));
@@ -331,7 +360,6 @@
       });
 
       if (autoPlay) {
-        // ako nakon kratkog čekanja i dalje stoji pauza -> pokreni
         setTimeout(async () => {
           const st = await player.getCurrentState();
           if (st && st.paused) player.togglePlay();
@@ -399,8 +427,8 @@
 
       textWrap.appendChild(title);
       textWrap.appendChild(artist);
-      li.appendChild(img);
       li.appendChild(textWrap);
+      li.prepend(img);
 
       li.onclick = () => {
         customOrder = displayedOrder.slice();
@@ -432,7 +460,7 @@
     });
   }
 
-  function shuffleTrackList() {
+  async function shuffleTrackList() {
     const copy = currentTracks.slice();
     for (let i = copy.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -451,7 +479,11 @@
       });
     }
 
-    applyCustomQueueAtCurrentTrack({ preservePosition: true });
+    // ⬇️ VAŽNO: ne šalji /play ako Spotify ne svira – to je uzrokovalo auto-start
+    const st = player ? await player.getCurrentState() : null;
+    if (st && !st.paused) {
+      await applyCustomQueueAtCurrentTrack({ preservePosition: true });
+    }
   }
 
   async function applyCustomQueueAtCurrentTrack({ preservePosition = true } = {}) {
@@ -548,132 +580,147 @@
       if (index === 0) firstPlaylistUri = pl.uri;
     });
 
-    // ⬇️ Samo učitaj i izmiješaj prvu – BEZ automatskog sviranja
+    // Samo učitaj i izmiješaj prvu – BEZ automatskog sviranja
     if (firstPlaylistUri) {
       currentPlaylistUri = firstPlaylistUri;
       const firstPlaylistId = firstPlaylistUri.split(':').pop();
       await loadPlaylistTracks(firstPlaylistId);
     }
   }
-  </script>
 
-  <!-- Radio logika -->
-  <script>
-    const allRadios = [];
+  /* ===== Radio logika + volumeni ===== */
+  function percent(val){ return Math.round((val||0)*100) + '%'; }
+  function syncLabel(rangeEl, labelEl){ if (rangeEl && labelEl){ labelEl.textContent = percent(rangeEl.valueAsNumber); } }
+  function syncAllVolumeLabels(){
+    syncLabel(document.getElementById('rd-vol'), document.getElementById('rd-vol-label'));
+    syncLabel(document.getElementById('nx-vol'), document.getElementById('nx-vol-label'));
+    syncLabel(document.getElementById('sp-vol'), document.getElementById('sp-vol-label'));
+  }
 
-    function makeRadio({ audioId, playId, volId, statusId, nowId, label }) {
-      const a  = document.getElementById(audioId);
-      const b  = document.getElementById(playId);
-      const vr = document.getElementById(volId);
-      const st = document.getElementById(statusId);
-      const nw = document.getElementById(nowId);
-      const cardKey = (label||'').toLowerCase(); // 'rd' | 'nx'
+  const allRadios = [];
 
-      allRadios.push(a);
+  function makeRadio({ audioId, playId, volId, statusId, nowId, label }) {
+    const a  = document.getElementById(audioId);
+    const b  = document.getElementById(playId);
+    const vr = document.getElementById(volId);
+    const st = document.getElementById(statusId);
+    const nw = document.getElementById(nowId);
+    const cardKey = (label||'').toLowerCase(); // 'rd' | 'nx'
 
-      let retries = 0, maxRetries = 5;
-      const setStatus = t => st.textContent = t;
-      const setNow    = t => nw.textContent = t;
+    allRadios.push(a);
 
-      async function playOnlyThis() {
-        try {
-          Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
-          if (window.player && player.pause) await player.pause();
-          setButtonLabel(buttons.sp, false);
+    let retries = 0, maxRetries = 5;
+    const setStatus = t => st.textContent = t;
+    const setNow    = t => nw.textContent = t;
 
-          setStatus('Pokušavam reproducirati…');
-          await a.play();
-          setButtonLabel(b, true);
-          setActiveCard(cardKey);
-        } catch (e) {
-          setStatus('Klikni “Play” (autoplay blokiran).');
-          console.warn(`[${label}] play error`, e);
-        }
-      }
+    async function playOnlyThis() {
+      try {
+        Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
+        if (player && player.pause) await player.pause();   // ⬅️ pauziraj Spotify sigurno
+        setButtonLabel(buttons.sp, false);
 
-      function reconnect() {
-        if (retries < maxRetries) {
-          retries++;
-          const delay = Math.min(1500 * retries, 7000);
-          setTimeout(() => { a.load(); a.play().catch(()=>{}); }, delay);
-        } else {
-          setStatus('Ne može se spojiti. Provjeri stream URL.');
-        }
-      }
-
-      b.addEventListener('click', () => {
-        if (a.paused) playOnlyThis(); else a.pause();
-      });
-
-      vr && vr.addEventListener('input', () => { a.volume = vr.valueAsNumber; });
-
-      a.addEventListener('error',   () => { setStatus('Greška na streamu. Pokušavam ponovo…'); reconnect(); });
-      a.addEventListener('stalled', () => { setStatus('Veza je zastala… pokušavam ponovo.');   reconnect(); });
-
-      a.addEventListener('playing', () => {
-        retries = 0;
-        setStatus('Reproduciram ✅');
-        setNow('Sviramo najbolje hitove 🎵');
+        setStatus('Pokušavam reproducirati…');
+        await a.play();
         setButtonLabel(b, true);
         setActiveCard(cardKey);
-        if (window.player && player.pause) player.pause();
-        Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
-        if (b === buttons.rd) setButtonLabel(buttons.nx, false);
-        if (b === buttons.nx) setButtonLabel(buttons.rd, false);
-        setButtonLabel(buttons.sp, false);
-      });
-
-      a.addEventListener('pause', () => {
-        setButtonLabel(b, false);
-        const otherRadioPlaying = Object.values(audios).some(x => x !== a && !x.paused && !x.ended);
-        const checkSpotify = (window.player && player.getCurrentState) ? player.getCurrentState() : null;
-        Promise.resolve(checkSpotify).then(st => {
-          const spIsPlaying = st ? !st.paused : false;
-          if (!otherRadioPlaying && !spIsPlaying) setActiveCard(null);
-        });
-      });
-
-      a.addEventListener('ended', () => {
-        setButtonLabel(b, false);
-        const radioJosSvira = Object.values(audios).some(x => !x.paused && !x.ended);
-        Promise.resolve(player?.getCurrentState?.()).then(st => {
-          const spIsPlaying = st ? !st.paused : false;
-          if (!radioJosSvira && !spIsPlaying) setActiveCard(null);
-        });
-      });
-
-      return { playOnlyThis, setStatus, setNow, audio:a, button:b };
+      } catch (e) {
+        setStatus('Klikni “Play” (autoplay blokiran).');
+        console.warn(`[${label}] play error`, e);
+      }
     }
 
-    const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', statusId:'rd-status', nowId:'rd-now', label:'rd' });
-    const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', statusId:'nx-status', nowId:'nx-now', label:'nx' });
-
-    // Spotify Play:
-    // - ugasi radije
-    // - ako još ništa nije učitano u player (nema current tracka), pusti 1. iz customOrder
-    // - inače togglaj play/pause
-    document.getElementById('playPause').addEventListener('click', async () => {
-      pauseAllRadios();
-
-      const st = await player.getCurrentState();
-      const nothingLoaded = !st || !st.track_window || !st.track_window.current_track;
-
-      if (nothingLoaded && customOrder && customOrder.length) {
-        await playByCustomIndex(customIndex >= 0 ? customIndex : 0);
+    function reconnect() {
+      if (retries < maxRetries) {
+        retries++;
+        const delay = Math.min(1500 * retries, 7000);
+        setTimeout(() => { a.load(); a.play().catch(()=>{}); }, delay);
       } else {
-        togglePlay();
+        setStatus('Ne može se spojiti. Provjeri stream URL.');
       }
+    }
+
+    b.addEventListener('click', () => {
+      if (a.paused) playOnlyThis(); else a.pause();
     });
 
-    // Spotify glasnoća (0–1), identično kao na radijima
-    const spVol = document.getElementById('sp-vol');
-    if (spVol) {
-      spVol.addEventListener('input', () => {
-        if (window.player && player.setVolume) {
-          player.setVolume(spVol.valueAsNumber);
-        }
+    if (vr){
+      vr.addEventListener('input', () => {
+        a.volume = vr.valueAsNumber;
+        const lbl = document.getElementById(volId+'-label'.replace('-vol','-vol-label')) || document.getElementById(label.toLowerCase() + '-vol-label');
+        syncLabel(vr, document.getElementById(label.toLowerCase() + '-vol-label'));
       });
     }
+
+    a.addEventListener('error',   () => { setStatus('Greška na streamu. Pokušavam ponovo…'); reconnect(); });
+    a.addEventListener('stalled', () => { setStatus('Veza je zastala… pokušavam ponovo.');   reconnect(); });
+
+    a.addEventListener('playing', () => {
+      retries = 0;
+      setStatus('Reproduciram ✅');
+      setNow('Sviramo najbolje hitove 🎵');
+      setButtonLabel(b, true);
+      setActiveCard(cardKey);
+      if (player && player.pause) player.pause();  // ⬅️ pauziraj Spotify sigurno
+      Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
+      if (b === buttons.rd) setButtonLabel(buttons.nx, false);
+      if (b === buttons.nx) setButtonLabel(buttons.rd, false);
+      setButtonLabel(buttons.sp, false);
+    });
+
+    a.addEventListener('pause', () => {
+      setButtonLabel(b, false);
+      const otherRadioPlaying = Object.values(audios).some(x => x !== a && !x.paused && !x.ended);
+      const checkSpotify = (player && player.getCurrentState) ? player.getCurrentState() : null;
+      Promise.resolve(checkSpotify).then(st => {
+        const spIsPlaying = st ? !st.paused : false;
+        if (!otherRadioPlaying && !spIsPlaying) setActiveCard(null);
+      });
+    });
+
+    a.addEventListener('ended', () => {
+      setButtonLabel(b, false);
+      const radioJosSvira = Object.values(audios).some(x => !x.paused && !x.ended);
+      Promise.resolve(player?.getCurrentState?.()).then(st => {
+        const spIsPlaying = st ? !st.paused : false;
+        if (!radioJosSvira && !spIsPlaying) setActiveCard(null);
+      });
+    });
+
+    return { playOnlyThis, setStatus, setNow, audio:a, button:b };
+  }
+
+  const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', statusId:'rd-status', nowId:'rd-now', label:'rd' });
+  const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', statusId:'nx-status', nowId:'nx-now', label:'nx' });
+
+  // Spotify Play:
+  // - ugasi radije
+  // - ako još ništa nije učitano u player (nema current tracka), pusti 1. iz customOrder
+  // - inače togglaj play/pause
+  document.getElementById('playPause').addEventListener('click', async () => {
+    pauseAllRadios();
+
+    const st = await player.getCurrentState();
+    const nothingLoaded = !st || !st.track_window || !st.track_window.current_track;
+
+    if (nothingLoaded && customOrder && customOrder.length) {
+      await playByCustomIndex(customIndex >= 0 ? customIndex : 0);
+    } else {
+      togglePlay();
+    }
+  });
+
+  // Spotify glasnoća + label
+  const spVol = document.getElementById('sp-vol');
+  const spVolLabel = document.getElementById('sp-vol-label');
+  if (spVol) {
+    spVol.addEventListener('input', () => {
+      if (player && player.setVolume) player.setVolume(spVol.valueAsNumber);
+      if (spVolLabel) spVolLabel.textContent = percent(spVol.valueAsNumber);
+    });
+  }
+
+  // init sve volumene (u slučaju da HTML dođe s drugim defaultima)
+  syncAllVolumeLabels();
   </script>
 </body>
 </html>
