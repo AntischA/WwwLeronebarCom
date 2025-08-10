@@ -18,7 +18,6 @@
       --sub:#a7b2c6;
       --accent:#10b981;
       --accent-2:#1db954; /* spotify zelena */
-      --danger:#ef4444;
       --radius:16px;
       --shadow:0 10px 30px rgba(0,0,0,.35);
       --gap:18px;
@@ -39,22 +38,10 @@
       margin:0 auto;
       padding:22px var(--gap);
       display:grid;
-      grid-template-rows:auto auto auto;
+      grid-template-rows:auto auto;
       gap:var(--gap-lg);
     }
 
-    /* Spotify mini traka (samo naslov + Play) */
-    .spotify-bar{
-      background:var(--card);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:14px var(--gap);
-      display:flex;
-      align-items:center;
-      gap:14px;
-      justify-content:space-between;
-    }
-    .spotify-bar h2{ margin:0; font-size:1.05rem; letter-spacing:.2px; }
     .btn{
       appearance:none; border:0; cursor:pointer;
       background:var(--accent-2); color:#062d16;
@@ -64,7 +51,7 @@
     .btn:active{ transform:translateY(1px) }
     .btn.alt{ background:var(--accent); color:#04281f }
 
-    /* Red 1: 3 radio kartice */
+    /* Red 1: 3 kartice (2 radija + Spotify) */
     .radios-grid{
       display:grid;
       grid-template-columns: repeat(3, 1fr);
@@ -144,12 +131,12 @@
     .list::-webkit-scrollbar{ width:8px }
     .list::-webkit-scrollbar-thumb{ background:#1f2c4c; border-radius:8px }
 
-    /* Responsivno: tablet = 2 radio kolone, mob = 1 */
+    /* Responsivno: tablet = 2 kolone u prvom redu, mob = 1 */
     @media (max-width: 1100px){
       .radios-grid{ grid-template-columns: repeat(2,1fr); }
       .content-grid{ grid-template-columns: 1fr; }
     }
-    @media (max-width: 640px){
+    @media (max-width: 800px){
       .radios-grid{ grid-template-columns: 1fr; }
     }
   </style>
@@ -157,20 +144,7 @@
 <body>
   <div class="page">
 
-    <!-- Spotify mini panel: samo naslov + Play -->
-    <section class="spotify-bar">
-      <h2>🎵 Spotify – Player</h2>
-      <button id="playPause" class="btn">PLAY</button>
-      <!-- Skrivene mete koje spotify.js očekuje -->
-      <div class="sr-only">
-        <img id="albumImage" alt="">
-        <div id="trackName"></div>
-        <div id="artistName"></div>
-        <input type="range" id="seekSlider" value="0" min="0" max="100" step="1">
-      </div>
-    </section>
-
-    <!-- RED 1: 3 RADIO PLAYERA (isti izgled) -->
+    <!-- RED 1: Radio Dalmacija + Naxi + Spotify (tri iste kartice) -->
     <section class="radios-grid">
 
       <!-- Radio Dalmacija -->
@@ -212,24 +186,24 @@
         </audio>
       </article>
 
-      <!-- Custom Radio (3. slot) -->
-      <article class="radio-card" id="cx-card">
+      <!-- Spotify kao treća kartica -->
+      <article class="radio-card" id="sp-card">
         <div class="radio-head">
-          <div class="radio-title">📡 Custom Radio — Tvoj URL</div>
-          <div id="cx-status" class="radio-status">Nema URL-a</div>
+          <div class="radio-title">🎵 Spotify — Player</div>
+          <div id="sp-status" class="radio-status">Spremno</div>
         </div>
-        <div class="radio-controls" style="gap:8px; flex-wrap:wrap;">
-          <input id="cx-url" type="text" placeholder="https://example.com/stream.mp3"
-                 style="flex:1 1 260px; background:#0e162b; color:var(--text); border:1px solid #1f2c4c; border-radius:10px; padding:10px 12px;">
-          <button id="cx-set" class="btn">Postavi</button>
-          <button id="cx-play" class="btn alt">▶ Play</button>
-          <div class="vol">
-            <span>Glasnoća</span>
-            <input id="cx-vol" type="range" min="0" max="1" step="0.01" value="0.9">
-          </div>
+        <div class="radio-controls">
+          <button id="playPause" class="btn">▶ Play</button>
         </div>
-        <div class="ticker"><span id="cx-now">Unesi URL pa klikni Postavi.</span></div>
-        <audio id="cx-audio" preload="none"></audio>
+        <div class="ticker"><span>Odaberi playlistu ispod pa klikni Play.</span></div>
+
+        <!-- Skrivene mete koje spotify.js očekuje -->
+        <div class="sr-only">
+          <img id="albumImage" alt="">
+          <div id="trackName"></div>
+          <div id="artistName"></div>
+          <input type="range" id="seekSlider" value="0" min="0" max="100" step="1">
+        </div>
       </article>
 
     </section>
@@ -305,7 +279,7 @@
       a.addEventListener('playing', () => { retries = 0; setStatus('Reproduciram ✅'); setNow('Sviramo najbolje hitove 🎵'); });
 
       b.addEventListener('click', play);
-      vr.addEventListener('input', () => { a.volume = vr.valueAsNumber; });
+      vr && vr.addEventListener('input', () => { a.volume = vr.valueAsNumber; });
 
       return { play, setStatus, setNow, audio:a };
     }
@@ -314,29 +288,10 @@
     const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', statusId:'rd-status', nowId:'rd-now', label:'RD' });
     const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', statusId:'nx-status', nowId:'nx-now', label:'NAXI' });
 
-    // Custom radio (3. slot)
-    (function(){
-      const a  = document.getElementById('cx-audio');
-      const setBtn = document.getElementById('cx-set');
-      const urlIn  = document.getElementById('cx-url');
-      const st = document.getElementById('cx-status');
-      const nw = document.getElementById('cx-now');
-
-      const CX = makeRadio({ audioId:'cx-audio', playId:'cx-play', volId:'cx-vol', statusId:'cx-status', nowId:'cx-now', label:'CUSTOM' });
-
-      setBtn.addEventListener('click', () => {
-        const url = urlIn.value.trim();
-        if (!url) { st.textContent = 'Nema URL-a'; return; }
-        a.src = url; // postavi direktno src (može biti .mp3, .aac ili .m3u8)
-        st.textContent = 'URL postavljen • Spremno';
-        nw.textContent = 'Spreman za reprodukciju.';
-      });
-    })();
-
-    // (Opcionalno) Ako želiš: pauziraj Spotify kad krene bilo koji radio
-    // document.getElementById('rd-audio').addEventListener('play', ()=> player && player.pause());
-    // document.getElementById('nx-audio').addEventListener('play', ()=> player && player.pause());
-    // document.getElementById('cx-audio').addEventListener('play', ()=> player && player.pause());
+    // Kad klikneš Spotify Play, pauziraj radio playere (da se ne miješaju)
+    document.getElementById('playPause').addEventListener('click', () => {
+      allRadios.forEach(a => a.pause());
+    });
   </script>
 </body>
 </html>
