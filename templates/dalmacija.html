@@ -6,16 +6,29 @@
   <title>Radio Dalmacija – Player</title>
   <style>
     :root { --bg:#0f172a; --fg:#e2e8f0; --accent:#10b981; }
-    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu; background:var(--bg); color:var(--fg); display:grid; place-items:center; min-height:100svh; }
-    .player { width:min(680px,92vw); background:#111827; border-radius:18px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.35); }
+    * { box-sizing: border-box; }
+    body {
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
+      background:var(--bg); color:var(--fg);
+      display:grid; place-items:center; min-height:100svh;
+    }
+    .player {
+      width:min(720px,92vw); background:#111827; border-radius:18px;
+      padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.35);
+    }
     .row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
     .title { font-weight:700; font-size:1.1rem; letter-spacing:.3px; }
-    button { border:0; border-radius:12px; padding:10px 14px; cursor:pointer; background:var(--accent); color:#052e26; font-weight:700; }
-    button[disabled]{opacity:.5; cursor:not-allowed;}
+    button {
+      border:0; border-radius:12px; padding:10px 14px; cursor:pointer;
+      background:var(--accent); color:#052e26; font-weight:700;
+    }
+    button[disabled]{opacity:.6; cursor:not-allowed;}
     .muted { background:#334155; color:#e2e8f0; }
-    .status { font-size:.9rem; opacity:.8; }
-    input[type="range"] { width:160px; }
-    .marquee { overflow:hidden; white-space:nowrap; mask-image:linear-gradient(90deg,transparent 0, #000 10%, #000 90%, transparent 100%); }
+    .status { font-size:.9rem; opacity:.85; }
+    input[type="range"] { width:180px; }
+    .marquee { overflow:hidden; white-space:nowrap;
+      mask-image:linear-gradient(90deg,transparent 0,#000 10%,#000 90%,transparent 100%);
+    }
     .marquee span { display:inline-block; padding-left:100%; animation:scroll 12s linear infinite; }
     @keyframes scroll { from { transform:translateX(0);} to { transform:translateX(-100%);} }
   </style>
@@ -36,17 +49,14 @@
 
     <div class="row" style="margin-top:8px;">
       <div class="marquee" style="flex:1;">
-        <span id="nowPlaying">Povezujem se na stream…</span>
+        <span id="nowPlaying">Spajam se na Radio Dalmaciju…</span>
       </div>
     </div>
 
-    <!-- Ako nađeš više formata, dodaj ih kao <source> redom (browser sam bira najbolji) -->
+    <!-- Direktni HTTPS stream – radi na HTTPS sajtu bez mixed content-a -->
     <audio id="radio" preload="none" crossorigin="anonymous">
-      <!-- ZAMIJENI OVO stvarnim URL-om iz .pls/.m3u -->
-      <!-- Primjeri (placeholderi): -->
-      <!-- <source src="https://example.cdn.hr/radiodalmacija/live.mp3" type="audio/mpeg"> -->
-      <!-- <source src="https://example.cdn.hr/radiodalmacija/stream.aac" type="audio/aac"> -->
-      <!-- <source src="https://example.cdn.hr/radiodalmacija/live.m3u8" type="application/vnd.apple.mpegurl"> -->
+      <source src="https://shoutcast.pondi.hr:9000/;" type="audio/aac">
+      Tvoj browser ne podržava HTML5 audio.
     </audio>
   </div>
 
@@ -67,6 +77,7 @@
     async function start() {
       try {
         setStatus('Pokušavam reproducirati…');
+        // iOS/Safari traže korisnički klik za play – zato je na dugme
         await audio.play();
         setStatus('Reproduciram ✅');
       } catch (e) {
@@ -78,34 +89,40 @@
     function stop() { audio.pause(); setStatus('Pauzirano ⏸'); }
 
     // Auto-reconnect ako istekne veza / dođe do greške
-    audio.addEventListener('error', () => {
-      setStatus('Greška na streamu. Pokušavam ponovo…');
+    function scheduleReconnect() {
       if (retryCount < maxRetries) {
         retryCount++;
-        setTimeout(() => { audio.load(); audio.play().catch(()=>{}); }, Math.min(1500 * retryCount, 7000));
+        const delay = Math.min(1500 * retryCount, 7000);
+        setTimeout(() => { audio.load(); audio.play().catch(()=>{}); }, delay);
       } else {
-        setStatus('Ne može se spojiti. Provjeri URL streama.');
+        setStatus('Ne može se spojiti. Provjeri dostupnost streama.');
       }
+    }
+
+    audio.addEventListener('error', () => {
+      setStatus('Greška na streamu. Pokušavam ponovo…');
+      scheduleReconnect();
     });
 
-    audio.addEventListener('playing', () => { retryCount = 0; });
+    audio.addEventListener('stalled', () => {
+      setStatus('Veza je zastala… pokušavam ponovo.');
+      scheduleReconnect();
+    });
+
+    audio.addEventListener('playing', () => {
+      retryCount = 0;
+      setStatus('Reproduciram ✅');
+      setNow('Sviramo najbolje hitove 🎵');
+    });
 
     // Kontrole
     playB.addEventListener('click', start);
     pauseB.addEventListener('click', stop);
-    muteB.addEventListener('click', () => { audio.muted = !audio.muted; muteB.textContent = audio.muted ? '🔊 Unmute' : '🔇 Mute'; });
+    muteB.addEventListener('click', () => {
+      audio.muted = !audio.muted;
+      muteB.textContent = audio.muted ? '🔊 Unmute' : '🔇 Mute';
+    });
     vol.addEventListener('input', () => { audio.volume = vol.valueAsNumber; });
-
-    // (Opcionalno) dohvat “now playing” metapodataka za Shoutcast/Icecast JSON
-    // Ako tvoj stream ima /status-json.xsl ili sličan endpoint, ovdje možeš prikazati pjesmu.
-    async function pollNowPlaying() {
-      // PRIMJER (zamijeni URL ako postoji javni status JSON na tvojoj instanci):
-      // const res = await fetch('https://example.cdn.hr/status-json.xsl');
-      // const data = await res.json();
-      // setNow(data.icestats?.source?.title || 'Sviramo najbolje hitove');
-      setNow('Sviramo najbolje hitove 🎵');
-    }
-    pollNowPlaying(); setInterval(pollNowPlaying, 30000);
   </script>
 </body>
 </html>
