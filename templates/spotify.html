@@ -5,8 +5,6 @@
   <title>Spotify + 3 Radio Playera</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-
-  <!-- ===== NOVI GLOBALNI CSS ===== -->
   <style>
     :root{
       --bg:#0b1020;
@@ -15,7 +13,7 @@
       --text:#e8eef7;
       --sub:#a7b2c6;
       --accent:#10b981;
-      --accent-2:#1db954; /* spotify zelena */
+      --accent-2:#1db954;
       --radius:16px;
       --shadow:0 10px 30px rgba(0,0,0,.35);
       --gap:18px;
@@ -31,19 +29,21 @@
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial;
     }
 
+    /* Stranica zauzima visinu prozora; drugi red puni ostatak */
     .page{
       max-width:1280px;
       margin:0 auto;
       padding:22px var(--gap);
       display:grid;
-      grid-template-rows:auto auto;
+      grid-template-rows:auto 1fr;  /* ⬅️ drugi red raste do dna */
       gap:var(--gap-lg);
+      min-height:100svh;            /* ⬅️ ključ za ispunu visine */
     }
 
     .btn{
       appearance:none; border:0; cursor:pointer;
       background:var(--accent-2); color:#062d16;
-      padding:20px 16px 20px; border-radius:12px; font-weight:800;
+      padding:20px 16px; border-radius:12px; font-weight:800;
       transition:transform .06s ease, filter .12s ease;
     }
     .btn:active{ transform:translateY(1px) }
@@ -63,21 +63,11 @@
       display:flex; flex-direction:column; gap:10px;
       min-height:160px;
     }
-    .radio-head{
-      display:flex; align-items:center; gap:10px;
-    }
-    .radio-title{
-      font-weight:800; letter-spacing:.2px; font-size:1.02rem;
-    }
-    .radio-status{
-      margin-left:auto; font-size:.9rem; color:var(--sub);
-    }
-    .radio-controls{
-      display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-    }
-    .vol{
-      display:flex; align-items:center; gap:8px; color:var(--sub); font-size:.9rem;
-    }
+    .radio-head{ display:flex; align-items:center; gap:10px; }
+    .radio-title{ font-weight:800; letter-spacing:.2px; font-size:1.02rem; }
+    .radio-status{ margin-left:auto; font-size:.9rem; color:var(--sub); }
+    .radio-controls{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .vol{ display:flex; align-items:center; gap:8px; color:var(--sub); font-size:.9rem; }
     .vol input[type="range"]{ width:180px; }
 
     .ticker{
@@ -89,23 +79,29 @@
     .ticker span{ display:inline-block; padding-left:100%; animation:ticker 12s linear infinite; }
     @keyframes ticker{ from{ transform:translateX(0);} to{ transform:translateX(-100%);} }
 
-    /* Red 2: Playlists (lijevo) i Tracks (desno) */
+    /* Red 2: mreža koja ispuni preostalu visinu */
     .content-grid{
       display:grid;
       grid-template-columns: 1fr 1fr;
       gap:var(--gap-lg);
       align-items:stretch;
+      min-height:0;   /* ⬅️ dozvoli da djeca preuzmu 100% visine reda */
     }
     .panel{
       background:var(--card);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
       padding:16px;
-      display:flex; flex-direction:column; min-height:340px;
+      display:flex; flex-direction:column;
+      height:100%;    /* ⬅️ ispuni visinu ćelije */
+      min-height:0;   /* ⬅️ omogući skrol u djeci */
     }
     .panel h3{ margin:0 0 10px 0; font-size:1.02rem; letter-spacing:.2px; }
+
     .list{
-      list-style:none; margin:0; padding:0; overflow:auto; flex:1;
+      list-style:none; margin:0; padding:0;
+      overflow:auto; flex:1;      /* ⬅️ skrol unutar panela */
+      min-height:0;
     }
     .list li{
       background:#17213b; margin:8px 0; padding:10px 12px; border-radius:10px;
@@ -122,14 +118,9 @@
     .track-artist{ color:var(--sub); font-size:.82rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .track-item.playing{ outline:1px solid #3a7bd5; background:#15294f; }
 
-    /* Skrivene stvari koje spotify.js i dalje koristi */
     .sr-only{ display:none !important; }
 
-    /* Scrollbar suptilno */
-    .list::-webkit-scrollbar{ width:8px }
-    .list::-webkit-scrollbar-thumb{ background:#1f2c4c; border-radius:8px }
-
-    /* Responsivno: tablet = 2 kolone u prvom redu, mob = 1 */
+    /* Responsive */
     @media (max-width: 1100px){
       .radios-grid{ grid-template-columns: repeat(2,1fr); }
       .content-grid{ grid-template-columns: 1fr; }
@@ -142,10 +133,9 @@
 <body>
   <div class="page">
 
-    <!-- RED 1: Radio Dalmacija + Naxi + Spotify (tri iste kartice) -->
+    <!-- RED 1: Radio Dalmacija + Naxi + Spotify -->
     <section class="radios-grid">
 
-      <!-- Radio Dalmacija -->
       <article class="radio-card" id="rd-card">
         <div class="radio-head">
           <div class="radio-title">🎧 Radio Dalmacija — Live</div>
@@ -164,7 +154,6 @@
         </audio>
       </article>
 
-      <!-- Naxi Radio -->
       <article class="radio-card" id="nx-card">
         <div class="radio-head">
           <div class="radio-title">📻 Naxi Radio — Live</div>
@@ -184,388 +173,328 @@
         </audio>
       </article>
 
-<!-- Spotify kao treća kartica -->
-<article class="radio-card" id="sp-card">
-  <div class="radio-head">
-    <div class="radio-title">🎵 Spotify — Player</div>
-    <div id="sp-status" class="radio-status">Spremno</div>
-  </div>
+      <article class="radio-card" id="sp-card">
+        <div class="radio-head">
+          <div class="radio-title">🎵 Spotify — Player</div>
+          <div id="sp-status" class="radio-status">Spremno</div>
+        </div>
+        <div class="radio-controls">
+          <button id="playPause" class="btn alt">▶ Play</button>
+          <div class="vol">
+            <span>Glasnoća</span>
+            <input id="sp-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+          </div>
+        </div>
+        <div class="ticker"><span>Odaberi playlistu ispod pa klikni Play.</span></div>
 
-  <div class="radio-controls">
-    <!-- isti gumb kao na radijima -->
-    <button id="playPause" class="btn alt">▶ Play</button>
-
-    <!-- novi slider za glasnoću, isti kao na radijima -->
-    <div class="vol">
-      <span>Glasnoća</span>
-      <input id="sp-vol" type="range" min="0" max="1" step="0.01" value="0.9">
-    </div>
-  </div>
-
-  <div class="ticker"><span>Odaberi playlistu ispod pa klikni Play.</span></div>
-
-  <!-- Skrivene mete koje spotify.js očekuje -->
-  <div class="sr-only">
-    <img id="albumImage" alt="">
-    <div id="trackName"></div>
-    <div id="artistName"></div>
-    <input type="range" id="seekSlider" value="0" min="0" max="100" step="1">
-  </div>
-</article>
+        <div class="sr-only">
+          <img id="albumImage" alt="">
+          <div id="trackName"></div>
+          <div id="artistName"></div>
+          <input type="range" id="seekSlider" value="0" min="0" max="100" step="1">
+        </div>
+      </article>
 
     </section>
 
     <!-- RED 2: Playliste (lijevo) i Pjesme (desno) -->
     <section class="content-grid">
-
-      <!-- Moje Playliste -->
       <article class="panel">
         <h3>📚 Moje playliste</h3>
         <ul id="playlistList" class="list"></ul>
       </article>
 
-      <!-- Pjesme u playlisti -->
       <article class="panel">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-          <h3>🎼 Pjesme u playlisti</h3>
-          <button id="uiShuffle" onclick="shuffleTrackList()" class="btn">Izmiješaj prikaz</button>
-        </div>
+        <h3>🎼 Pjesme u playlisti</h3>
         <ul id="tracksList" class="list"></ul>
       </article>
-
     </section>
   </div>
 
-  <!-- Spotify SDK + tvoj kod -->
+  <!-- Spotify SDK -->
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
+
   <script>
-
   let player;
-let deviceId = null;
-let currentPlaylistUri = null;
-let currentTracks = [];        // {name, artists, uri, albumImage, originalIndex}
-let trackUriToLi = new Map();  // mapa za highlight i scroll
-let lastPlayingEl = null;
-let displayedOrder = [];       // trenutan prikaz u desnoj listi
-let customOrder = null;        // aktivni queue (redoslijed koji Next/Prev prate)
-let customIndex = -1;          // indeks u customOrder
-let currentTrackUri = null;    // pratimo trenutnu traku
+  let deviceId = null;
+  let currentPlaylistUri = null;
+  let currentTracks = [];
+  let trackUriToLi = new Map();
+  let lastPlayingEl = null;
+  let displayedOrder = [];
+  let customOrder = null;
+  let customIndex = -1;
+  let currentTrackUri = null;
 
+  window.onSpotifyWebPlaybackSDKReady = async () => {
+    const token = await getValidToken();
+    if (!token) return;
 
-
-window.onSpotifyWebPlaybackSDKReady = async () => {
-  const token = await getValidToken();
-  if (!token) return;
-
-  player = new Spotify.Player({
-    name: 'Lerone Web Player',
-    getOAuthToken: cb => cb(token),
-    volume: 0.5
-  });
-
-player.addListener('ready', ({ device_id }) => {
-  deviceId = device_id;
-  console.log('🎶 Player spreman, ID:', device_id);
-  const spVol = document.getElementById('sp-vol');
-  if (spVol) {
-  try { player.setVolume(spVol.valueAsNumber); } catch(e) {}
-}
-  loadPlaylists(token);
-});
-
-
-player.addListener('player_state_changed', state => {
-  if (!state) return;
-  const current = state.track_window.current_track;
-  const progress = (state.position / state.duration) * 100;
-
-  document.getElementById("trackName").textContent = current.name;
-  document.getElementById("artistName").textContent = current.artists.map(a => a.name).join(", ");
-  document.getElementById("albumImage").src = current.album.images[0].url;
-  document.getElementById("seekSlider").value = progress;
-
-  currentTrackUri = current.uri;
-  if (customOrder) {
-    const idx = customOrder.findIndex(t => t.uri === current.uri);
-    if (idx !== -1) customIndex = idx;
-  }
-  highlightAndCenterCurrentTrack(current.uri);
-});
-
-  player.connect();
-};
-
-
-
-
-function playPlaylist(uri, autoPlay = false) {
-  currentPlaylistUri = uri;
-  const playlistId = uri.split(':').pop(); // "spotify:playlist:XYZ" -> "XYZ"
-
-  getValidToken().then(token => {
-    // 1) pusti playlistu
-    fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({ context_uri: uri })
-    }).then(() => {
-      if (autoPlay) {
-        setTimeout(() => { togglePlay(); }, 1000);
-      }
+    player = new Spotify.Player({
+      name: 'Lerone Web Player',
+      getOAuthToken: cb => cb(token),
+      volume: 0.5
     });
 
-    // 2) učitaj i prikaži pesme u desnoj koloni
-    loadPlaylistTracks(playlistId);
-  });
-}
+    player.addListener('ready', ({ device_id }) => {
+      deviceId = device_id;
+      console.log('🎶 Player spreman, ID:', device_id);
+      const spVol = document.getElementById('sp-vol');
+      if (spVol) { try { player.setVolume(spVol.valueAsNumber); } catch(e) {} }
+      loadPlaylists(token);
+    });
 
-async function loadPlaylistTracks(playlistId) {
-  const token = await getValidToken();
-  if (!token) return;
+    player.addListener('player_state_changed', state => {
+      if (!state) return;
+      const current = state.track_window.current_track;
+      const progress = (state.position / state.duration) * 100;
 
-  let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
-  let items = [];
+      document.getElementById("trackName").textContent = current.name;
+      document.getElementById("artistName").textContent = current.artists.map(a => a.name).join(", ");
+      document.getElementById("albumImage").src = current.album.images[0].url;
+      document.getElementById("seekSlider").value = progress;
 
-  while (url) {
-    const res = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
-    const data = await res.json();
-    if (!data || !data.items) break;
-    items = items.concat(data.items);
-    url = data.next; // Spotify vraća full URL za sledeću stranicu ili null
+      currentTrackUri = current.uri;
+      if (customOrder) {
+        const idx = customOrder.findIndex(t => t.uri === current.uri);
+        if (idx !== -1) customIndex = idx;
+      }
+      highlightAndCenterCurrentTrack(current.uri);
+    });
+
+    player.connect();
+  };
+
+  function playPlaylist(uri, autoPlay = false) {
+    currentPlaylistUri = uri;
+    const playlistId = uri.split(':').pop();
+
+    getValidToken().then(token => {
+      fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ context_uri: uri })
+      }).then(() => {
+        if (autoPlay) setTimeout(() => { togglePlay(); }, 1000);
+      });
+
+      loadPlaylistTracks(playlistId);
+    });
   }
 
-  // Normalizacija u naš format
-  currentTracks = items
-    .map((it, idx) => {
-      const t = it.track;
-      if (!t) return null;
+  async function loadPlaylistTracks(playlistId) {
+    const token = await getValidToken();
+    if (!token) return;
+
+    let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
+    let items = [];
+
+    while (url) {
+      const res = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
+      const data = await res.json();
+      if (!data || !data.items) break;
+      items = items.concat(data.items);
+      url = data.next;
+    }
+
+    currentTracks = items.map((it, idx) => {
+      const t = it.track; if (!t) return null;
       return {
         name: t.name,
         artists: (t.artists || []).map(a => a.name).join(", "),
         uri: t.uri,
         albumImage: (t.album && t.album.images && t.album.images.length)
-          ? t.album.images[t.album.images.length - 1].url // najmanja slika
-          : "",
+          ? t.album.images[t.album.images.length - 1].url : "",
         originalIndex: idx
       };
-    })
-    .filter(Boolean);
+    }).filter(Boolean);
 
-  renderTracks(currentTracks);
-}
+    // 🔀 AUTOMATSKO MJEŠANJE SVAKI PUT KAD SE UČITA PLAYLISTA
+    shuffleTrackList();
+  }
 
-function renderTracks(tracksArray) {
-  displayedOrder = tracksArray.slice(); // zapamti trenutan prikaz
-  const listEl = document.getElementById("tracksList");
-  listEl.innerHTML = "";
-  trackUriToLi.clear();
+  function renderTracks(tracksArray) {
+    displayedOrder = tracksArray.slice();
+    const listEl = document.getElementById("tracksList");
+    listEl.innerHTML = "";
+    trackUriToLi.clear();
 
-  displayedOrder.forEach((item, idx) => {
-    const li = document.createElement("li");
-    li.className = "track-item";
+    displayedOrder.forEach((item, idx) => {
+      const li = document.createElement("li");
+      li.className = "track-item";
 
-    const img = document.createElement("img");
-    img.src = item.albumImage || "";
-    img.alt = "Cover";
-    img.className = "track-thumb";
+      const img = document.createElement("img");
+      img.src = item.albumImage || "";
+      img.alt = "Cover";
+      img.className = "track-thumb";
 
-    const textWrap = document.createElement("div");
-    textWrap.className = "track-text";
-    const title = document.createElement("div");
-    title.className = "track-title";
-    title.textContent = item.name;
-    const artist = document.createElement("div");
-    artist.className = "track-artist";
-    artist.textContent = item.artists;
+      const textWrap = document.createElement("div");
+      textWrap.className = "track-text";
+      const title = document.createElement("div");
+      title.className = "track-title";
+      title.textContent = item.name;
+      const artist = document.createElement("div");
+      artist.className = "track-artist";
+      artist.textContent = item.artists;
 
-    textWrap.appendChild(title);
-    textWrap.appendChild(artist);
-    li.appendChild(img);
-    li.appendChild(textWrap);
+      textWrap.appendChild(title);
+      textWrap.appendChild(artist);
+      li.appendChild(img);
+      li.appendChild(textWrap);
 
-    // klik na stavku svira prema trenutnom PRIKAZU
-li.onclick = () => {
-  customOrder = displayedOrder.slice();
-  playByCustomIndex(idx);
-};
+      li.onclick = () => {
+        customOrder = displayedOrder.slice();
+        playByCustomIndex(idx);
+      };
 
-    // ⬇️ novo: ako je ovo trenutno svirajuća, odmah je označi
-    if (item.uri === currentTrackUri) {
-      li.classList.add("playing");
-      lastPlayingEl = li;
+      if (item.uri === currentTrackUri) {
+        li.classList.add("playing");
+        lastPlayingEl = li;
+      }
+
+      listEl.appendChild(li);
+      trackUriToLi.set(item.uri, li);
+    });
+  }
+
+  async function playByCustomIndex(index) {
+    if (!customOrder || index < 0 || index >= customOrder.length) return;
+    const uris = customOrder.map(t => t.uri);
+    customIndex = index;
+
+    const token = await getValidToken();
+    if (!token) return;
+
+    await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+      body: JSON.stringify({ uris, offset: { position: index }, position_ms: 0 })
+    });
+  }
+
+  function shuffleTrackList() {
+    const copy = currentTracks.slice();
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
     }
 
-    listEl.appendChild(li);
-    trackUriToLi.set(item.uri, li);
-  });
-}
+    renderTracks(copy);
+    customOrder = copy.slice();
 
-async function playByCustomIndex(index) {
-  if (!customOrder || index < 0 || index >= customOrder.length) return;
-  const uris = customOrder.map(t => t.uri);
-  customIndex = index;
+    const idx = customOrder.findIndex(t => t.uri === currentTrackUri);
+    customIndex = (idx !== -1) ? idx : 0;
 
-  const token = await getValidToken();
-  if (!token) return;
+    if (currentTrackUri) {
+      requestAnimationFrame(() => {
+        highlightAndCenterCurrentTrack(currentTrackUri);
+      });
+    }
 
-  await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-    body: JSON.stringify({ uris, offset: { position: index }, position_ms: 0 })
-  });
-}
-
-
-
-
-function shuffleTrackList() {
-  const copy = currentTracks.slice();
-
-  // Fisher–Yates
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
+    applyCustomQueueAtCurrentTrack({ preservePosition: true });
   }
 
-  renderTracks(copy);
-  customOrder = copy.slice();
+  async function applyCustomQueueAtCurrentTrack({ preservePosition = true } = {}) {
+    if (!customOrder || customIndex < 0) return;
 
-  const idx = customOrder.findIndex(t => t.uri === currentTrackUri);
-  customIndex = (idx !== -1) ? idx : 0;
+    const token = await getValidToken();
+    if (!token) return;
 
-  if (currentTrackUri) {
-    requestAnimationFrame(() => {
-      highlightAndCenterCurrentTrack(currentTrackUri);
+    const uris = customOrder.map(t => t.uri);
+
+    let position_ms = 0;
+    if (preservePosition && player) {
+      const st = await player.getCurrentState();
+      if (st) position_ms = st.position || 0;
+    }
+
+    await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+      body: JSON.stringify({ uris, offset: { position: customIndex }, position_ms })
     });
   }
 
-  // ⬇️ KLJUČNI KORAK: reprogramiraj queue na novi poredak,
-  // ostajući na istoj pesmi i istoj poziciji.
-  applyCustomQueueAtCurrentTrack({ preservePosition: true });
-}
-
-async function applyCustomQueueAtCurrentTrack({ preservePosition = true } = {}) {
-  if (!customOrder || customIndex < 0) return;
-
-  const token = await getValidToken();
-  if (!token) return;
-
-  const uris = customOrder.map(t => t.uri);
-
-  let position_ms = 0;
-  if (preservePosition && player) {
-    const st = await player.getCurrentState();
-    if (st) position_ms = st.position || 0;
+  function highlightAndCenterCurrentTrack(trackUri) {
+    if (!trackUriToLi.has(trackUri)) return;
+    if (lastPlayingEl) lastPlayingEl.classList.remove("playing");
+    const el = trackUriToLi.get(trackUri);
+    el.classList.add("playing");
+    lastPlayingEl = el;
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
   }
 
-  // Ovime Spotify-ju "uvaljujemo" novi queue (na istoj pesmi i istoj poziciji).
-  await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-    body: JSON.stringify({
-      uris,
-      offset: { position: customIndex },
-      position_ms
-    })
-  });
-}
-
-
-
-
-function highlightAndCenterCurrentTrack(trackUri) {
-  if (!trackUriToLi.has(trackUri)) return;
-
-  // skini prethodni highlight
-  if (lastPlayingEl) lastPlayingEl.classList.remove("playing");
-
-  const el = trackUriToLi.get(trackUri);
-  el.classList.add("playing");
-  lastPlayingEl = el;
-
-  // scroll-uj tako da je u sredini vidnog polja
-  el.scrollIntoView({ block: "center", behavior: "smooth" });
-}
-
-
-function togglePlay() {
-  if (!player) return;
-  player.togglePlay();
-}
-
-async function getValidToken() {
-  const accessToken = localStorage.getItem("access_token");
-  const refreshToken = localStorage.getItem("refresh_token");
-  if (!refreshToken) {
-    window.location.href = "/spotify_auth";
-    return null;
+  function togglePlay() {
+    if (!player) return;
+    player.togglePlay();
   }
-  const ts = parseInt(localStorage.getItem("token_timestamp") || "0");
-  if (Date.now() - ts >= 3600 * 1000) {
-    const res = await fetch("/refresh_token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: refreshToken })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      localStorage.setItem("access_token", data.access_token);
-      localStorage.setItem("token_timestamp", Date.now());
-      return data.access_token;
-    } else {
-      alert("Greška pri osvježavanju tokena.");
+
+  async function getValidToken() {
+    const accessToken = localStorage.getItem("access_token");
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (!refreshToken) {
+      window.location.href = "/spotify_auth";
       return null;
     }
-  }
-  return accessToken;
-}
-
-if (localStorage.getItem("refresh_token")) {
-  setInterval(getValidToken, 3300000);
-}
-
-async function loadPlaylists(token) {
-  const res = await fetch("https://api.spotify.com/v1/me/playlists", {
-    headers: { "Authorization": `Bearer ${token}` }
-  });
-
-  const data = await res.json();
-  const list = document.getElementById("playlistList");
-  list.innerHTML = "";
-
-  // 🔠 Sortiraj playliste po imenu (A–Ž)
-  const sortedPlaylists = data.items.sort((a, b) =>
-    a.name.localeCompare(b.name, 'hr', { sensitivity: 'base' })
-  );
-
-  let firstPlaylistUri = null;
-
-  sortedPlaylists.forEach((pl, index) => {
-    const li = document.createElement("li");
-    li.textContent = pl.name;
-    li.style.cursor = "pointer";
-    li.onclick = () => playPlaylist(pl.uri);
-    list.appendChild(li);
-
-    // 🎯 Zapamti URI prve playliste za automatsko pokretanje
-    if (index === 0) {
-      firstPlaylistUri = pl.uri;
+    const ts = parseInt(localStorage.getItem("token_timestamp") || "0");
+    if (Date.now() - ts >= 3600 * 1000) {
+      const res = await fetch("/refresh_token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refreshToken })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("token_timestamp", Date.now());
+        return data.access_token;
+      } else {
+        alert("Greška pri osvježavanju tokena.");
+        return null;
+      }
     }
-  });
-
-  // ▶️ Automatski pusti prvu playlistu i odmah klikni play
-  if (firstPlaylistUri) {
-    playPlaylist(firstPlaylistUri, true);
+    return accessToken;
   }
-}
+
+  if (localStorage.getItem("refresh_token")) {
+    setInterval(getValidToken, 3300000);
+  }
+
+  async function loadPlaylists(token) {
+    const res = await fetch("https://api.spotify.com/v1/me/playlists", {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+
+    const data = await res.json();
+    const list = document.getElementById("playlistList");
+    list.innerHTML = "";
+
+    const sortedPlaylists = data.items.sort((a, b) =>
+      a.name.localeCompare(b.name, 'hr', { sensitivity: 'base' })
+    );
+
+    let firstPlaylistUri = null;
+
+    sortedPlaylists.forEach((pl, index) => {
+      const li = document.createElement("li");
+      li.textContent = pl.name;
+      li.style.cursor = "pointer";
+      li.onclick = () => playPlaylist(pl.uri);
+      list.appendChild(li);
+      if (index === 0) firstPlaylistUri = pl.uri;
+    });
+
+    if (firstPlaylistUri) {
+      playPlaylist(firstPlaylistUri, true);
+    }
+  }
   </script>
 
-  <!-- ===== Radio logika (Play + Volume, bez Pause/Mute) ===== -->
+  <!-- Radio logika -->
   <script>
-    // Kolekcija svih audio elemenata da samo jedan svira
     const allRadios = [];
 
     function makeRadio({ audioId, playId, volId, statusId, nowId, label }) {
@@ -583,7 +512,6 @@ async function loadPlaylists(token) {
 
       async function play() {
         try {
-          // zaustavi sve ostale
           allRadios.forEach(x => { if (x !== a) x.pause(); });
           setStatus('Pokušavam reproducirati…');
           await a.play();
@@ -614,7 +542,6 @@ async function loadPlaylists(token) {
       return { play, setStatus, setNow, audio:a };
     }
 
-    // Init 2 radija
     const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', statusId:'rd-status', nowId:'rd-now', label:'RD' });
     const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', statusId:'nx-status', nowId:'nx-now', label:'NAXI' });
 
@@ -633,7 +560,6 @@ async function loadPlaylists(token) {
         }
       });
     }
-
   </script>
 </body>
 </html>
