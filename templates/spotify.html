@@ -214,7 +214,7 @@ body{
 <body>
   <div class="page">
 
-    <!-- RED 1: RD + Naxi + TOP Radio (audio) -->
+    <!-- RED 1: RD + Naxi + Otvoreni -->
     <section class="radios-grid">
 
       <article class="radio-card" id="rd-card">
@@ -252,22 +252,21 @@ body{
         </audio>
       </article>
 
-      <!-- Treći: TOP Radio – preko VAŠEG proxyja -->
-      <article class="radio-card" id="tp-card">
+      <!-- Treći: Otvoreni Radio – direktni HTTPS stream -->
+      <article class="radio-card" id="ot-card">
         <div class="radio-head">
-          <div class="radio-title">📻 TOP Radio — Live</div>
+          <div class="radio-title">📻 Otvoreni Radio — Live</div>
         </div>
         <div class="radio-controls">
-          <button id="tp-play" class="btn alt">▶ Play</button>
+          <button id="ot-play" class="btn alt">▶ Play</button>
           <div class="vol">
-            <span id="tp-vol-label">90%</span>
-            <input id="tp-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+            <span id="ot-vol-label">90%</span>
+            <input id="ot-vol" type="range" min="0" max="1" step="0.01" value="0.9">
           </div>
         </div>
-        <div class="ticker"><span id="tp-now">TOP Radio – spremno</span></div>
-        <audio id="tp-audio" preload="none" crossorigin="anonymous">
-          <!-- PROXY audio stream (vidi backend) -->
-          <source src="/proxy/topradio" type="audio/mpeg">
+        <div class="ticker"><span id="ot-now">Otvoreni Radio – spremno</span></div>
+        <audio id="ot-audio" preload="none" crossorigin="anonymous">
+          <source src="https://stream2.otvoreni.hr/otvoreni" type="audio/mpeg">
         </audio>
       </article>
 
@@ -339,23 +338,23 @@ body{
   let playlistsMeta = [];
   let playlistUriToIndex = new Map();
 
-  /* UI helperi – RD, Naxi, TOP, Spotify */
+  /* UI helperi – RD, Naxi, Otvoreni, Spotify */
   const cards = {
     rd: document.getElementById('rd-card'),
     nx: document.getElementById('nx-card'),
-    tp: document.getElementById('tp-card'),
+    ot: document.getElementById('ot-card'),
     sp: document.getElementById('sp-card')
   };
   const buttons = {
     rd: document.getElementById('rd-play'),
     nx: document.getElementById('nx-play'),
-    tp: document.getElementById('tp-play'),
+    ot: document.getElementById('ot-play'),
     sp: document.getElementById('playPause')
   };
   const audios  = {
     rd: document.getElementById('rd-audio'),
     nx: document.getElementById('nx-audio'),
-    tp: document.getElementById('tp-audio')
+    ot: document.getElementById('ot-audio')
   };
 
   function setButtonLabel(btn, playing){ if(!btn) return; btn.textContent = playing ? '⏸ Pause' : '▶ Play'; }
@@ -364,7 +363,7 @@ body{
     Object.values(audios).forEach(a => { try{ a.pause(); }catch(e){} });
     setButtonLabel(buttons.rd, false);
     setButtonLabel(buttons.nx, false);
-    setButtonLabel(buttons.tp, false);
+    setButtonLabel(buttons.ot, false);
   }
   function anyRadioPlaying(){ return Object.values(audios).some(a => !a.paused && !a.ended); }
 
@@ -379,7 +378,7 @@ body{
     playPlaylist(nextUri, true);
   }
 
-  /* ============= Spotify ============= */
+  /* ============= SPOTIFY ============= */
   window.onSpotifyWebPlaybackSDKReady = async () => {
     const token = await getValidToken();
     if (!token) return;
@@ -404,6 +403,7 @@ body{
       loadPlaylists(); // bez autoplay
       syncAllVolumeLabels();
 
+      // fail-safe: ako je klik na Play prerano, pokreni prvu listu
       document.getElementById('playPause').addEventListener('click', async () => {
         pauseAllRadios();
         const st = await player.getCurrentState();
@@ -453,10 +453,8 @@ body{
         document.getElementById("artistName").textContent = current.artists.map(a => a.name).join(", ");
         document.getElementById("albumImage").src = current.album.images[0]?.url || '';
         currentTrackUri = current.uri;
-
         const spNow = document.getElementById('sp-now');
         if (spNow) spNow.textContent = `Sada svira: ${current.name} — ${current.artists.map(a => a.name).join(", ")}`;
-
         if (customOrder) {
           const idx = customOrder.findIndex(t => t.uri === current.uri);
           if (idx !== -1) customIndex = idx;
@@ -629,46 +627,24 @@ body{
     el.scrollIntoView({ block: "center", behavior: "smooth" });
   }
 
-  /* ===== Radio logika + “now playing” za TOP Radio (preko proxyja) ===== */
+  /* ===== Radio logika + volumeni ===== */
   function percent(val){ return Math.round((val||0)*100) + '%'; }
   function syncLabel(rangeEl, labelEl){ if (rangeEl && labelEl){ labelEl.textContent = percent(rangeEl.valueAsNumber); } }
   function syncAllVolumeLabels(){
     syncLabel(document.getElementById('rd-vol'), document.getElementById('rd-vol-label'));
     syncLabel(document.getElementById('nx-vol'), document.getElementById('nx-vol-label'));
-    syncLabel(document.getElementById('tp-vol'), document.getElementById('tp-vol-label'));
+    syncLabel(document.getElementById('ot-vol'), document.getElementById('ot-vol-label'));
     syncLabel(document.getElementById('sp-vol'), document.getElementById('sp-vol-label'));
   }
 
-  function startNowPolling(el, url){
-    let stop = false, timer = null;
-    async function poll(){
-      if (stop) return;
-      try{
-        const r = await fetch(url, { cache:'no-store' });
-        if (r.ok){
-          const txt = (await r.text()).trim();
-          if (txt) el.textContent = txt;
-        }
-      }catch(e){}
-      timer = setTimeout(poll, 15000);
-    }
-    poll();
-    return () => { stop = true; if (timer) clearTimeout(timer); };
-  }
-
-  const allRadios = [];
-
-  function makeRadio({ audioId, playId, volId, nowId, label, nowPollUrl }) {
+  function makeRadio({ audioId, playId, volId, nowId, label }) {
     const a  = document.getElementById(audioId);
     const b  = document.getElementById(playId);
     const vr = document.getElementById(volId);
     const nw = document.getElementById(nowId);
     const cardKey = (label||'').toLowerCase();
 
-    allRadios.push(a);
-
     let retries = 0, maxRetries = 5;
-    let stopNow = null;
     const setNow = t => { if (nw) nw.textContent = t; };
 
     async function playOnlyThis() {
@@ -714,17 +690,16 @@ body{
 
     a.addEventListener('playing', () => {
       retries = 0;
-      if (!nowPollUrl) setNow('Sviramo najbolje hitove 🎵'); // RD i Naxi
+      if (label === 'ot') setNow('Otvoreni Radio — uživo 🎶');
+      else setNow('Sviramo najbolje hitove 🎵');
+
       setButtonLabel(b, true);
       setActiveCard(cardKey);
       if (player && player.pause) player.pause();
       Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
 
-      ['rd','nx','tp'].forEach(k => { if (buttons[k] !== b) setButtonLabel(buttons[k], false); });
+      ['rd','nx','ot'].forEach(k => { if (buttons[k] !== b) setButtonLabel(buttons[k], false); });
       setButtonLabel(buttons.sp, false);
-
-      // pokreni “now playing” polling (samo za TOP Radio)
-      if (nowPollUrl && nw && !stopNow) stopNow = startNowPolling(nw, nowPollUrl);
     });
 
     a.addEventListener('pause', () => {
@@ -735,7 +710,6 @@ body{
         const spIsPlaying = st ? !st.paused : false;
         if (!otherRadioPlaying && !spIsPlaying) setActiveCard(null);
       });
-      if (stopNow) { stopNow(); stopNow = null; }
     });
 
     a.addEventListener('ended', () => {
@@ -745,7 +719,6 @@ body{
         const spIsPlaying = st ? !st.paused : false;
         if (!radioJosSvira && !spIsPlaying) setActiveCard(null);
       });
-      if (stopNow) { stopNow(); stopNow = null; }
     });
 
     return { playOnlyThis, setNow, audio:a, button:b };
@@ -753,11 +726,7 @@ body{
 
   const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', nowId:'rd-now', label:'rd' });
   const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', nowId:'nx-now', label:'nx' });
-  // TOP Radio – koristi proxy za now playing txt
-  const TP = makeRadio({
-    audioId:'tp-audio', playId:'tp-play', volId:'tp-vol', nowId:'tp-now', label:'tp',
-    nowPollUrl:'/proxy/topradio_now'
-  });
+  const OT = makeRadio({ audioId:'ot-audio', playId:'ot-play', volId:'ot-vol', nowId:'ot-now', label:'ot' });
 
   // Spotify glasnoća + label
   const spVol = document.getElementById('sp-vol');
