@@ -298,6 +298,11 @@ player = new Spotify.Player({
       loadPlaylists(token);
     });
 
+    player.addListener('authentication_error', ({message}) => console.warn('auth_error', message));
+    player.addListener('account_error',        ({message}) => console.warn('account_error', message));
+    player.addListener('initialization_error', ({message}) => console.warn('init_error', message));
+    player.addListener('playback_error',       ({message}) => console.warn('playback_error', message));
+
     // Prati play/pause i ažuriraj gumb + aktivnu karticu
     player.addListener('player_state_changed', state => {
       if (!state) return;
