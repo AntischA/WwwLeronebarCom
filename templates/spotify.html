@@ -32,11 +32,10 @@ body{
 }
 
 .page{
-  /* suženo ~30%: 70% širine prozora, ali ne šire od 1000px i ne uže od 320px */
-  width: clamp(320px, 70vw, 1000px);
-  margin: 0 auto;                /* centriraj vodoravno */
+  /* suženo ~20%: 80% širine prozora, max 1280px, min 320px */
+  width: clamp(320px, 80vw, 1280px);
+  margin: 0 auto;
 
-  /* ostatak tvog layouta */
   padding: 22px var(--gap);
   display: grid;
   grid-template-rows: auto 1fr;
@@ -44,6 +43,8 @@ body{
   height: 100dvh;
   min-height: 100svh;
 }
+
+
 .btn{
   appearance:none; border:0; cursor:pointer;
   background:var(--accent-2); color:#062d16;
