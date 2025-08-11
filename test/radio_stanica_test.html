@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<title>Radio Stream Test</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #111; color: #fff; text-align: center; }
+  .station { margin: 10px 0; }
+  audio { width: 90%; margin-top: 5px; }
+  button { padding: 5px 10px; margin-left: 10px; }
+</style>
+</head>
+<body>
+
+<h1>🎵 Radio Stream Test Player</h1>
+
+<div id="stations"></div>
+
+<script>
+const workerBase = "https://radio-proxy.maluma-d-o-o.workers.dev/?meta=0&s=";
+
+const stations = {
+  'naxi-fresh': 'Naxi Fresh',
+  'naxi-mix': 'Naxi Mix',
+  'bravo': 'Radio Bravo',
+  'naxi': 'Naxi 128',
+  'naxi-64': 'Naxi 64',
+  'otvoreni': 'Otvoreni Radio',
+  'dalmacija': 'Radio Dalmacija'
+};
+
+const container = document.getElementById("stations");
+
+Object.entries(stations).forEach(([key, name]) => {
+  const div = document.createElement("div");
+  div.className = "station";
+  div.innerHTML = `
+    <strong>${name}</strong><br>
+    <audio controls preload="none" crossorigin="anonymous">
+      <source src="${workerBase}${key}" type="audio/mpeg">
+    </audio>
+    <button onclick="testStream('${key}')">Test HEAD</button>
+  `;
+  container.appendChild(div);
+});
+
+async function testStream(station) {
+  const url = `${workerBase}${station}`;
+  try {
+    const res = await fetch(url, { method: 'HEAD' });
+    alert(`${station}: ${res.status} ${res.statusText} - ${res.headers.get('content-type')}`);
+  } catch (err) {
+    alert(`${station}: ERROR ${err}`);
+  }
+}
+</script>
+
+</body>
+</html>

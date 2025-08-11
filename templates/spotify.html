@@ -308,9 +308,11 @@ body{
 </audio>
 </article>
 
-<!-- Bravo Hrvatska (preko Workera) -->
+<!-- Bravo Hrvatska (direktno) -->
 <article class="radio-card" id="br-card">
-  <div class="radio-head"><div class="radio-title">📻 Bravo Hrvatska — Live</div></div>
+  <div class="radio-head">
+    <div class="radio-title">📻 Bravo Hrvatska — Live</div>
+  </div>
   <div class="radio-controls">
     <button id="br-play" class="btn alt">▶ Play</button>
     <div class="vol">
@@ -318,11 +320,12 @@ body{
       <input id="br-vol" type="range" min="0" max="1" step="0.01" value="0.9">
     </div>
   </div>
-  <div class="ticker"><span id="br-now">Spremno</span></div>
-<audio id="br-audio" preload="none" crossorigin="anonymous">
-  <source src="https://radio-proxy.maluma-d-o-o.workers.dev/?s=bravo" type="audio/mpeg">
-  <source src="https://drugi-proxy.example.com/?u=http%3A%2F%2Fliveb.bravoportal.com%3A8000%2Fbravo" type="audio/mpeg">
-</audio>
+  <div class="ticker">
+    <span id="br-now">Spremno</span>
+  </div>
+  <audio id="br-audio" preload="none" crossorigin="anonymous">
+    <source src="https://relay1.social3.hr/radio/8310/radio.mp3" type="audio/mpeg">
+  </audio>
 </article>
 
 
