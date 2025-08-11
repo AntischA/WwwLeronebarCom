@@ -40,8 +40,8 @@
   const remaining_ds = () => Math.max(0, state.total_ds - state.listened_ds);
 
   function render() {
-    if (totalEl)    totalEl.textContent    = `Današnje pjesme ${fmtSec(state.total_ds)} sekundi`;
-    if (listenedEl) listenedEl.textContent = `Današnje odslušane pjesme ${fmtSec(state.listened_ds)} sekundi`;
+    if (totalEl)    totalEl.textContent    = `${fmtSec(state.total_ds)} sekundi`;
+    if (listenedEl) listenedEl.textContent = `${fmtSec(state.listened_ds)} sekundi`;
   }
 
   async function refreshFromDB() {
