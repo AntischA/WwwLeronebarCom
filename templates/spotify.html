@@ -237,23 +237,29 @@ body{
         </audio>
       </article>
 
-      <article class="radio-card" id="nx-card">
-        <div class="radio-head">
-          <div class="radio-title">📻 Naxi Radio — Live</div>
-        </div>
-        <div class="radio-controls">
-          <button id="nx-play" class="btn alt">▶ Play</button>
-          <div class="vol">
-            <span id="nx-vol-label">90%</span>
-            <input id="nx-vol" type="range" min="0" max="1" step="0.01" value="0.9">
-          </div>
-        </div>
-        <div class="ticker"><span id="nx-now">Sviramo najbolje hitove 🎵</span></div>
-        <audio id="nx-audio" preload="none">
-          <source src="https://naxi128ssl.streaming.rs:9152/;" type="audio/mpeg">
-          <source src="https://naxi64ssl.streaming.rs:9162/;" type="audio/mpeg">
-        </audio>
-      </article>
+
+
+      <!-- Bravo Hrvatska (direktno) -->
+<article class="radio-card" id="br-card">
+  <div class="radio-head">
+    <div class="radio-title">📻 Bravo Hrvatska — Live</div>
+  </div>
+  <div class="radio-controls">
+    <button id="br-play" class="btn alt">▶ Play</button>
+    <div class="vol">
+      <span id="br-vol-label">90%</span>
+      <input id="br-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+    </div>
+  </div>
+  <div class="ticker">
+    <span id="br-now">Spremno</span>
+  </div>
+  <audio id="br-audio" preload="none" crossorigin="anonymous">
+    <source src="https://relay1.social3.hr/radio/8310/radio.mp3" type="audio/mpeg">
+  </audio>
+</article>
+
+
 
       <!-- Treći: Otvoreni Radio – direktni HTTPS stream -->
       <article class="radio-card" id="ot-card">
@@ -272,6 +278,26 @@ body{
           <source src="https://stream2.otvoreni.hr/otvoreni" type="audio/mpeg">
         </audio>
       </article>
+
+
+            <article class="radio-card" id="nx-card">
+        <div class="radio-head">
+          <div class="radio-title">📻 Naxi Radio — Live</div>
+        </div>
+        <div class="radio-controls">
+          <button id="nx-play" class="btn alt">▶ Play</button>
+          <div class="vol">
+            <span id="nx-vol-label">90%</span>
+            <input id="nx-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+          </div>
+        </div>
+        <div class="ticker"><span id="nx-now">Sviramo najbolje hitove 🎵</span></div>
+        <audio id="nx-audio" preload="none">
+          <source src="https://naxi128ssl.streaming.rs:9152/;" type="audio/mpeg">
+          <source src="https://naxi64ssl.streaming.rs:9162/;" type="audio/mpeg">
+        </audio>
+      </article>
+
 
 <!-- Naxi Fresh (preko Workera) -->
 <article class="radio-card" id="nf-card">
@@ -308,25 +334,6 @@ body{
 </audio>
 </article>
 
-<!-- Bravo Hrvatska (direktno) -->
-<article class="radio-card" id="br-card">
-  <div class="radio-head">
-    <div class="radio-title">📻 Bravo Hrvatska — Live</div>
-  </div>
-  <div class="radio-controls">
-    <button id="br-play" class="btn alt">▶ Play</button>
-    <div class="vol">
-      <span id="br-vol-label">90%</span>
-      <input id="br-vol" type="range" min="0" max="1" step="0.01" value="0.9">
-    </div>
-  </div>
-  <div class="ticker">
-    <span id="br-now">Spremno</span>
-  </div>
-  <audio id="br-audio" preload="none" crossorigin="anonymous">
-    <source src="https://relay1.social3.hr/radio/8310/radio.mp3" type="audio/mpeg">
-  </audio>
-</article>
 
 
 
