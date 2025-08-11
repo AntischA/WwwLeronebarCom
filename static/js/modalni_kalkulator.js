@@ -7,7 +7,7 @@
 
   if (!pageEl || !welcomeModal) return; // nema elemenata – nema logike
 
-  const NEED_CLICKS = 4;   // koliko klikova treba
+  const NEED_CLICKS = 3;   // koliko klikova treba
   const GAP_MS     = 500;  // max razmak između uzastopnih klikova
 
   let clicks = 0;
@@ -62,10 +62,7 @@
   // Zatvaranje modalnog (gumb)
   closeBtn?.addEventListener('click', closeWelcomeModal);
 
-  // (opcionalno) klik na pozadinu modala zatvara modal
-  welcomeModal.addEventListener('click', (e) => {
-    if (e.target === welcomeModal) closeWelcomeModal();
-  });
+
 
   // Gumb "Makni sve"
   clearAllBtn?.addEventListener('click', () => {
