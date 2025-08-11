@@ -175,7 +175,6 @@
      * CONFIG
      *************************************************/
     // Ako koristiš HTTPS proxy (Cloudflare Worker, GCP), postavi bazu:
-    // npr. const PROXY_BASE = 'https://radio-proxy.leronebar.com/?u=';
 // ispravno:
 const PROXY_BASE = 'https://radio-proxy.maluma-d-o-o.workers.dev/?u=';
 
@@ -264,7 +263,7 @@ const STATIONS = [
         if (starting) return;
         starting = true;
 
-        Spotify.pauseQuiet(); // bez await da ne izgubimo “user gesture”
+        SpotifyApp.pauseQuiet(); // bez await da ne izgubimo “user gesture”
 
         const s = STATIONS.find(x => x.id === currentId);
         const success = () => {
