@@ -4,602 +4,590 @@
   <meta charset="UTF-8" />
   <title>Lerone • Radio + Spotify</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Favicon (nema 404) -->
+  <!-- Inline favicon da ne baca 404 -->
   <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎵</text></svg>'>
 
   <style>
-    :root{
-      --bg:#0b1020; --card:#11182a; --soft:#0f1526;
-      --text:#e8eef7; --muted:#a7b2c6; --line:#203055;
-      --accent:#1db954; --accent2:#10b981;
-      --radius:16px; --gap:18px; --shadow:0 10px 30px rgba(0,0,0,.35);
-    }
+  :root{
+    --bg:#0b1020; --card:#11182a; --soft:#0f1526;
+    --text:#e8eef7; --sub:#a7b2c6;
+    --accent:#10b981; --accent-2:#1db954;
+    --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.35);
+    --gap:18px; --gap-lg:22px; --line:#203055;
+    --active-1:#16324a; --active-2:#0f1f39;
+  }
 
-    *{ box-sizing:border-box }
-    html, body { height:100% }
-    body{
-      margin:0; color:var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial;
-      background: radial-gradient(1200px 600px at 30% -10%, #17213f 0%, #0b1020 55%, #0b1020 100%);
-    }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial;
+    background: radial-gradient(1200px 600px at 30% -10%, #17213f 0%, #0b1020 55%, #0b1020 100%);
+  }
 
-    .app{
-      width: clamp(320px, 80vw, 1280px);
-      margin: 0 auto; padding: 22px var(--gap);
-      display: grid; gap: var(--gap);
-      grid-auto-rows: min-content;
-      min-height: 100svh;
-    }
+  .page{
+    width: clamp(320px, 80vw, 1280px);
+    margin: 0 auto; padding: 22px var(--gap);
+    display: grid; grid-template-rows: auto 1fr; gap: var(--gap-lg);
+    height: 100dvh; min-height: 100svh;
+  }
 
-    .h { margin:0; font-size:1.12rem; font-weight:800; letter-spacing:.2px; color:#e9f2ff }
+  h1{ margin:0 0 8px; font-size:1.1rem; letter-spacing:.2px; color:#dfe8f7; font-weight:800; }
 
-    .grid{ display:grid; gap: var(--gap); grid-template-columns: 1fr 1fr }
-    @media (max-width: 1100px){ .grid{ grid-template-columns: 1fr } }
+  .grid{
+    display:grid; grid-template-columns: 1fr 1fr; gap: var(--gap-lg);
+    align-items:stretch; min-height:0;
+  }
 
-    .card{
-      background: linear-gradient(180deg, var(--card), var(--soft));
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 16px;
-      display: flex; flex-direction: column; gap: 12px;
-      min-height: 160px;
-    }
-    .panel{
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 16px;
-      display:flex; flex-direction:column; gap:12px; min-height: 0;
-    }
-    .panel .h2{ margin:0; font-weight:700; letter-spacing:.2px; font-size:1rem }
-    .row{ display:flex; align-items:center; gap:12px; min-width:0 }
+  .card{
+    background:linear-gradient(180deg, var(--card), var(--soft));
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:16px; display:flex; flex-direction:column; gap:10px; min-height:160px;
+  }
+  .panel{ background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; display:flex; flex-direction:column; min-height:0; }
+  .panel h3{ margin:0 0 10px; font-size:1.02rem; letter-spacing:.2px; position:sticky; top:0; background:var(--card); z-index:1; padding-bottom:8px; }
 
-    .btn{
-      appearance:none; border:0; cursor:pointer;
-      background: var(--accent);
-      color:#062d16; font-weight:800;
-      padding:12px 14px; border-radius:12px; min-width:110px;
-      transition: transform .06s ease, filter .12s ease, opacity .12s ease;
-    }
-    .btn.alt{ background: var(--accent2); color:#04281f }
-    .btn:active{ transform: translateY(1px) }
-    .btn:disabled{ opacity:.55; cursor:not-allowed }
+  .row{ display:flex; align-items:center; gap:12px; min-width:0; }
+  .title{ font-weight:800; letter-spacing:.2px; font-size:1.02rem; }
 
-    .vol{ display:flex; align-items:center; gap:10px; color:var(--muted); flex:1 1 auto; min-width:0 }
-    .vol span{ display:inline-block; width:4ch; text-align:right }
-    .vol input[type="range"]{
-      flex:1 1 auto; height:40px; background:transparent;
-      appearance:none; -webkit-appearance:none;
-    }
-    .vol input[type="range"]::-webkit-slider-runnable-track{
-      height:40px; border-radius:10px; background:var(--line);
-    }
-    .vol input[type="range"]::-webkit-slider-thumb{
-      -webkit-appearance:none; width:26px; height:26px; margin-top:7px;
-      border-radius:50%; background:#e8eef7; border:2px solid #0f1f39;
-    }
-    .vol input[type="range"]::-moz-range-track{ height:12px; border-radius:10px; background:var(--line) }
-    .vol input[type="range"]::-moz-range-thumb{
-      width:22px; height:22px; border-radius:50%; background:#e8eef7; border:2px solid #0f1f39
-    }
+  .btn{
+    appearance:none; border:0; cursor:pointer;
+    background:var(--accent-2); color:#062d16;
+    padding:14px 14px; border-radius:12px; font-weight:800; min-width:110px;
+    transition:transform .06s ease, filter .12s ease, opacity .12s ease;
+  }
+  .btn.alt{ background:var(--accent); color:#04281f }
+  .btn:active{ transform:translateY(1px) }
+  .btn:disabled{ opacity:.55; cursor:not-allowed }
 
-    .ticker{ overflow:hidden; white-space:nowrap; font-size:.95rem; color:#dfe8f7;
-      -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 10%,#000 90%,transparent 100%);
-              mask-image:linear-gradient(90deg,transparent 0,#000 10%,#000 90%,transparent 100%);
-    }
-    .ticker span{ display:inline-block; padding-left:100%; animation:ticker 12s linear infinite }
-    @keyframes ticker{ from{ transform:translateX(0) } to{ transform:translateX(-100%) } }
+  .vol{ display:flex; align-items:center; gap:10px; color:var(--sub); font-size:.95rem; flex:1 1 auto; min-width:0; white-space:nowrap; }
+  .vol span{ display:inline-block; width:4ch; text-align:right; }
+  .vol input[type="range"]{
+    flex:1 1 auto; width:100%; max-width:100%; height:42px; background:transparent; -webkit-appearance:none; appearance:none;
+  }
+  .vol input[type="range"]::-webkit-slider-runnable-track{ height:42px; border-radius:10px; background:var(--line); }
+  .vol input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; width:28px; height:28px; border-radius:50%; background:#e8eef7; margin-top:7px; border:2px solid #0f1f39; }
+  .vol input[type="range"]::-moz-range-track{ height:12px; border-radius:10px; background:var(--line); }
+  .vol input[type="range"]::-moz-range-thumb{ width:22px; height:22px; border-radius:50%; background:#e8eef7; border:2px solid #0f1f39; }
 
-    .list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; min-height:0; overflow:auto }
-    .item{
-      display:flex; align-items:center; gap:12px;
-      background:#17213b; border-radius:12px; padding:10px 12px;
-      cursor:pointer; transition: filter .12s ease, transform .06s ease;
-    }
-    .item:hover{ filter:brightness(1.07); transform: translateY(-1px) }
-    .item.active{ outline:2px solid var(--accent2); background:#1a2747 }
+  .list{ list-style:none; margin:0; padding:0; flex:1 1 auto; min-height:0; overflow:auto; }
+  .list li{
+    background:#17213b; margin:8px 0; padding:10px 12px; border-radius:10px;
+    cursor:pointer; transition:filter .12s ease, transform .06s ease;
+    display:flex; align-items:center; gap:10px;
+  }
+  .list li:hover{ filter:brightness(1.07); transform:translateY(-1px); }
+  .list li.active{ outline:2px solid var(--accent); background:#1a2747; }
 
-    .thumb{ width:44px; height:44px; border-radius:10px; background:#24345e; object-fit:cover; flex:0 0 44px }
-    .tcol{ min-width:0 }
-    .t1{ font-weight:700; font-size:.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
-    .t2{ color:var(--muted); font-size:.82rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
-    .playing{ outline:1px solid #3a7bd5; background:#15294f }
+  .track{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; }
+  .track:hover{ background:#1a2747; }
+  .thumb{ width:44px; height:44px; border-radius:6px; object-fit:cover; background:#24345e; flex:0 0 44px; }
+  .tcol{ min-width:0; }
+  .tt{ font-weight:700; font-size:.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ta{ color:var(--sub); font-size:.82rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .playing{ outline:1px solid #3a7bd5; background:#15294f; }
 
-    .muted { color:var(--muted); font-size:.9rem }
-    .sr-only{ position:absolute !important; left:-9999px !important }
+  .ticker{ overflow:hidden; white-space:nowrap; -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%); mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%); font-size:.95rem; color:#dfe8f7; }
+  .ticker span{ display:inline-block; padding-left:100%; animation:ticker 12s linear infinite; }
+  @keyframes ticker{ from{ transform:translateX(0);} to{ transform:translateX(-100%);} }
+
+  .muted{ color:var(--sub); font-size:.9rem; }
+  .sr-only{ position:absolute!important; left:-9999px!important; }
+
+  @media (max-width:1100px){ .grid{ grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
-  <main class="app">
-    <h1 class="h">Lerone • Radio + Spotify</h1>
+  <div class="page">
+    <h1>Lerone • Radio + Spotify</h1>
 
-    <!-- RADIO -->
-    <section class="grid" aria-label="Radio blok">
-      <article class="panel" aria-labelledby="radio-list-h">
-        <h2 class="h2" id="radio-list-h">📻 Radio stanice</h2>
+    <!-- RED 1: Radio lista (lijevo) + jedan player (desno) -->
+    <section class="grid" aria-label="Radio">
+      <article class="panel" aria-labelledby="radios-h">
+        <h3 id="radios-h">📻 Radio stanice</h3>
         <ul id="radioList" class="list" role="listbox" aria-label="Popis radio stanica"></ul>
       </article>
 
-      <article class="card" aria-labelledby="radio-player-h">
-        <h2 class="h2" id="radio-player-h">🔊 <span id="ra-title">Odaberi stanicu lijevo</span></h2>
+      <article class="card" id="ra-card">
+        <div class="row">
+          <div class="title" id="ra-title">🔊 Odaberi stanicu lijevo</div>
+        </div>
         <div class="row">
           <button id="ra-play" class="btn alt" aria-label="Reproduciraj radio">▶ Play</button>
           <div class="vol">
-            <span id="ra-vlbl">90%</span>
+            <span id="ra-vlabel">90%</span>
             <input id="ra-vol" type="range" min="0" max="1" step="0.01" value="0.9" aria-label="Glasnoća radija">
           </div>
         </div>
         <div class="ticker" aria-live="polite"><span id="ra-now">Spreman za reprodukciju…</span></div>
-        <!-- BEZ crossorigin zbog CORS na nekim streamovima -->
+        <!-- playsinline: iOS Safari -->
         <audio id="ra-audio" preload="none" playsinline></audio>
       </article>
     </section>
 
-    <!-- SPOTIFY -->
-    <section class="grid" aria-label="Spotify blok">
-      <article class="card" aria-labelledby="spotify-player-h">
-        <h2 class="h2" id="spotify-player-h">🎵 Spotify — Player</h2>
+    <!-- RED 2: Spotify (lijevo player + playliste), desno pjesme -->
+    <section class="grid" aria-label="Spotify">
+      <div class="card" id="sp-card">
         <div class="row">
-          <button id="sp-play" class="btn" disabled aria-label="Reproduciraj Spotify">▶ Play</button>
+          <div class="title">🎵 Spotify — Player</div>
+        </div>
+        <div class="row">
+          <button id="sp-play" class="btn alt" disabled aria-label="Reproduciraj Spotify">▶ Play</button>
           <div class="vol">
-            <span id="sp-vlbl">90%</span>
+            <span id="sp-vlabel">90%</span>
             <input id="sp-vol" type="range" min="0" max="1" step="0.01" value="0.9" aria-label="Glasnoća Spotify">
           </div>
         </div>
         <div class="ticker" aria-live="polite"><span id="sp-now">Odaberi playlistu pa klikni Play.</span></div>
+
         <div class="sr-only" aria-hidden="true">
           <img id="sp-img" alt="">
           <div id="sp-track"></div>
           <div id="sp-artist"></div>
-          <input id="sp-seek" type="range" min="0" max="100" step="1" value="0">
+          <input type="range" id="sp-seek" value="0" min="0" max="100" step="1">
         </div>
-        <div class="panel" style="background:transparent; box-shadow:none; padding:0">
-          <h3 class="h2" style="margin-top:8px">📚 Moje playliste</h3>
-          <ul id="pl-list" class="list" aria-label="Playliste"></ul>
-        </div>
-      </article>
+      </div>
 
-      <article class="panel" aria-labelledby="tracks-h">
-        <h2 class="h2" id="tracks-h">🎼 Pjesme u playlisti</h2>
+      <div class="panel">
+        <h3>🎼 Pjesme u playlisti</h3>
         <ul id="tracks" class="list"></ul>
-        <div id="tracks-hint" class="muted">Odaberi playlistu iz “Moje playliste”.</div>
-      </article>
+        <div class="muted" id="tracks-hint">Odaberi playlistu iz “Moje playliste”.</div>
+      </div>
     </section>
-  </main>
+
+    <section class="panel" style="margin-top:var(--gap-lg)">
+      <h3>📚 Moje playliste</h3>
+      <ul id="playlists" class="list"></ul>
+    </section>
+  </div>
 
   <!-- Spotify SDK -->
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
 
   <script>
-    /*************************************************
-     * CONFIG
-     *************************************************/
-    // Ako koristiš HTTPS proxy (Cloudflare Worker, GCP), postavi bazu:
-// ispravno:
-const PROXY_BASE = 'https://radio-proxy.maluma-d-o-o.workers.dev/?u=';
+  /*************
+   * CONFIG
+   *************/
+  // Ako postaviš proxy (npr. Cloudflare Worker), upiši bazu, a u stations ostavi originalni URL.
+  // Primjer Workera koji prima ?u=<encodedURL> → PROXY_BASE = 'https://radio-proxy.leronebar.com/?u=';
+  const PROXY_BASE = ''; // ostavi '' ako ne koristiš proxy
 
-const STATIONS = [
-  // postojeće
-  { id:'rd', name:'Radio Dalmacija — Live', sources:['https://shoutcast.pondi.hr:9000/;'] },
-  { id:'nx', name:'Naxi Radio — Live',      sources:['https://naxi128ssl.streaming.rs:9152/;','https://naxi64ssl.streaming.rs:9162/;'] },
-  { id:'ot', name:'Otvoreni Radio — Live',  sources:['https://stream2.otvoreni.hr/otvoreni'] },
+  const STATIONS = [
+    { id:'rd', name:'Radio Dalmacija — Live', sources:['https://shoutcast.pondi.hr:9000/;'] },
+    { id:'nx', name:'Naxi Radio — Live',      sources:['https://naxi128ssl.streaming.rs:9152/;','https://naxi64ssl.streaming.rs:9162/;'] },
+    { id:'ot', name:'Otvoreni Radio — Live',  sources:['https://stream2.otvoreni.hr/otvoreni'] },
+    // Primjer dodavanja: { id:'nf', name:'Naxi Fresh', sources:['http://naxidigital-fresh128.streaming.rs:8210/'] },
+    // Za HTTP/mixed-content radit će kroz proxy ako PROXY_BASE != ''.
+  ];
 
-  // NOVO — Naxi digital (HTTP → idealno preko PROXY_BASE)
-  { id:'nf', name:'Naxi Fresh — Live', sources:[
-    'http://naxidigital-fresh128.streaming.rs:8210/'
-  ]},
-  { id:'nm', name:'Naxi Mix — Live', sources:[
-    'http://naxidigital-mix128.streaming.rs:8220/'
-  ]},
+  /*************
+   * HELPERS
+   *************/
+  const $ = sel => document.querySelector(sel);
+  const el = (tag, cls) => { const x = document.createElement(tag); if (cls) x.className = cls; return x; };
+  const pct = v => Math.round((v||0)*100) + '%';
+  const setBtn = (btn, playing) => { btn.textContent = playing ? '⏸ Pause' : '▶ Play'; };
 
-  // NOVO — Bravo (zamijeni URL ako koristiš drugi Bravo stream)
-  { id:'br', name:'Bravo Radio — Live', sources:[
-    // Ako imaš svoj točan URL, stavi ga na 1. mjesto.
-    // Primjer HTTP (ide preko PROXY_BASE):
-    'http://streamer.radio-bravo.rs:8000/bravo',
-    // Ako imaš HTTPS varijantu, dodaj je ispred HTTP-a:
-    // 'https://streamer.radio-bravo.rs/bravo'
-  ]},
-];
+  const resolveSrc = (src) => PROXY_BASE ? (PROXY_BASE + encodeURIComponent(src)) : src;
 
-    /*************************************************
-     * UTILS
-     *************************************************/
-    const $ = s => document.querySelector(s);
-    const el = (tag, cls) => { const n = document.createElement(tag); if (cls) n.className = cls; return n; };
-    const pct = v => Math.round((v||0) * 100) + '%';
-    const setBtn = (btn, playing) => { btn.textContent = playing ? '⏸ Pause' : '▶ Play'; };
-    const resolveSrc = url => PROXY_BASE ? (PROXY_BASE + encodeURIComponent(url)) : url;
-    const sleep = ms => new Promise(r => setTimeout(r, ms));
+  /*************
+   * RADIO
+   *************/
+  const radio = (() => {
+    const list = $('#radioList');
+    const audio = $('#ra-audio');
+    const playBtn = $('#ra-play');
+    const title = $('#ra-title');
+    const now = $('#ra-now');
+    const vol = $('#ra-vol'), vlabel = $('#ra-vlabel');
 
-    /*************************************************
-     * RADIO MODULE
-     *************************************************/
-    const Radio = (() => {
-      const listEl = $('#radioList');
-      const titleEl = $('#ra-title');
-      const nowEl = $('#ra-now');
-      const audio = $('#ra-audio');
-      const playBtn = $('#ra-play');
-      const vol = $('#ra-vol'); const vlbl = $('#ra-vlbl');
+    let currentId = null;
+    let srcIndex = 0;
+    let starting = false;
 
-      let currentId = null;
-      let srcIndex = 0;
-      let starting = false;
+    const renderList = () => {
+      list.innerHTML = '';
+      STATIONS.forEach(s => {
+        const li = el('li');
+        li.textContent = s.name;
+        li.dataset.id = s.id;
+        li.onclick = () => select(s.id);
+        if (s.id === currentId) li.classList.add('active');
+        list.appendChild(li);
+      });
+    };
 
-      const renderList = () => {
-        listEl.innerHTML = '';
-        STATIONS.forEach(s => {
-          const li = el('li','item');
-          li.textContent = s.name;
-          li.dataset.id = s.id;
-          li.onclick = () => select(s.id);
-          if (s.id === currentId) li.classList.add('active');
-          listEl.appendChild(li);
-        });
-      };
+    const select = (id) => {
+      const s = STATIONS.find(x => x.id === id);
+      if (!s) return;
+      try { audio.pause(); } catch(_) {}
+      starting = false;
+      currentId = id; srcIndex = 0;
 
-      const select = (id) => {
-        const s = STATIONS.find(x => x.id === id);
-        if (!s) return;
-        try { audio.pause(); } catch(_) {}
+      title.textContent = '🔊 ' + s.name;
+      now.textContent = 'Spreman: ' + s.name;
+      [...list.children].forEach(li => li.classList.toggle('active', li.dataset.id === id));
+
+      playBtn.disabled = true;
+      setTimeout(()=> playBtn.disabled = false, 250);
+
+      audio.removeAttribute('src');
+      audio.src = resolveSrc(s.sources[0]);
+      try { audio.load(); } catch(_) {}
+      setBtn(playBtn, false);
+    };
+
+    const tryPlay = () => {
+      if (starting) return;
+      starting = true;
+
+      // pauziraj Spotify u pozadini (bez await da ne izgubimo user gesture)
+      spotify.pauseQuiet();
+
+      const s = STATIONS.find(x => x.id === currentId);
+      const success = () => {
+        setBtn(playBtn, true);
+        now.textContent = 'Slušate: ' + (s?.name || 'Radio') + ' 🎶';
         starting = false;
-        currentId = id; srcIndex = 0;
-
-        titleEl.textContent = s.name;
-        nowEl.textContent = 'Spreman: ' + s.name;
-        [...listEl.children].forEach(li => li.classList.toggle('active', li.dataset.id === id));
-
-        playBtn.disabled = true;
-        setTimeout(() => playBtn.disabled = false, 220);
-
-        audio.removeAttribute('src');
-        audio.src = resolveSrc(s.sources[0]);
-        try { audio.load(); } catch(_) {}
-        setBtn(playBtn, false);
       };
-
-      const tryPlay = () => {
-        if (starting) return;
-        starting = true;
-
-        SpotifyApp.pauseQuiet(); // bez await da ne izgubimo “user gesture”
-
-        const s = STATIONS.find(x => x.id === currentId);
-        const success = () => {
-          setBtn(playBtn, true);
-          nowEl.textContent = 'Slušate: ' + (s?.name || 'Radio') + ' 🎶';
-          starting = false;
-        };
-        const failover = async (err) => {
-          if (s && srcIndex < s.sources.length - 1) {
-            srcIndex++;
-            audio.src = resolveSrc(s.sources[srcIndex]);
-            try { audio.load(); } catch(_) {}
-            attempt();
-            return;
-          }
-          nowEl.textContent = (err && err.name === 'NotAllowedError')
-            ? 'Preglednik blokira zvuk. Klikni još jednom.'
-            : 'Ne mogu reproducirati stream. Pokušaj ponovno.';
-          setBtn(playBtn, false);
-          starting = false;
-        };
-        const attempt = () => {
-          let p;
-          try { p = audio.play(); } catch(e){ failover(e); return; }
-          if (p?.then) p.then(success).catch(failover); else success();
-        };
-        attempt();
-      };
-
-      // UI hooks
-      playBtn.addEventListener('click', () => {
-        if (!currentId && STATIONS.length) select(STATIONS[0].id);
-        if (audio.paused) tryPlay(); else audio.pause();
-      });
-      vol.addEventListener('input', () => {
-        audio.volume = vol.valueAsNumber;
-        vlbl.textContent = pct(vol.valueAsNumber);
-      });
-
-      // Audio lifecycle
-      audio.addEventListener('playing', () => setBtn(playBtn, true));
-      audio.addEventListener('pause', () => setBtn(playBtn, false));
-      audio.addEventListener('stalled', () => {
-        nowEl.textContent = 'Veza je zastala… pokušavam ponovo.';
-        try { audio.load(); audio.play().catch(()=>{}); } catch(_){}
-      });
-      audio.addEventListener('error', () => {
-        const s = STATIONS.find(x => x.id === currentId); if (!s) return;
-        if (srcIndex < s.sources.length - 1){
+      const failover = (err) => {
+        if (s && srcIndex < s.sources.length - 1) {
           srcIndex++;
           audio.src = resolveSrc(s.sources[srcIndex]);
-          try { audio.load(); audio.play().catch(()=>{}); } catch(_){}
-        } else {
-          nowEl.textContent = 'Greška na streamu. Pokušaj kasnije.';
-          setBtn(playBtn, false);
-        }
-      });
-
-      const init = () => {
-        renderList();
-        vlbl.textContent = pct(vol.valueAsNumber);
-        if (STATIONS.length) select(STATIONS[0].id);
-      };
-
-      return {
-        init,
-        pause: () => { try { audio.pause(); } catch(_) {} },
-      };
-    })();
-
-    /*************************************************
-     * SPOTIFY MODULE
-     *************************************************/
-    const SpotifyApp = (() => {
-      // Elements
-      const playBtn = $('#sp-play');
-      const vol = $('#sp-vol'); const vlbl = $('#sp-vlbl');
-      const nowEl = $('#sp-now');
-
-      const plList = $('#pl-list');
-      const trList = $('#tracks'); const trHint = $('#tracks-hint');
-
-      // State
-      let player = null, deviceId = null, ready = false, lock = false;
-      let playlists = []; // [{uri,id,name,li}]
-      let tracks = [];    // [{name,artists,uri,img}]
-      let custom = null;  // current queue order (copy of tracks)
-      let curIndex = -1;  // index in custom
-      let curUri = null;
-      const uriToLi = new Map();
-      let lastPlayingEl = null;
-
-      // Auth helpers (uses your backend)
-      async function refreshAccessToken() {
-        const rt = localStorage.getItem('refresh_token');
-        if (!rt) { window.location.href = '/spotify_auth'; return null; }
-        const res = await fetch('/refresh_token', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ refresh_token: rt })
-        });
-        const data = await res.json();
-        if (res.ok && data.access_token) {
-          localStorage.setItem('access_token', data.access_token);
-          localStorage.setItem('token_timestamp', Date.now());
-          return data.access_token;
-        }
-        console.error('Refresh failed', data);
-        return null;
-      }
-      async function getToken() {
-        const at = localStorage.getItem('access_token');
-        const rt = localStorage.getItem('refresh_token');
-        if (!rt) { window.location.href = '/spotify_auth'; return null; }
-        const ts = parseInt(localStorage.getItem('token_timestamp') || '0', 10);
-        if (!at || (Date.now()-ts) >= 55*60*1000) return await refreshAccessToken();
-        return at;
-      }
-
-      async function ensureActiveDevice(){
-        if (!deviceId) return;
-        const token = await getToken(); if (!token) return;
-        try{
-          await fetch('https://api.spotify.com/v1/me/player', {
-            method:'PUT',
-            headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
-            body: JSON.stringify({ device_ids:[deviceId], play:false })
-          });
-          await sleep(150);
-        }catch(e){ console.warn('device transfer', e); }
-      }
-
-      function renderPlaylists(items){
-        plList.innerHTML = '';
-        playlists = [];
-        items.forEach(p => {
-          const li = el('li','item'); li.textContent = p.name; li.style.cursor='pointer';
-          li.onclick = () => playPlaylist(p.uri);
-          plList.appendChild(li);
-          playlists.push({ uri:p.uri, id:p.id, name:p.name, li });
-        });
-      }
-      function setActivePlaylist(uri){
-        playlists.forEach(p => p.li.classList.toggle('active', p.uri === uri));
-      }
-
-      function renderTracks(arr){
-        trList.innerHTML = ''; uriToLi.clear(); lastPlayingEl = null;
-        arr.forEach((t, i) => {
-          const li = el('li','item');
-          const img = el('img','thumb'); img.src = t.img || ''; img.alt = 'Cover';
-          const col = el('div','tcol');
-          const t1 = el('div','t1'); t1.textContent = t.name;
-          const t2 = el('div','t2'); t2.textContent = t.artists;
-          col.append(t1, t2); li.append(img, col);
-          li.onclick = () => { custom = arr.slice(); playByIndex(i); };
-          if (t.uri === curUri) { li.classList.add('playing'); lastPlayingEl = li; }
-          trList.appendChild(li); uriToLi.set(t.uri, li);
-        });
-        trHint.style.display = arr.length ? 'none' : 'block';
-      }
-      function highlight(uri){
-        if (!uriToLi.has(uri)) return;
-        if (lastPlayingEl) lastPlayingEl.classList.remove('playing');
-        const li = uriToLi.get(uri);
-        li.classList.add('playing');
-        lastPlayingEl = li;
-        li.scrollIntoView({ block:'center', behavior:'smooth' });
-      }
-
-      async function fetchTracks(playlistId){
-        const token = await getToken(); if (!token) return [];
-        let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
-        const items = [];
-        while(url){
-          const res = await fetch(url, { headers:{ Authorization:`Bearer ${token}` }});
-          const data = await res.json();
-          if (!data || !data.items) break;
-          items.push(...data.items);
-          url = data.next;
-        }
-        return items.map(it => {
-          const t = it.track; if (!t) return null;
-          return {
-            name: t.name,
-            artists: (t.artists||[]).map(a=>a.name).join(', '),
-            uri: t.uri,
-            img: (t.album?.images?.[t.album.images.length-1]?.url) || ''
-          };
-        }).filter(Boolean);
-      }
-
-      async function playPlaylist(uri){
-        setActivePlaylist(uri);
-        const id = uri.split(':').pop();
-        tracks = await fetchTracks(id);
-        custom = tracks.slice();
-        renderTracks(custom);
-
-        await ensureActiveDevice();
-        const token = await getToken(); if (!token) return;
-        const uris = custom.map(t => t.uri);
-        await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-          method:'PUT',
-          headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
-          body: JSON.stringify({ uris, offset:{ position:0 }, position_ms:0 })
-        });
-      }
-
-      async function playByIndex(idx){
-        if (!custom || idx < 0 || idx >= custom.length) return;
-        curIndex = idx;
-        await ensureActiveDevice();
-        const token = await getToken(); if (!token) return;
-        const uris = custom.map(t => t.uri);
-        await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-          method:'PUT',
-          headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
-          body: JSON.stringify({ uris, offset:{ position: idx }, position_ms:0 })
-        });
-      }
-
-      async function loadPlaylists() {
-         const token = await getToken(); if (!token) return;
-
-        const res = await fetch("https://api.spotify.com/v1/me/playlists", {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-
-        if (!res.ok) {
-          const err = await res.json().catch(()=>({}));
-          console.error('Playlists error', res.status, err);
-          document.getElementById('tracks-hint').textContent =
-            'Ne mogu učitati playliste (provjeri dopuštenja aplikacije na Spotifyju).';
+          try { audio.load(); } catch(_) {}
+          attempt();
           return;
         }
-
-        const data = await res.json();
-        const items = (data.items||[]).sort((a,b)=> a.name.localeCompare(b.name,'hr',{sensitivity:'base'}));
-        renderPlaylists(items);
-        if (items.length){
-          // Prefetch prve (bez automatske reprodukcije)
-          const firstTracks = await fetchTracks(items[0].id);
-          tracks = firstTracks; custom = tracks.slice(); renderTracks(custom);
-          setActivePlaylist(items[0].uri);
-        }
-      }
-
-
-      // Public (poziva Radio):
-      function pauseQuiet(){ try { player?.pause(); } catch(_) {} }
-
-      // SDK READY
-      window.onSpotifyWebPlaybackSDKReady = async () => {
-        const token = await getToken(); if (!token) return;
-
-        player = new Spotify.Player({
-          name: 'Lerone Web Player',
-          getOAuthToken: async cb => { cb(await getToken() || await refreshAccessToken()); },
-          volume: 0.5
-        });
-
-        player.addListener('ready', async ({ device_id }) => {
-          deviceId = device_id; ready = true;
-          playBtn.disabled = false;
-          try { player.setVolume(vol.valueAsNumber); } catch(_) {}
-          await ensureActiveDevice();
-          loadPlaylists();
-
-          playBtn.addEventListener('click', async () => {
-            if (!ready || lock) return;
-            lock = true; setTimeout(()=>lock=false, 320);
-
-            // ugasi radio
-            Radio.pause();
-
-            const st = await player.getCurrentState();
-            const empty = !st || !st.track_window || !st.track_window.current_track;
-            if (empty){
-              await ensureActiveDevice();
-              if (custom?.length) await playByIndex(curIndex >= 0 ? curIndex : 0);
-              else if (playlists[0]?.uri) await playPlaylist(playlists[0].uri);
-            } else {
-              player.togglePlay();
-            }
-          });
-        });
-
-        player.addListener('player_state_changed', (state) => {
-          if (!state) return;
-          setBtn(playBtn, !state.paused);
-
-          // kad Spotify svira, ugasi radio
-          if (!state.paused) Radio.pause();
-
-          const cur = state.track_window?.current_track;
-          if (cur){
-            $('#sp-track').textContent = cur.name;
-            $('#sp-artist').textContent = (cur.artists||[]).map(a=>a.name).join(', ');
-            $('#sp-img').src = cur.album?.images?.[0]?.url || '';
-            curUri = cur.uri;
-            nowEl.textContent = `Sada svira: ${cur.name} — ${(cur.artists||[]).map(a=>a.name).join(', ')}`;
-            if (custom){
-              const i = custom.findIndex(t => t.uri === cur.uri);
-              if (i !== -1) curIndex = i;
-            }
-            highlight(cur.uri);
-          }
-        });
-
-        player.addListener('authentication_error', ({message}) => console.warn('auth_error', message));
-        player.addListener('account_error',        ({message}) => console.warn('account_error', message));
-        player.addListener('initialization_error', ({message}) => console.warn('init_error', message));
-        player.addListener('playback_error',       ({message}) => console.warn('playback_error', message));
-
-        player.connect();
+        now.textContent = (err && err.name === 'NotAllowedError')
+          ? 'Preglednik blokira zvuk. Klikni još jednom.'
+          : 'Ne mogu reproducirati stream. Pokušaj ponovno.';
+        setBtn(playBtn, false);
+        starting = false;
+      };
+      const attempt = () => {
+        let p;
+        try { p = audio.play(); } catch(e) { failover(e); return; }
+        if (p && p.then) p.then(success).catch(failover); else success();
       };
 
-      // Volume UI
-      vol.addEventListener('input', () => {
-        try { player?.setVolume(vol.valueAsNumber); } catch(_) {}
-        vlbl.textContent = pct(vol.valueAsNumber);
+      attempt();
+    };
+
+    // UI events
+    playBtn.addEventListener('click', () => {
+      if (!currentId && STATIONS.length) select(STATIONS[0].id);
+      if (audio.paused) tryPlay(); else audio.pause();
+    });
+    vol.addEventListener('input', () => {
+      audio.volume = vol.valueAsNumber; vlabel.textContent = pct(vol.valueAsNumber);
+    });
+
+    audio.addEventListener('playing', () => setBtn(playBtn, true));
+    audio.addEventListener('pause', () => setBtn(playBtn, false));
+    audio.addEventListener('stalled', () => {
+      now.textContent = 'Veza je zastala… pokušavam ponovo.';
+      try { audio.load(); audio.play().catch(()=>{}); } catch(_){}
+    });
+    audio.addEventListener('error', () => {
+      const s = STATIONS.find(x => x.id === currentId);
+      if (!s) return;
+      if (srcIndex < s.sources.length - 1) {
+        srcIndex++;
+        audio.src = resolveSrc(s.sources[srcIndex]);
+        try { audio.load(); audio.play().catch(()=>{}); } catch(_){}
+      } else {
+        now.textContent = 'Greška na streamu. Pokušaj kasnije.';
+        setBtn(playBtn, false);
+      }
+    });
+
+    // init
+    const init = () => {
+      renderList();
+      vlabel.textContent = pct(vol.valueAsNumber);
+      if (STATIONS.length) select(STATIONS[0].id);
+    };
+
+    // API koji koristi Spotify modul
+    const pause = () => { try { audio.pause(); } catch(_) {} };
+
+    return { init, pause, select };
+  })();
+
+  /*************
+   * SPOTIFY
+   *************/
+  const spotify = (() => {
+    let player = null, deviceId = null, ready = false;
+    let clickLock = false;
+
+    let currentPlaylistUri = null;
+    let tracks = [];         // [{name, artists, uri, img}]
+    let customOrder = null;  // kopija za shuffle ili custom red
+    let customIndex = -1;
+    let currentTrackUri = null;
+    let lastPlayingEl = null;
+    let playlistsMeta = [];  // [{uri,id,name,li}]
+    const uriToLi = new Map();
+
+    const spPlay = $('#sp-play');
+    const spVol  = $('#sp-vol');
+    const spVlbl = $('#sp-vlabel');
+    const spNow  = $('#sp-now');
+    const listPlaylists = $('#playlists');
+    const listTracks = $('#tracks');
+    const tracksHint = $('#tracks-hint');
+
+    const setActivePlaylist = (uri) => {
+      playlistsMeta.forEach(p => p.li.classList.toggle('active', p.uri === uri));
+    };
+
+    const ensureActiveDevice = async () => {
+      if (!deviceId) return;
+      const token = await getValidToken(); if (!token) return;
+      try{
+        await fetch('https://api.spotify.com/v1/me/player', {
+          method:'PUT',
+          headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+          body: JSON.stringify({ device_ids:[deviceId], play:false })
+        });
+        await new Promise(r => setTimeout(r, 150));
+      }catch(e){ console.warn('device transfer', e); }
+    };
+
+    const renderTracks = (arr) => {
+      listTracks.innerHTML = '';
+      uriToLi.clear();
+      arr.forEach((t, idx) => {
+        const li = el('li', 'track');
+        const img = el('img', 'thumb'); img.src = t.img || ''; img.alt = 'Cover';
+        const col = el('div','tcol');
+        const tt = el('div','tt'); tt.textContent = t.name;
+        const ta = el('div','ta'); ta.textContent = t.artists;
+        col.append(tt, ta);
+        li.append(img, col);
+        li.onclick = () => {
+          customOrder = arr.slice();
+          playByIndex(idx);
+        };
+        if (t.uri === currentTrackUri) { li.classList.add('playing'); lastPlayingEl = li; }
+        listTracks.appendChild(li);
+        uriToLi.set(t.uri, li);
+      });
+      tracksHint.style.display = arr.length ? 'none' : 'block';
+    };
+
+    const highlight = (uri) => {
+      if (!uriToLi.has(uri)) return;
+      if (lastPlayingEl) lastPlayingEl.classList.remove('playing');
+      const elx = uriToLi.get(uri);
+      elx.classList.add('playing');
+      lastPlayingEl = elx;
+      elx.scrollIntoView({ block: "center", behavior: "smooth" });
+    };
+
+    const loadPlaylistTracks = async (playlistId) => {
+      const token = await getValidToken(); if (!token) return [];
+      let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
+      const items = [];
+      while (url) {
+        const res = await fetch(url, { headers:{ Authorization:`Bearer ${token}` }});
+        const data = await res.json();
+        if (!data || !data.items) break;
+        items.push(...data.items);
+        url = data.next;
+      }
+      return items.map(it => {
+        const t = it.track; if (!t) return null;
+        return {
+          name: t.name,
+          artists: (t.artists||[]).map(a=>a.name).join(', '),
+          uri: t.uri,
+          img: (t.album?.images?.[t.album.images.length-1]?.url) || ''
+        };
+      }).filter(Boolean);
+    };
+
+    const playPlaylist = async (uri) => {
+      currentPlaylistUri = uri;
+      setActivePlaylist(uri);
+      const playlistId = uri.split(':').pop();
+
+      tracks = await loadPlaylistTracks(playlistId);
+      customOrder = tracks.slice();
+      renderTracks(customOrder);
+
+      await ensureActiveDevice();
+      const token = await getValidToken(); if (!token) return;
+      const uris = customOrder.map(t => t.uri);
+
+      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ uris, offset: { position: 0 }, position_ms: 0 })
+      });
+    };
+
+    const playByIndex = async (idx) => {
+      if (!customOrder || idx < 0 || idx >= customOrder.length) return;
+      customIndex = idx;
+      await ensureActiveDevice();
+      const token = await getValidToken(); if (!token) return;
+      const uris = customOrder.map(t => t.uri);
+      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ uris, offset: { position: idx }, position_ms: 0 })
+      });
+    };
+
+    const loadPlaylists = async () => {
+      const token = await getValidToken(); if (!token) return;
+      const res = await fetch("https://api.spotify.com/v1/me/playlists", { headers: { Authorization:`Bearer ${token}` }});
+      const data = await res.json();
+      const items = (data.items || []).sort((a,b)=> a.name.localeCompare(b.name,'hr',{sensitivity:'base'}));
+      playlistsMeta = [];
+      listPlaylists.innerHTML = '';
+      items.forEach((pl, i) => {
+        const li = el('li'); li.textContent = pl.name; li.style.cursor = 'pointer';
+        li.onclick = () => playPlaylist(pl.uri);
+        listPlaylists.appendChild(li);
+        const meta = { uri:pl.uri, id:pl.id, name:pl.name, li };
+        playlistsMeta.push(meta);
+      });
+      if (playlistsMeta.length) {
+        currentPlaylistUri = playlistsMeta[0].uri;
+        setActivePlaylist(currentPlaylistUri);
+        // prefetch first (bez sviranja)
+        const firstTracks = await loadPlaylistTracks(playlistsMeta[0].id);
+        tracks = firstTracks; customOrder = tracks.slice(); renderTracks(customOrder);
+      }
+    };
+
+    // Public pause (poziva radio modul)
+    const pauseQuiet = () => { try { player?.pause(); } catch(_) {} };
+
+    // SDK READY
+    window.onSpotifyWebPlaybackSDKReady = async () => {
+      const token = await getValidToken(); if (!token) return;
+
+      player = new Spotify.Player({
+        name: 'Lerone Web Player',
+        getOAuthToken: async (cb) => {
+          let t = await getValidToken();
+          if (!t) t = await refreshAccessToken();
+          cb(t);
+        },
+        volume: 0.5
       });
 
-      return { pauseQuiet };
-    })();
+      player.addListener('ready', async ({ device_id }) => {
+        deviceId = device_id; ready = true;
+        spPlay.disabled = false;
+        try { player.setVolume(spVol.valueAsNumber); } catch(_) {}
+        await ensureActiveDevice();
+        loadPlaylists();
 
-    /*************************************************
-     * BOOT
-     *************************************************/
-    (function init(){
-      // Radio
-      Radio.init();
-      // Spotify volume label
-      $('#sp-vlbl').textContent = pct($('#sp-vol').valueAsNumber);
-      // SDK će sam pozvati window.onSpotifyWebPlaybackSDKReady
-    })();
+        spPlay.addEventListener('click', async () => {
+          if (!ready || clickLock) return;
+          clickLock = true; setTimeout(()=>clickLock=false, 350);
+
+          // za svaki slučaj ugasi radio
+          radio.pause();
+
+          const st = await player.getCurrentState();
+          const empty = !st || !st.track_window || !st.track_window.current_track;
+          if (empty) {
+            await ensureActiveDevice();
+            if (customOrder?.length) await playByIndex(customIndex >= 0 ? customIndex : 0);
+            else if (currentPlaylistUri || playlistsMeta[0]?.uri) await playPlaylist(currentPlaylistUri || playlistsMeta[0].uri);
+          } else {
+            player.togglePlay();
+          }
+        });
+      });
+
+      player.addListener('player_state_changed', (state) => {
+        if (!state) return;
+        const paused = state.paused;
+        setBtn(spPlay, !paused);
+
+        if (!paused) {
+          // ugasi radio kad krene Spotify
+          radio.pause();
+        }
+
+        const cur = state.track_window?.current_track;
+        if (cur){
+          $('#sp-track').textContent = cur.name;
+          $('#sp-artist').textContent = (cur.artists||[]).map(a=>a.name).join(', ');
+          $('#sp-img').src = cur.album?.images?.[0]?.url || '';
+          currentTrackUri = cur.uri;
+          spNow.textContent = `Sada svira: ${cur.name} — ${(cur.artists||[]).map(a=>a.name).join(', ')}`;
+          if (customOrder) {
+            const idx = customOrder.findIndex(t => t.uri === cur.uri);
+            if (idx !== -1) customIndex = idx;
+          }
+          highlight(cur.uri);
+        }
+      });
+
+      player.addListener('authentication_error', ({message}) => console.warn('auth_error', message));
+      player.addListener('account_error',        ({message}) => console.warn('account_error', message));
+      player.addListener('initialization_error', ({message}) => console.warn('init_error', message));
+      player.addListener('playback_error',       ({message}) => console.warn('playback_error', message));
+
+      player.connect();
+    };
+
+    // UI volume
+    spVol.addEventListener('input', () => {
+      try { player?.setVolume(spVol.valueAsNumber); } catch(_){}
+      spVlbl.textContent = pct(spVol.valueAsNumber);
+    });
+
+    return { pauseQuiet };
+  })();
+
+  /*************
+   * AUTH HELPERS (isti backend kao tvoj)
+   *************/
+  async function refreshAccessToken() {
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (!refreshToken) { window.location.href = "/spotify_auth"; return null; }
+    const res = await fetch("/refresh_token", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    });
+    const data = await res.json();
+    if (res.ok && data.access_token) {
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("token_timestamp", Date.now());
+      return data.access_token;
+    }
+    console.error("Refresh failed", data);
+    return null;
+  }
+  async function getValidToken() {
+    const accessToken = localStorage.getItem("access_token");
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (!refreshToken) { window.location.href = "/spotify_auth"; return null; }
+    const ts = parseInt(localStorage.getItem("token_timestamp") || "0", 10);
+    const maxAge = 55 * 60 * 1000;
+    if (!accessToken || (Date.now() - ts) >= maxAge) return await refreshAccessToken();
+    return accessToken;
+  }
+
+  /*************
+   * BOOT
+   *************/
+  (function boot(){
+    // Radio init
+    radio.init();
+    // Spotify SDK će pozvati window.onSpotifyWebPlaybackSDKReady
+    // Label volumena
+    $('#sp-vlabel').textContent = pct($('#sp-vol').valueAsNumber);
+  })();
   </script>
 </body>
 </html>
