@@ -63,9 +63,9 @@ async function dohvatOtkazanihNarudzbiZaWelcome() {
 
 
 // Zatvori modal kada se klikne X
-document.querySelector("#resultModal .close").addEventListener("click", () => {
-    document.getElementById("resultModal").style.display = "none";
-});
+  document.getElementById('closeWelcomeBtn')?.addEventListener('click', () => {
+    document.getElementById('welcomeModal').style.display = 'none';
+  });
 
 
 document.getElementById('clearAllBtn').addEventListener('click', function() {
