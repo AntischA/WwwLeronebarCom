@@ -176,14 +176,31 @@
      *************************************************/
     // Ako koristiš HTTPS proxy (Cloudflare Worker, GCP), postavi bazu:
     // npr. const PROXY_BASE = 'https://radio-proxy.leronebar.com/?u=';
-    const PROXY_BASE = '';
+const PROXY_BASE = 'https://radio-proxy.leronebar.com/?u=';
 
-    const STATIONS = [
-      { id:'rd', name:'Radio Dalmacija — Live', sources:['https://shoutcast.pondi.hr:9000/;'] },
-      { id:'nx', name:'Naxi Radio — Live',      sources:['https://naxi128ssl.streaming.rs:9152/;','https://naxi64ssl.streaming.rs:9162/;'] },
-      { id:'ot', name:'Otvoreni Radio — Live',  sources:['https://stream2.otvoreni.hr/otvoreni'] },
-      // Primjer (HTTP → preko proxy-ja): { id:'nf', name:'Naxi Fresh', sources:['http://naxidigital-fresh128.streaming.rs:8210/'] },
-    ];
+const STATIONS = [
+  // postojeće
+  { id:'rd', name:'Radio Dalmacija — Live', sources:['https://shoutcast.pondi.hr:9000/;'] },
+  { id:'nx', name:'Naxi Radio — Live',      sources:['https://naxi128ssl.streaming.rs:9152/;','https://naxi64ssl.streaming.rs:9162/;'] },
+  { id:'ot', name:'Otvoreni Radio — Live',  sources:['https://stream2.otvoreni.hr/otvoreni'] },
+
+  // NOVO — Naxi digital (HTTP → idealno preko PROXY_BASE)
+  { id:'nf', name:'Naxi Fresh — Live', sources:[
+    'http://naxidigital-fresh128.streaming.rs:8210/'
+  ]},
+  { id:'nm', name:'Naxi Mix — Live', sources:[
+    'http://naxidigital-mix128.streaming.rs:8220/'
+  ]},
+
+  // NOVO — Bravo (zamijeni URL ako koristiš drugi Bravo stream)
+  { id:'br', name:'Bravo Radio — Live', sources:[
+    // Ako imaš svoj točan URL, stavi ga na 1. mjesto.
+    // Primjer HTTP (ide preko PROXY_BASE):
+    'http://streamer.radio-bravo.rs:8000/bravo',
+    // Ako imaš HTTPS varijantu, dodaj je ispred HTTP-a:
+    // 'https://streamer.radio-bravo.rs/bravo'
+  ]},
+];
 
     /*************************************************
      * UTILS
