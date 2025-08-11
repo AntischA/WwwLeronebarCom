@@ -11,12 +11,14 @@ steps:
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
       [
-        'run', 'deploy', 'wwwleronebarcom',
-        '--image', 'gcr.io/web-stranica-wwwleronebarcom/wwwleronebarcom',
-        '--platform', 'managed',
-        '--region', 'europe-west1',
-        '--allow-unauthenticated'
+        'run','deploy','wwwleronebarcom',
+        '--image','gcr.io/web-stranica-wwwleronebarcom/wwwleronebarcom',
+        '--platform','managed',
+        '--region','europe-west1',
+        '--allow-unauthenticated',
+        '--set-env-vars','DB_PATH=/tmp/listening.sqlite3'
       ]
+
 
 images:
   - 'gcr.io/web-stranica-wwwleronebarcom/wwwleronebarcom'

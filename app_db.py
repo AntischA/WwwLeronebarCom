@@ -1,7 +1,8 @@
 import sqlite3, os
-DB_PATH = os.environ.get('DB_PATH', 'listening.sqlite3')
+DB_PATH = os.environ.get('DB_PATH', '/tmp/listening.sqlite3')  # default u /tmp
 
 def init_db():
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     with sqlite3.connect(DB_PATH) as con:
         con.execute("""
           CREATE TABLE IF NOT EXISTS listening_daily (
@@ -12,6 +13,7 @@ def init_db():
           )
         """)
         con.commit()
+
 
 def get_day(day):
     with sqlite3.connect(DB_PATH) as con:
