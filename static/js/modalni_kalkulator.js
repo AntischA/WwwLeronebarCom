@@ -1,193 +1,160 @@
-// === Modal na 3 brza klika DESNO od .page ===================================
+// === Welcome modal: današnje pjesme / odslušane pjesme ======================
+// očekuje elemente:
+//  #welcomeModal, #closeWelcomeBtn
+//  #welcomeTotalInfo        (lijevo gore)           -> "Današnje pjesme X.X sekundi"
+//  #welcomeListenedInfo     (desno gore)            -> "Današnje odslušane pjesme Y.Y sekundi"
+//  gumbi u desnom dolje: #btnPlus5, #btnPlus10, #btnPlus30, #btnPlus60, #btnFinish
+//  (trigger otvaranja modala – zadržavam tvoj "klik desno od .page" ako ga već imaš)
+
+// #### Klijent drži jedinicu: desetinka sekunde (deciseconds) ####
+//   - u DB šaljemo INTEGER = sekunde * 10
+//   - s DB-a čitamo INTEGER i prikazujemo /10 s jednom decimalom
+
 (() => {
-  const pageEl       = document.querySelector('.page');
-  const welcomeModal = document.getElementById('welcomeModal');
+  const SCALE = 10; // 1 = 0.1 sek
+  const todayISO = new Date().toISOString().slice(0, 10); // YYYY-MM-DD (za /api/danasnje_pjesme)
+  const todayHR  = new Date().toLocaleDateString("hr-HR"); // za /api/otkazane_narudzbe (ako ga koristiš)
+
+  // UI refs
+  const modalEl      = document.getElementById('welcomeModal');
   const closeBtn     = document.getElementById('closeWelcomeBtn');
+  const totalEl      = document.getElementById('welcomeTotalInfo');     // lijevo gore
+  const listenedEl   = document.getElementById('welcomeListenedInfo');  // desno gore
 
-  if (!pageEl || !welcomeModal) return;
+  // kontrole (desno dolje)
+  const btnPlus5     = document.getElementById('btnPlus5');
+  const btnPlus10    = document.getElementById('btnPlus10');
+  const btnPlus30    = document.getElementById('btnPlus30');
+  const btnPlus60    = document.getElementById('btnPlus60');
+  const btnFinish    = document.getElementById('btnFinish');
 
-  const NEED_CLICKS = 3;
-  const GAP_MS = 500;
-  let clicks = 0, lastTs = 0;
+  // lokalno stanje (u decisekundama)
+  const state = {
+    date: todayISO,
+    total_ds: 0,
+    listened_ds: 0,
+  };
 
-  function isRightOfPage(e) {
-    const r = pageEl.getBoundingClientRect();
-    return (e.clientX > r.right) && (e.clientY >= r.top && e.clientY <= r.bottom);
+  // --------- Helpers ---------
+  const fmtSec = (ds) => (ds / SCALE).toFixed(1);     // "X.X"
+  const remaining_ds = () => Math.max(0, state.total_ds - state.listened_ds);
+
+  function render() {
+    if (totalEl)    totalEl.textContent    = `Današnje pjesme ${fmtSec(state.total_ds)} sekundi`;
+    if (listenedEl) listenedEl.textContent = `Današnje odslušane pjesme ${fmtSec(state.listened_ds)} sekundi`;
   }
 
-  function openModal() {
-    welcomeModal.style.display = 'flex';
-    loadTodayState(); // povuci/popravi stanje na otvaranju
-  }
-  function closeModal() {
-    welcomeModal.style.display = 'none';
-  }
-
-  document.addEventListener('click', (e) => {
-    if (welcomeModal.style.display === 'flex') return;
-    if (isRightOfPage(e)) {
-      const now = performance.now();
-      clicks = (now - lastTs <= GAP_MS) ? clicks + 1 : 1;
-      lastTs = now;
-      if (clicks >= NEED_CLICKS) {
-        clicks = 0; lastTs = 0;
-        openModal();
-      }
-    } else {
-      clicks = 0; lastTs = 0;
+  async function refreshFromDB() {
+    const res = await fetch(`/api/danasnje_pjesme?date=${encodeURIComponent(state.date)}`, { cache: 'no-store' });
+    const json = await res.json().catch(() => ({}));
+    if (json && json.success) {
+      // backend vraća integer; držimo u decisekundama
+      state.total_ds    = Number(json.total_secs)    || 0;
+      state.listened_ds = Number(json.listened_secs) || 0;
+      render();
     }
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && welcomeModal.style.display === 'flex') closeModal();
-  });
-  closeBtn?.addEventListener('click', closeModal);
-})();
-
-// === “Baza” + stanje po danu (API -> fallback localStorage) =================
-const API_BASE = '/api/danasnje_pjesme'; // vidi Flask ispod; front fallbacka na LS
-const todayISO = new Date().toISOString().slice(0,10); // YYYY-MM-DD
-const LS_KEY   = 'dp_' + todayISO;
-
-let state = {
-  date: todayISO,
-  total_secs: 0,     // koliko je “Današnje pjesme” ukupno
-  listened_secs: 0,  // koliko je od toga odslušano
-};
-let lastDeltaStack = []; // za “Undo”
-
-// DOM refs
-const elRemaining = document.getElementById('todayRemaining');
-const elListened  = document.getElementById('todayListened');
-const totalInput  = document.getElementById('totalInput');
-const setTotalBtn = document.getElementById('setTotalBtn');
-const finishAllBtn= document.getElementById('finishAllBtn');
-const customSec   = document.getElementById('customSec');
-const addCustomBtn= document.getElementById('addCustomBtn');
-const undoBtn     = document.getElementById('undoBtn');
-
-function fmtSec(n){ n = Math.max(0, Math.floor(+n||0)); return n; }
-function clampState(s){
-  s.listened_secs = Math.max(0, Math.min(s.listened_secs, s.total_secs));
-  return s;
-}
-function render(){
-  const remaining = Math.max(0, state.total_secs - state.listened_secs);
-  elRemaining.innerHTML = `${fmtSec(remaining)} <span>sek.</span>`;
-  elListened.innerHTML  = `${fmtSec(state.listened_secs)} <span>sek.</span>`;
-  totalInput.value = state.total_secs || '';
-}
-
-// --- Persistence helpers (API -> LS) ---
-async function apiGet(dateISO){
-  try{
-    const r = await fetch(`${API_BASE}?date=${encodeURIComponent(dateISO)}`, {cache:'no-store'});
-    if (!r.ok) throw 0;
-    return await r.json();
-  }catch{ return null; }
-}
-async function apiPost(body){
-  try{
-    const r = await fetch(API_BASE, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(body)
-    });
-    if (!r.ok) throw 0;
-    return await r.json();
-  }catch{ return null; }
-}
-function lsLoad(){
-  const raw = localStorage.getItem(LS_KEY);
-  if (!raw) return null;
-  try{ return JSON.parse(raw); } catch { return null; }
-}
-function lsSave(s){
-  localStorage.setItem(LS_KEY, JSON.stringify(s));
-}
-
-async function loadTodayState(){
-  // pokušaj API…
-  const api = await apiGet(todayISO);
-  if (api && api.success) {
-    state = clampState({
-      date: todayISO,
-      total_secs: +api.total_secs || 0,
-      listened_secs: +api.listened_secs || 0
-    });
-    lsSave(state); // sync to LS
-    render();
-    return;
   }
-  // …fallback LS
-  const ls = lsLoad();
-  if (ls) state = clampState(ls);
-  render();
-}
 
-async function saveTotal(newTotal){
-  newTotal = Math.max(0, Math.floor(+newTotal||0));
-  state.total_secs = newTotal;
-  state = clampState(state);
-  render();
+  // Postavi TOTAL iz vanjskog izvora (tvoja postojeća funkcija – ime zadržano)
+  // Ova funkcija sada:
+  // 1) dohvaća "sekunde" iz /api/otkazane_narudzbe (tvoj postojeći endpoint)
+  // 2) postavlja taj total u našu tablicu /api/danasnje_pjesme (set_total_secs)
+  // 3) refresha prikaz
+  async function dohvatOtkazanihNarudzbiZaWelcome() {
+    try {
+      const response = await fetch("/api/otkazane_narudzbe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from_date: todayHR, to_date: todayHR })
+      });
+      const data = await response.json();
+      const secs = Number(data?.total) || 0;  // npr. 10.7
 
-  // pokušaj API, inače LS
-  const res = await apiPost({date: todayISO, set_total_secs: newTotal});
-  if (!(res && res.success)) lsSave(state);
-}
+      // upiši u našu DB (kao decisekunde)
+      await fetch('/api/danasnje_pjesme', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: state.date,
+          set_total_secs: Math.round(secs * SCALE)
+        })
+      });
 
-async function addListened(delta){
-  delta = Math.max(1, Math.floor(+delta||0));
-  const before = {...state};
-  state.listened_secs = Math.min(state.total_secs, state.listened_secs + delta);
-  state = clampState(state);
-  render();
-  lastDeltaStack.push(delta);
+      await refreshFromDB();
+    } catch (err) {
+      console.error('dohvatOtkazanihNarudzbiZaWelcome error:', err);
+    }
+  }
 
-  const res = await apiPost({date: todayISO, delta_listened_secs: delta});
-  if (!(res && res.success)) lsSave(state);
-}
+  // Povećaj odslušane za delta sekundi (float dozvoljen); clamp radi backend
+  async function addListenedSeconds(deltaSecs) {
+    const delta_ds = Math.round(Number(deltaSecs || 0) * SCALE);
+    if (!delta_ds) return;
+    await fetch('/api/danasnje_pjesme', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        date: state.date,
+        delta_listened_secs: delta_ds
+      })
+    });
+    await refreshFromDB();
+  }
 
-async function undoLast(){
-  const d = lastDeltaStack.pop();
-  if (!d) return;
-  state.listened_secs = Math.max(0, state.listened_secs - d);
-  state = clampState(state);
-  render();
+  // Odsušaj do kraja – prebaci sve što je ostalo
+  async function finishAll() {
+    const rem = remaining_ds();
+    if (rem <= 0) return;
+    await fetch('/api/danasnje_pjesme', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        date: state.date,
+        delta_listened_secs: rem
+      })
+    });
+    await refreshFromDB();
+  }
 
-  // pošalji negativni delta (backend snosi brigu o clampu)
-  const res = await apiPost({date: todayISO, delta_listened_secs: -d});
-  if (!(res && res.success)) lsSave(state);
-}
+  // --------- Wire-up kontrola ---------
+  btnPlus5  ?.addEventListener('click', () => addListenedSeconds(5));
+  btnPlus10 ?.addEventListener('click', () => addListenedSeconds(10));
+  btnPlus30 ?.addEventListener('click', () => addListenedSeconds(30));
+  btnPlus60 ?.addEventListener('click', () => addListenedSeconds(60));
+  btnFinish ?.addEventListener('click', finishAll);
 
-async function finishAll(){
-  const remaining = Math.max(0, state.total_secs - state.listened_secs);
-  if (!remaining) return;
-  lastDeltaStack.push(remaining);
-  state.listened_secs = state.total_secs;
-  render();
+  closeBtn  ?.addEventListener('click', () => { modalEl.style.display = 'none'; });
 
-  // specifičan endpoint ili samo delta
-  const res = await apiPost({date: todayISO, delta_listened_secs: remaining});
-  if (!(res && res.success)) lsSave(state);
-}
+  // Ako modal otvaraš “klikom desno od .page”, kad se otvori – povuci podatke i postavi total:
+  function openWelcomeModal() {
+    modalEl.style.display = 'flex';
+    // 1) povuci što već postoji u DB (ako je bilo ranije)
+    refreshFromDB().then(() => {
+      // 2) zatim DOHVATI današnji total iz vanjske funkcije i upiši kao "Današnje pjesme"
+      //    (ako endpoint ne vrati ništa, ostat će prethodno stanje)
+      dohvatOtkazanihNarudzbiZaWelcome();
+    });
+  }
 
-// Event listeners
-setTotalBtn?.addEventListener('click', () => {
-  saveTotal(totalInput.value);
-});
-finishAllBtn?.addEventListener('click', finishAll);
-addCustomBtn?.addEventListener('click', () => {
-  if (!customSec.value) return;
-  addListened(customSec.value);
-  customSec.value = '';
-});
-undoBtn?.addEventListener('click', undoLast);
+  // Ako već imaš svoj trigger, pozovi openWelcomeModal() iz njega.
+  // Primjer (otvaranje na 3 brza klika desno od .page):
+  (function initTripleClickRightOfPage() {
+    const pageEl = document.querySelector('.page');
+    if (!pageEl) return;
+    const NEED = 3, GAP = 500;
+    let clicks = 0, last = 0;
 
-// plus gumbi (+5, +10, +30, +60)
-document.querySelectorAll('.pill-btn[data-sec]').forEach(btn=>{
-  btn.addEventListener('click', () => addListened(btn.dataset.sec));
-});
+    function isRight(e) {
+      const r = pageEl.getBoundingClientRect();
+      return (e.clientX > r.right) && (e.clientY >= r.top && e.clientY <= r.bottom);
+    }
 
-// inicijalni render (za slučaj da se modal otvori kasnije)
-render();
+    document.addEventListener('click', (e) => {
+      if (!isRight(e)) { clicks = 0; last = 0; return; }
+      const now = performance.now();
+      clicks = (now - last <= GAP) ? clicks + 1 : 1;
+      last = now;
+      if (clicks >= NEED) { clicks = 0; last = 0; openWelcomeModal(); }
+    });
+  })();
+})();

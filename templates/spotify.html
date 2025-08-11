@@ -187,21 +187,24 @@
 
 
 
-
 <!-- Današnje pjesme — modal -->
-<div id="welcomeModal" class="modal welcome-modal">
+<div id="welcomeModal" class="modal welcome-modal" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
   <div class="welcome-grid">
-    <!-- Gornji lijevi: Današnje pjesme (preostalo) + postavi ukupno -->
-    <div class="grid-item">
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <div class="title-row">
-          <span class="pill pill-accent">🎵 Današnje pjesme</span>
-        </div>
-        <div id="todayRemaining" class="big-num">0 <span>sek.</span></div>
 
-        <div class="meta-row">
+    <!-- Gornji lijevi: Današnje pjesme (ukupno/preostalo) + ručni unos -->
+    <div class="grid-item">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="title-row">
+          <span id="welcomeTitle" class="pill pill-accent">🎵 Današnje pjesme</span>
+        </div>
+
+        <!-- Prikaz: "Današnje pjesme X.X sekundi" -->
+        <div id="welcomeTotalInfo" class="big-num">0<span> sek.</span></div>
+
+        <!-- Ručno postavljanje ukupnog iznosa za danas (opcionalno) -->
+        <div class="meta-row" style="display:flex;gap:8px;align-items:center;">
           <label for="totalInput">Ukupno danas:</label>
-          <input id="totalInput" type="number" min="0" step="1" placeholder="npr. 3600" />
+          <input id="totalInput" type="number" min="0" step="0.1" placeholder="npr. 3600.0" />
           <button id="setTotalBtn" class="btn-ghost">Spremi</button>
         </div>
       </div>
@@ -209,38 +212,41 @@
 
     <!-- Gornji desni: Današnje odslušane pjesme -->
     <div class="grid-item">
-      <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;flex-direction:column;gap:12px;">
         <div class="title-row">
           <span class="pill">✅ Današnje odslušane pjesme</span>
         </div>
-        <div id="todayListened" class="big-num">0 <span>sek.</span></div>
+
+        <!-- Prikaz: "Današnje odslušane pjesme Y.Y sekundi" -->
+        <div id="welcomeListenedInfo" class="big-num">0<span> sek.</span></div>
       </div>
     </div>
 
     <!-- Donji lijevi: Odsušaj do kraja -->
     <div class="grid-item">
-      <button id="finishAllBtn" class="finish-btn">Odsušaj do kraja</button>
+      <button id="btnFinish" class="finish-btn" style="width:100%;height:100%;">Odsušaj do kraja</button>
     </div>
 
     <!-- Donji desni: Kontrole (+ sekunde) -->
     <div class="grid-item">
-      <div class="controls">
-        <div class="btn-row">
-          <button class="pill-btn" data-sec="5">+5s</button>
-          <button class="pill-btn" data-sec="10">+10s</button>
-          <button class="pill-btn" data-sec="30">+30s</button>
-          <button class="pill-btn" data-sec="60">+60s</button>
+      <div class="controls" style="display:flex;flex-direction:column;gap:12px;width:100%;">
+        <div class="btn-row" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button id="btnPlus5"  class="pill-btn">+5s</button>
+          <button id="btnPlus10" class="pill-btn">+10s</button>
+          <button id="btnPlus30" class="pill-btn">+30s</button>
+          <button id="btnPlus60" class="pill-btn">+60s</button>
         </div>
-        <div class="custom-row">
-          <input id="customSec" type="number" min="1" step="1" placeholder="npr. 120" />
-          <button id="addCustomBtn" class="pill-btn">+sek</button>
-          <button id="undoBtn" class="btn-ghost">Undo</button>
+
+        <!-- (opcionalno) prilagođeni unos sekundi -->
+        <div class="custom-row" style="display:flex;gap:8px;align-items:center;">
+          <input id="customSec" type="number" min="0.1" step="0.1" placeholder="npr. 120.5" />
+          <button id="btnAddCustom" class="pill-btn">+sek</button>
         </div>
       </div>
     </div>
   </div>
 
-  <button id="closeWelcomeBtn">ZATVORI</button>
+  <button id="closeWelcomeBtn" class="btn-ghost" style="width:90%;margin-top:24px;">ZATVORI</button>
 </div>
 
 
