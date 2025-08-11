@@ -1,4 +1,3 @@
-    /*<link rel="stylesheet" href="{{ url_for('static', filename='css/spotify.css') }}">*/
 
 :root{
   --bg:#0b1020;
@@ -38,19 +37,24 @@ body{
   min-height: 100svh;
 }
 
+
 .btn{
   appearance:none; border:0; cursor:pointer;
   background:var(--accent-2); color:#062d16;
   padding:20px 16px; border-radius:12px; font-weight:800;
-  transition:transform .06s ease, filter .12s ease, opacity .12s ease;
+  transition:transform .06s ease, filter .12s ease;
   white-space:nowrap;
   min-width:120px;
   flex:0 0 auto;
 }
 .btn:active{ transform:translateY(1px) }
 .btn.alt{ background:var(--accent); color:#04281f }
-.btn:disabled{ opacity:.55; cursor:not-allowed }
 
+.radios-grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:var(--gap-lg);
+}
 .radio-card{
   background:linear-gradient(180deg, var(--card), var(--soft));
   border-radius:var(--radius);
@@ -70,6 +74,7 @@ body{
 .radio-head{ display:flex; align-items:center; gap:10px; }
 .radio-title{ font-weight:800; letter-spacing:.2px; font-size:1.02rem; }
 
+/* kontrole u jednom redu */
 .radio-controls{
   display:flex;
   align-items:center;
@@ -78,6 +83,7 @@ body{
   min-width:0;
 }
 
+/* glasnoća se rasteže */
 .vol{
   display:flex; align-items:center; gap:10px;
   color:var(--sub); font-size:.95rem;
@@ -126,16 +132,7 @@ body{
 .ticker span{ display:inline-block; padding-left:100%; animation:ticker 12s linear infinite; }
 @keyframes ticker{ from{ transform:translateX(0);} to{ transform:translateX(-100%);} }
 
-/* RED 1: lijevo lista radija, desno jedan radio player */
-.radios-layout{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:var(--gap-lg);
-  align-items:stretch;
-  min-height:0;
-}
-
-/* RED 2: lijevo Spotify (player + playliste), desno pjesme */
+/* DRUGI RED: lijevo kolona (Spotify gore + Playliste dolje), desno Pjesme */
 .content-grid{
   display:grid;
   grid-template-columns: 1fr 1fr;
@@ -166,6 +163,10 @@ body{
   margin:0 0 10px 0; font-size:1.02rem; letter-spacing:.2px;
   position:sticky; top:0; background:var(--card); z-index:1; padding-bottom:8px;
 }
+.panel button{
+  margin:0 0 10px 0; font-size:1.02rem; letter-spacing:.2px;
+  position:sticky; top:0; background:var(--card); z-index:1; padding-bottom:8px;
+}
 
 .list{
   list-style:none; margin:0; padding:0;
@@ -178,8 +179,10 @@ body{
   cursor:pointer; transition:filter .12s ease, transform .06s ease;
 }
 .list li:hover{ filter:brightness(1.07); transform:translateY(-1px); }
-#radioList li.active{
-  outline:2px solid var(--accent);
+
+/* Aktivna playlista (lijeva kolona) */
+#playlistList li.active{
+  outline:2px solid var(--accent-2);
   background:#1a2747;
 }
 
@@ -195,12 +198,14 @@ body{
 
 /* Responsive */
 @media (max-width: 1100px){
-  .radios-layout{ grid-template-columns: 1fr; }
+  .radios-grid{ grid-template-columns: repeat(2,1fr); }
   .content-grid{ grid-template-columns: 1fr; }
 }
-@media (max-width: 800px){ }
+@media (max-width: 800px){
+  .radios-grid{ grid-template-columns: 1fr; }
+}
+/* Ultra usko – dopusti prijelom */
 @media (max-width: 560px){
   .radio-controls{ flex-wrap:wrap; }
   .vol{ width:100%; }
 }
-

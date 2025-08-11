@@ -4,224 +4,12 @@
   <meta charset="UTF-8" />
   <title>Spotify + 3 Radio Playera</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <style>
-:root{
-  --bg:#0b1020;
-  --card:#11182a;
-  --soft:#0f1526;
-  --text:#e8eef7;
-  --sub:#a7b2c6;
-  --accent:#10b981;
-  --accent-2:#1db954;
-  --radius:16px;
-  --shadow:0 10px 30px rgba(0,0,0,.35);
-  --gap:18px;
-  --gap-lg:22px;
-  --active-1:#16324a;
-  --active-2:#0f1f39;
-}
-
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;
-  background: radial-gradient(1200px 600px at 30% -10%, #17213f 0%, #0b1020 55%, #0b1020 100%);
-  color:var(--text);
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial;
-}
-
-.page{
-  /* suženo ~20%: 80% širine prozora, max 1280px, min 320px */
-  width: clamp(320px, 80vw, 1280px);
-  margin: 0 auto;
-
-  padding: 22px var(--gap);
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: var(--gap-lg);
-  height: 100dvh;
-  min-height: 100svh;
-}
-
-
-.btn{
-  appearance:none; border:0; cursor:pointer;
-  background:var(--accent-2); color:#062d16;
-  padding:20px 16px; border-radius:12px; font-weight:800;
-  transition:transform .06s ease, filter .12s ease;
-  white-space:nowrap;
-  min-width:120px;
-  flex:0 0 auto;
-}
-.btn:active{ transform:translateY(1px) }
-.btn.alt{ background:var(--accent); color:#04281f }
-
-.radios-grid{
-  display:grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap:var(--gap-lg);
-}
-.radio-card{
-  background:linear-gradient(180deg, var(--card), var(--soft));
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  padding:16px;
-  display:flex; flex-direction:column; gap:10px;
-  min-height:160px;
-  transition: background .2s ease, outline-color .2s ease, box-shadow .2s ease;
-  outline:2px solid transparent;
-}
-.radio-card.is-active{
-  background:linear-gradient(180deg, var(--active-1), var(--active-2));
-  outline-color: var(--accent);
-  box-shadow:0 12px 34px rgba(16,185,129,.25);
-}
-
-.radio-head{ display:flex; align-items:center; gap:10px; }
-.radio-title{ font-weight:800; letter-spacing:.2px; font-size:1.02rem; }
-
-/* kontrole u jednom redu */
-.radio-controls{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  flex-wrap:nowrap;
-  min-width:0;
-}
-
-/* glasnoća se rasteže */
-.vol{
-  display:flex; align-items:center; gap:10px;
-  color:var(--sub); font-size:.95rem;
-  flex:1 1 auto;
-  min-width:0;
-  white-space:nowrap;
-}
-.vol span{
-  display:inline-block;
-  width:4ch;
-  text-align:right;
-}
-
-/* Touch-friendly range */
-.vol input[type="range"]{
-  flex:1 1 auto;
-  width:100%;
-  max-width:100%;
-  height:50px;
-  background:transparent;
-  -webkit-appearance:none;
-  appearance:none;
-}
-.vol input[type="range"]::-webkit-slider-runnable-track{
-  height:50px; border-radius:10px; background:#203055;
-}
-.vol input[type="range"]::-webkit-slider-thumb{
-  -webkit-appearance:none;
-  width:40px; height:40px; border-radius:50%;
-  background:#e8eef7; margin-top:5px; border:2px solid #0f1f39;
-}
-.vol input[type="range"]::-moz-range-track{
-  height:14px; border-radius:10px; background:#203055;
-}
-.vol input[type="range"]::-moz-range-thumb{
-  width:26px; height:26px; border-radius:50%;
-  background:#e8eef7; border:2px solid #0f1f39;
-}
-
-.ticker{
-  overflow:hidden; white-space:nowrap;
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%);
-  mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%);
-  font-size:.95rem; color:#dfe8f7;
-}
-.ticker span{ display:inline-block; padding-left:100%; animation:ticker 12s linear infinite; }
-@keyframes ticker{ from{ transform:translateX(0);} to{ transform:translateX(-100%);} }
-
-/* DRUGI RED: lijevo kolona (Spotify gore + Playliste dolje), desno Pjesme */
-.content-grid{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:var(--gap-lg);
-  align-items:stretch;
-  min-height:0;
-}
-.left-col{
-  display:flex;
-  flex-direction:column;
-  gap:var(--gap-lg);
-  min-height:0;
-}
-.left-col .radio-card{ flex:0 0 auto; }
-.left-col .panel{ flex:1 1 auto; min-height:0; }
-
-.panel{
-  background:var(--card);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  padding:16px;
-  display:flex; flex-direction:column;
-  height:100%;
-  min-height:0;
-  overflow:hidden;
-}
-.panel h3{
-  margin:0 0 10px 0; font-size:1.02rem; letter-spacing:.2px;
-  position:sticky; top:0; background:var(--card); z-index:1; padding-bottom:8px;
-}
-.panel button{
-  margin:0 0 10px 0; font-size:1.02rem; letter-spacing:.2px;
-  position:sticky; top:0; background:var(--card); z-index:1; padding-bottom:8px;
-}
-
-.list{
-  list-style:none; margin:0; padding:0;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-}
-.list li{
-  background:#17213b; margin:8px 0; padding:10px 12px; border-radius:10px;
-  cursor:pointer; transition:filter .12s ease, transform .06s ease;
-}
-.list li:hover{ filter:brightness(1.07); transform:translateY(-1px); }
-
-/* Aktivna playlista (lijeva kolona) */
-#playlistList li.active{
-  outline:2px solid var(--accent-2);
-  background:#1a2747;
-}
-
-.track-item{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; }
-.track-item:hover{ background:#1a2747; }
-.track-thumb{ width:44px;height:44px;border-radius:6px;object-fit:cover;background:#24345e;flex:0 0 44px; }
-.track-text{ min-width:0; }
-.track-title{ font-weight:700; font-size:.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.track-artist{ color:var(--sub); font-size:.82rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.track-item.playing{ outline:1px solid #3a7bd5; background:#15294f; }
-
-.sr-only{ display:none !important; }
-
-/* Responsive */
-@media (max-width: 1100px){
-  .radios-grid{ grid-template-columns: repeat(2,1fr); }
-  .content-grid{ grid-template-columns: 1fr; }
-}
-@media (max-width: 800px){
-  .radios-grid{ grid-template-columns: 1fr; }
-}
-/* Ultra usko – dopusti prijelom */
-@media (max-width: 560px){
-  .radio-controls{ flex-wrap:wrap; }
-  .vol{ width:100%; }
-}
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/spotify.css') }}">
 </head>
 <body>
   <div class="page">
 
-    <!-- RED 1: RD + Naxi + Otvoreni -->
+    <!-- RED 1: RD + Bravo + Otvoreni + Naxi -->
     <section class="radios-grid">
 
       <article class="radio-card" id="rd-card">
@@ -235,37 +23,31 @@ body{
             <input id="rd-vol" type="range" min="0" max="1" step="0.01" value="0.9">
           </div>
         </div>
-        <div class="ticker"><span id="rd-now">Sviramo najbolje hitove 🎵</span></div>
+        <div class="ticker"><span id="rd-now"></span></div>
         <audio id="rd-audio" preload="none">
           <source src="https://shoutcast.pondi.hr:9000/;" type="audio/aac">
         </audio>
       </article>
 
-
-
       <!-- Bravo Hrvatska (direktno) -->
-<article class="radio-card" id="br-card">
-  <div class="radio-head">
-    <div class="radio-title">📻 Bravo Hrvatska — Live</div>
-  </div>
-  <div class="radio-controls">
-    <button id="br-play" class="btn alt">▶ Play</button>
-    <div class="vol">
-      <span id="br-vol-label">90%</span>
-      <input id="br-vol" type="range" min="0" max="1" step="0.01" value="0.9">
-    </div>
-  </div>
-  <div class="ticker">
-    <span id="br-now">Spremno</span>
-  </div>
-  <audio id="br-audio" preload="none" crossorigin="anonymous">
-    <source src="https://relay1.social3.hr/radio/8310/radio.mp3" type="audio/mpeg">
-  </audio>
-</article>
+      <article class="radio-card" id="br-card">
+        <div class="radio-head">
+          <div class="radio-title">📻 Bravo Hrvatska — Live</div>
+        </div>
+        <div class="radio-controls">
+          <button id="br-play" class="btn alt">▶ Play</button>
+          <div class="vol">
+            <span id="br-vol-label">90%</span>
+            <input id="br-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+          </div>
+        </div>
+        <div class="ticker"><span id="br-now"></span></div>
+        <audio id="br-audio" preload="none" crossorigin="anonymous">
+          <source src="https://relay1.social3.hr/radio/8310/radio.mp3" type="audio/mpeg">
+        </audio>
+      </article>
 
-
-
-      <!-- Treći: Otvoreni Radio – direktni HTTPS stream -->
+      <!-- Otvoreni Radio – direktni HTTPS stream -->
       <article class="radio-card" id="ot-card">
         <div class="radio-head">
           <div class="radio-title">📻 Otvoreni Radio — Live</div>
@@ -277,14 +59,13 @@ body{
             <input id="ot-vol" type="range" min="0" max="1" step="0.01" value="0.9">
           </div>
         </div>
-        <div class="ticker"><span id="ot-now">Otvoreni Radio – spremno</span></div>
+        <div class="ticker"><span id="ot-now"></span></div>
         <audio id="ot-audio" preload="none" crossorigin="anonymous">
           <source src="https://stream2.otvoreni.hr/otvoreni" type="audio/mpeg">
         </audio>
       </article>
 
-
-            <article class="radio-card" id="nx-card">
+      <article class="radio-card" id="nx-card">
         <div class="radio-head">
           <div class="radio-title">📻 Naxi Radio — Live</div>
         </div>
@@ -295,51 +76,44 @@ body{
             <input id="nx-vol" type="range" min="0" max="1" step="0.01" value="0.9">
           </div>
         </div>
-        <div class="ticker"><span id="nx-now">Sviramo najbolje hitove 🎵</span></div>
+        <div class="ticker"><span id="nx-now"></span></div>
         <audio id="nx-audio" preload="none">
           <source src="https://naxi128ssl.streaming.rs:9152/;" type="audio/mpeg">
           <source src="https://naxi64ssl.streaming.rs:9162/;" type="audio/mpeg">
         </audio>
       </article>
 
+      <!-- Naxi Fresh (preko Workera) -->
+      <article class="radio-card" id="nf-card">
+        <div class="radio-head"><div class="radio-title">📻 Naxi Fresh — Live</div></div>
+        <div class="radio-controls">
+          <button id="nf-play" class="btn alt">▶ Play</button>
+          <div class="vol">
+            <span id="nf-vol-label">90%</span>
+            <input id="nf-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+          </div>
+        </div>
+        <div class="ticker"><span id="nf-now"></span></div>
+        <audio id="nf-audio" preload="none" crossorigin="anonymous">
+          <source src="https://radio-proxy.maluma-d-o-o.workers.dev/?s=naxi-fresh&meta=0" type="audio/mpeg">
+        </audio>
+      </article>
 
-<!-- Naxi Fresh (preko Workera) -->
-<article class="radio-card" id="nf-card">
-  <div class="radio-head"><div class="radio-title">📻 Naxi Fresh — Live</div></div>
-  <div class="radio-controls">
-    <button id="nf-play" class="btn alt">▶ Play</button>
-    <div class="vol">
-      <span id="nf-vol-label">90%</span>
-      <input id="nf-vol" type="range" min="0" max="1" step="0.01" value="0.9">
-    </div>
-  </div>
-  <div class="ticker"><span id="nf-now">Spremno</span></div>
-<audio id="nf-audio" preload="none" crossorigin="anonymous">
-  <source src="https://radio-proxy.maluma-d-o-o.workers.dev/?s=naxi-fresh&meta=0" type="audio/mpeg">
-</audio>
-
-
-
-</article>
-
-<!-- Naxi Mix (preko Workera) -->
-<article class="radio-card" id="nm-card">
-  <div class="radio-head"><div class="radio-title">📻 Naxi Mix — Live</div></div>
-  <div class="radio-controls">
-    <button id="nm-play" class="btn alt">▶ Play</button>
-    <div class="vol">
-      <span id="nm-vol-label">90%</span>
-      <input id="nm-vol" type="range" min="0" max="1" step="0.01" value="0.9">
-    </div>
-  </div>
-  <div class="ticker"><span id="nm-now">Spremno</span></div>
-<audio id="nm-audio" preload="none" crossorigin="anonymous">
-  <source src="https://radio-proxy.maluma-d-o-o.workers.dev/?s=naxi-mix&meta=0" type="audio/mpeg">
-</audio>
-</article>
-
-
-
+      <!-- Naxi Mix (preko Workera) -->
+      <article class="radio-card" id="nm-card">
+        <div class="radio-head"><div class="radio-title">📻 Naxi Mix — Live</div></div>
+        <div class="radio-controls">
+          <button id="nm-play" class="btn alt">▶ Play</button>
+          <div class="vol">
+            <span id="nm-vol-label">90%</span>
+            <input id="nm-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+          </div>
+        </div>
+        <div class="ticker"><span id="nm-now"></span></div>
+        <audio id="nm-audio" preload="none" crossorigin="anonymous">
+          <source src="https://radio-proxy.maluma-d-o-o.workers.dev/?s=naxi-mix&meta=0" type="audio/mpeg">
+        </audio>
+      </article>
 
     </section>
 
@@ -373,7 +147,6 @@ body{
         <article class="panel">
           <h3>📚 Moje playliste</h3>
           <button id="shuffleBtn" class="btn" style="margin-bottom:8px;">♻️ Shuffle</button>
-
           <ul id="playlistList" class="list"></ul>
         </article>
       </div>
@@ -412,42 +185,40 @@ body{
   let playlistUriToIndex = new Map();
 
   /* UI helperi – RD, Naxi, Otvoreni, Spotify */
-const cards = {
-  rd: document.getElementById('rd-card'),
-  nx: document.getElementById('nx-card'),
-  ot: document.getElementById('ot-card'),
-  nf: document.getElementById('nf-card'),
-  nm: document.getElementById('nm-card'),
-  br: document.getElementById('br-card'),
-  sp: document.getElementById('sp-card')
-};
-const buttons = {
-  rd: document.getElementById('rd-play'),
-  nx: document.getElementById('nx-play'),
-  ot: document.getElementById('ot-play'),
-  nf: document.getElementById('nf-play'),
-  nm: document.getElementById('nm-play'),
-  br: document.getElementById('br-play'),
-  sp: document.getElementById('playPause')
-};
-const audios  = {
-  rd: document.getElementById('rd-audio'),
-  nx: document.getElementById('nx-audio'),
-  ot: document.getElementById('ot-audio'),
-  nf: document.getElementById('nf-audio'),
-  nm: document.getElementById('nm-audio'),
-  br: document.getElementById('br-audio')
-};
+  const cards = {
+    rd: document.getElementById('rd-card'),
+    nx: document.getElementById('nx-card'),
+    ot: document.getElementById('ot-card'),
+    nf: document.getElementById('nf-card'),
+    nm: document.getElementById('nm-card'),
+    br: document.getElementById('br-card'),
+    sp: document.getElementById('sp-card')
+  };
+  const buttons = {
+    rd: document.getElementById('rd-play'),
+    nx: document.getElementById('nx-play'),
+    ot: document.getElementById('ot-play'),
+    nf: document.getElementById('nf-play'),
+    nm: document.getElementById('nm-play'),
+    br: document.getElementById('br-play'),
+    sp: document.getElementById('playPause')
+  };
+  const audios  = {
+    rd: document.getElementById('rd-audio'),
+    nx: document.getElementById('nx-audio'),
+    ot: document.getElementById('ot-audio'),
+    nf: document.getElementById('nf-audio'),
+    nm: document.getElementById('nm-audio'),
+    br: document.getElementById('br-audio')
+  };
 
-// Proxy za CORS (već ga koristiš za streamove)
-const META_PROXY = 'https://radio-proxy.maluma-d-o-o.workers.dev/?u=';
+  // Proxy za CORS (isti kao za streamove)
+  const META_PROXY = 'https://radio-proxy.maluma-d-o-o.workers.dev/?u=';
 
-// Meta izvori
-const BRAVO_META_URL = META_PROXY + encodeURIComponent('https://streaming.br.hr/stream/info/bravo_live_.txt');
-const RD_META_URL    = META_PROXY + encodeURIComponent('https://scraper2.onlineradiobox.com/hr.radiodalmacija?l=0');
-const OT_META_URL  = META_PROXY + encodeURIComponent('https://www.otvoreni.hr/umbraco/Surface/NowPlayingSurface/GetNowPlaying?stream=otvoreni');
-
-
+  // Meta izvori
+  const BRAVO_META_URL = META_PROXY + encodeURIComponent('https://streaming.br.hr/stream/info/bravo_live_.txt');
+  const RD_META_URL    = META_PROXY + encodeURIComponent('https://scraper2.onlineradiobox.com/hr.radiodalmacija?l=0');
+  const OT_META_URL    = META_PROXY + encodeURIComponent('https://www.otvoreni.hr/umbraco/Surface/NowPlayingSurface/GetNowPlaying?stream=otvoreni');
 
   function setButtonLabel(btn, playing){ if(!btn) return; btn.textContent = playing ? '⏸ Pause' : '▶ Play'; }
   function setActiveCard(name){ Object.keys(cards).forEach(k => cards[k].classList.toggle('is-active', k === name)); }
@@ -456,6 +227,9 @@ const OT_META_URL  = META_PROXY + encodeURIComponent('https://www.otvoreni.hr/um
     setButtonLabel(buttons.rd, false);
     setButtonLabel(buttons.nx, false);
     setButtonLabel(buttons.ot, false);
+    setButtonLabel(buttons.nf, false);
+    setButtonLabel(buttons.nm, false);
+    setButtonLabel(buttons.br, false);
   }
   function anyRadioPlaying(){ return Object.values(audios).some(a => !a.paused && !a.ended); }
 
@@ -496,28 +270,28 @@ const OT_META_URL  = META_PROXY + encodeURIComponent('https://www.otvoreni.hr/um
       syncAllVolumeLabels();
 
       // fail-safe: ako je klik na Play prerano, pokreni prvu listu
-document.getElementById('playPause').addEventListener('click', async () => {
-  pauseAllRadios();
-  await ensureDeviceReady(); // ⇐ osiguraj aktivan web player
+      document.getElementById('playPause').addEventListener('click', async () => {
+        pauseAllRadios();
+        await ensureDeviceReady(); // ⇐ osiguraj aktivan web player
 
-  const state = await player.getCurrentState();
-  const nothingLoaded = !state || !state.track_window || !state.track_window.current_track;
+        const state = await player.getCurrentState();
+        const nothingLoaded = !state || !state.track_window || !state.track_window.current_track;
 
-  if (nothingLoaded) {
-    const order = await ensureQueueLoaded();
-    if (order.length) {
-      const uris = order.map(t => t.uri);
-      const token = await getValidToken();
-      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        body: JSON.stringify({ uris, offset: { position: 0 }, position_ms: 0 })
+        if (nothingLoaded) {
+          const order = await ensureQueueLoaded();
+          if (order.length) {
+            const uris = order.map(t => t.uri);
+            const token = await getValidToken();
+            await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+              body: JSON.stringify({ uris, offset: { position: 0 }, position_ms: 0 })
+            });
+          }
+        } else {
+          await player.togglePlay();
+        }
       });
-    }
-  } else {
-    await player.togglePlay();
-  }
-});
 
     });
 
@@ -730,16 +504,15 @@ document.getElementById('playPause').addEventListener('click', async () => {
   /* ===== Radio logika + volumeni ===== */
   function percent(val){ return Math.round((val||0)*100) + '%'; }
   function syncLabel(rangeEl, labelEl){ if (rangeEl && labelEl){ labelEl.textContent = percent(rangeEl.valueAsNumber); } }
-function syncAllVolumeLabels(){
-  syncLabel(document.getElementById('rd-vol'), document.getElementById('rd-vol-label'));
-  syncLabel(document.getElementById('nx-vol'), document.getElementById('nx-vol-label'));
-  syncLabel(document.getElementById('ot-vol'), document.getElementById('ot-vol-label'));
-  syncLabel(document.getElementById('nf-vol'), document.getElementById('nf-vol-label'));
-  syncLabel(document.getElementById('nm-vol'), document.getElementById('nm-vol-label'));
-  syncLabel(document.getElementById('br-vol'), document.getElementById('br-vol-label'));
-  syncLabel(document.getElementById('sp-vol'), document.getElementById('sp-vol-label'));
-}
-
+  function syncAllVolumeLabels(){
+    syncLabel(document.getElementById('rd-vol'), document.getElementById('rd-vol-label'));
+    syncLabel(document.getElementById('nx-vol'), document.getElementById('nx-vol-label'));
+    syncLabel(document.getElementById('ot-vol'), document.getElementById('ot-vol-label'));
+    syncLabel(document.getElementById('nf-vol'), document.getElementById('nf-vol-label'));
+    syncLabel(document.getElementById('nm-vol'), document.getElementById('nm-vol-label'));
+    syncLabel(document.getElementById('br-vol'), document.getElementById('br-vol-label'));
+    syncLabel(document.getElementById('sp-vol'), document.getElementById('sp-vol-label'));
+  }
 
   function makeRadio({ audioId, playId, volId, nowId, label }) {
     const a  = document.getElementById(audioId);
@@ -751,31 +524,35 @@ function syncAllVolumeLabels(){
     let retries = 0, maxRetries = 5;
     const setNow = t => { if (nw) nw.textContent = t; };
 
-async function playOnlyThis() {
-  try {
-    // prvo zaustavi sve, ali pusti 1 frame prije .play()
-    Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
-    if (player?.pause) await player.pause();
-    setNow('Pokušavam reproducirati…');
+    async function playOnlyThis() {
+      try {
+        // zaustavi sve drugo, pa play na ovom
+        Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
+        if (player?.pause) await player.pause();
 
-    await new Promise(r => requestAnimationFrame(r));
-    await a.play();
-    setButtonLabel(b, true);
-    setActiveCard(cardKey);
-  } catch (e) {
-    if (e?.name === 'AbortError') {
-      // benigno – nastaje kad se play prekine pauzom, ne spamuj konzolu
-      setNow('Spremno. Klikni “Play”.');
-    } else {
-      console.warn(`[${label}] play error`, e);
-      setNow('Klikni “Play” (autoplay blokiran).');
+        await new Promise(r => requestAnimationFrame(r));
+        await a.play();
+        setButtonLabel(b, true);
+        setActiveCard(cardKey);
+      } catch (e) {
+        if (e?.name === 'AbortError') {
+          /* ignoriraj benigni abort */
+        } else {
+          console.warn(`[${label}] play error`, e);
+          // (ne postavljamo "Spremno/Pokušavam…")
+        }
+      }
     }
-  }
-}
 
-a.addEventListener('stalled', () => { setNow('Veza je zastala… pokušavam ponovo.'); reconnect(); });
-a.addEventListener('error',   () => { setNow('Greška na streamu. Pokušavam ponovo…'); reconnect(); });
-
+    a.addEventListener('stalled', () => {
+      // po želji može ostati info o grešci
+      setNow('Veza je zastala… pokušavam ponovo.');
+      reconnect();
+    });
+    a.addEventListener('error', () => {
+      setNow('Greška na streamu. Pokušavam ponovo…');
+      reconnect();
+    });
 
     function reconnect() {
       if (retries < maxRetries) {
@@ -799,22 +576,17 @@ a.addEventListener('error',   () => { setNow('Greška na streamu. Pokušavam pon
       });
     }
 
-    a.addEventListener('error',   () => { setNow('Greška na streamu. Pokušavam ponovo…'); reconnect(); });
-    a.addEventListener('stalled', () => { setNow('Veza je zastala… pokušavam ponovo.');   reconnect(); });
-
+    // ponovo: zadržavamo samo kontrole, ne postavljamo generičke slogane
     a.addEventListener('playing', () => {
       retries = 0;
-      if (label === 'ot') setNow('Otvoreni Radio — uživo 🎶');
-      else if (label !== 'br' && label !== 'rd') setNow('Sviramo najbolje hitove 🎵');
-
       setButtonLabel(b, true);
       setActiveCard(cardKey);
       if (player && player.pause) player.pause();
       Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
 
-Object.keys(buttons)
-  .filter(k => k !== 'sp') // samo radio gumbi, ne Spotify
-  .forEach(k => { if (buttons[k] !== b) setButtonLabel(buttons[k], false); });
+      Object.keys(buttons)
+        .filter(k => k !== 'sp')
+        .forEach(k => { if (buttons[k] !== b) setButtonLabel(buttons[k], false); });
       setButtonLabel(buttons.sp, false);
     });
 
@@ -934,113 +706,102 @@ Object.keys(buttons)
   // init volumeni
   syncAllVolumeLabels();
 
-
+  // ===== Now Playing (Bravo / RD / Otvoreni) =====
   (function startNowPlaying() {
-  // ===== Bravo (plain text) =====
-  let lastBravo = '';
-  async function fetchBravo() {
-    try {
-      const res = await fetch(BRAVO_META_URL, { cache: 'no-store' });
-      const text = await res.text();
-      // uzmi zadnju liniju, često je format "Artist - Title"
-      const line = (text || '').trim().split('\n').pop() || '';
-      if (line && line !== lastBravo) {
-        const el = document.getElementById('br-now');
-        if (el) el.textContent = line;
-        lastBravo = line;
-      }
-    } catch (e) {
-      // tiho ignoriraj; zadrži zadnji poznati
+    // Bravo (plain text)
+    let lastBravo = '';
+    async function fetchBravo() {
+      try {
+        const res = await fetch(BRAVO_META_URL, { cache: 'no-store' });
+        const text = await res.text();
+        const line = (text || '').trim().split('\n').pop() || '';
+        if (line && line !== lastBravo) {
+          const el = document.getElementById('br-now');
+          if (el) el.textContent = line;
+          lastBravo = line;
+        }
+      } catch (e) { /* ignore */ }
     }
-  }
-  fetchBravo();
-  setInterval(fetchBravo, 15000); // svake 15 s
+    fetchBravo();
+    setInterval(fetchBravo, 15000);
 
-  // ===== Radio Dalmacija (JSON) =====
-  let lastRD = '';
-  async function fetchRD() {
+    // Radio Dalmacija (JSON)
+    let lastRD = '';
+    async function fetchRD() {
+      try {
+        const res = await fetch(RD_META_URL, { cache: 'no-store' });
+        const data = await res.json();
+        let title = (data && data.title) ? data.title.trim() : '';
+        if (!title) {
+          const n = (data?.iName || '').trim();
+          const a = (data?.iArtist || '').trim();
+          title = [a, n].filter(Boolean).join(' - ');
+        }
+        if (title && title !== lastRD) {
+          const el = document.getElementById('rd-now');
+          if (el) el.textContent = title;
+          lastRD = title;
+        }
+      } catch (e) { /* ignore */ }
+    }
+    fetchRD();
+    setInterval(fetchRD, 15000);
+  })();
+
+  // Otvoreni (JSON)
+  let lastOT = '';
+  async function fetchOT() {
     try {
-      const res = await fetch(RD_META_URL, { cache: 'no-store' });
+      const res = await fetch(OT_META_URL, { cache: 'no-store' });
       const data = await res.json();
-      // preferiraj "title"; fallback na iArtist + iName
-      let title = (data && data.title) ? data.title.trim() : '';
-      if (!title) {
-        const n = (data?.iName || '').trim();
-        const a = (data?.iArtist || '').trim();
-        title = [a, n].filter(Boolean).join(' - ');
-      }
-      if (title && title !== lastRD) {
-        const el = document.getElementById('rd-now');
+      const title = [data?.artist, data?.title].filter(Boolean).join(' — ');
+      if (title && title !== lastOT) {
+        const el = document.getElementById('ot-now');
         if (el) el.textContent = title;
-        lastRD = title;
+        lastOT = title;
       }
-    } catch (e) {
-      // tiho ignoriraj
-    }
+    } catch (_) { /* ignore */ }
   }
-  fetchRD();
-  setInterval(fetchRD, 15000); // svake 15 s
-})();
-
-// ===== Otvoreni (JSON) =====
-let lastOT = '';
-async function fetchOT() {
-  try {
-    const res = await fetch(OT_META_URL, { cache: 'no-store' });
-    const data = await res.json();
-    const title = [data?.artist, data?.title].filter(Boolean).join(' — ');
-    if (title && title !== lastOT) {
-      const el = document.getElementById('ot-now');
-      if (el) el.textContent = title;
-      lastOT = title;
-    }
-  } catch (_) { /* ignore */ }
-}
-fetchOT();
-setInterval(fetchOT, 15000); // svakih 15 s
-
-
+  fetchOT();
+  setInterval(fetchOT, 15000);
 
   async function transferToDevice(devId, {play=false} = {}) {
-  const token = await getValidToken();
-  if (!token || !devId) return false;
+    const token = await getValidToken();
+    if (!token || !devId) return false;
 
-  const res = await fetch("https://api.spotify.com/v1/me/player", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-    body: JSON.stringify({ device_ids: [devId], play })
+    const res = await fetch("https://api.spotify.com/v1/me/player", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+      body: JSON.stringify({ device_ids: [devId], play })
+    });
+    return res.ok;
+  }
+
+  async function ensureDeviceReady({play=false} = {}) {
+    for (let i = 0; i < 10 && !deviceId; i++) {
+      await new Promise(r => setTimeout(r, 150));
+    }
+    await transferToDevice(deviceId, {play});
+  }
+
+  async function ensureQueueLoaded() {
+    if (!currentPlaylistUri && playlistsMeta[0]?.uri) {
+      currentPlaylistUri = playlistsMeta[0].uri;
+      setActivePlaylist(currentPlaylistUri);
+      await loadPlaylistTracks(playlistsMeta[0].id);
+    }
+    if (customOrder?.length) return customOrder;
+    if (currentTracks?.length) {
+      customOrder = currentTracks.slice();
+      return customOrder;
+    }
+    return [];
+  }
+
+  document.getElementById('shuffleBtn')?.addEventListener('click', async () => {
+    await shuffleTrackList();
+    await applyCustomQueueAtCurrentTrack({ preservePosition: true });
   });
-  return res.ok;
-}
-
-async function ensureDeviceReady({play=false} = {}) {
-  // čekaj da SDK prijavi deviceId
-  for (let i = 0; i < 10 && !deviceId; i++) {
-    await new Promise(r => setTimeout(r, 150));
-  }
-  await transferToDevice(deviceId, {play});
-}
-
-async function ensureQueueLoaded() {
-  // ako ništa nije učitano – učitaj prvu playlistu i pripremi customOrder
-  if (!currentPlaylistUri && playlistsMeta[0]?.uri) {
-    currentPlaylistUri = playlistsMeta[0].uri;
-    setActivePlaylist(currentPlaylistUri);
-    await loadPlaylistTracks(playlistsMeta[0].id);
-  }
-  if (customOrder?.length) return customOrder;
-  if (currentTracks?.length) {
-    customOrder = currentTracks.slice();
-    return customOrder;
-  }
-  return [];
-}
-
-document.getElementById('shuffleBtn')?.addEventListener('click', async () => {
-  await shuffleTrackList();
-  await applyCustomQueueAtCurrentTrack({ preservePosition: true });
-});
-
 
   </script>
 </body>
