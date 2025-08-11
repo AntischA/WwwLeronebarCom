@@ -42,7 +42,12 @@
   function render() {
     if (totalEl)    totalEl.textContent    = `${fmtSec(state.total_ds)} sekundi`;
     if (listenedEl) listenedEl.textContent = `${fmtSec(state.listened_ds)} sekundi`;
+
+    const rem = remaining_ds(); // total - listened (u decisekundama)
+    if (finishRemainingEl) finishRemainingEl.textContent = `${fmtSec(rem)} sekundi`;
+    if (btnFinish) btnFinish.disabled = rem <= 0; // opcionalno
   }
+
 
   async function refreshFromDB() {
     const res = await fetch(`/api/danasnje_pjesme?date=${encodeURIComponent(state.date)}`, { cache: 'no-store' });
