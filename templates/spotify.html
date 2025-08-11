@@ -316,12 +316,10 @@ body{
     </div>
   </div>
   <div class="ticker"><span id="br-now">Spremno</span></div>
-  <audio id="br-audio" preload="none">
-    <!-- primarni alias -->
-    <source src="https://radio-proxy.maluma-d-o-o.workers.dev/?s=bravo" type="audio/mpeg">
-    <!-- opcionalni fallback na alternativni host (ako ga koristiš u ALLOWED) -->
-    <source src="https://radio-proxy.maluma-d-o-o.workers.dev/?u=http%3A%2F%2Fliveb.bravoportal.com%3A8000%2Fbravo" type="audio/mpeg">
-  </audio>
+<audio id="br-audio" preload="none" crossorigin="anonymous">
+  <source src="https://radio-proxy.maluma-d-o-o.workers.dev/?s=bravo" type="audio/mpeg">
+  <source src="https://drugi-proxy.example.com/?u=http%3A%2F%2Fliveb.bravoportal.com%3A8000%2Fbravo" type="audio/mpeg">
+</audio>
 </article>
 
 
@@ -357,6 +355,8 @@ body{
         <!-- Playliste -->
         <article class="panel">
           <h3>📚 Moje playliste</h3>
+          <button id="shuffleBtn" class="btn" style="margin-bottom:8px;">♻️ Shuffle</button>
+
           <ul id="playlistList" class="list"></ul>
         </article>
       </div>
@@ -470,21 +470,29 @@ const audios  = {
       syncAllVolumeLabels();
 
       // fail-safe: ako je klik na Play prerano, pokreni prvu listu
-      document.getElementById('playPause').addEventListener('click', async () => {
-        pauseAllRadios();
-        const st = await player.getCurrentState();
-        const nothingLoaded = !st || !st.track_window || !st.track_window.current_track;
+document.getElementById('playPause').addEventListener('click', async () => {
+  pauseAllRadios();
+  await ensureDeviceReady(); // ⇐ osiguraj aktivan web player
 
-        if (nothingLoaded) {
-          if (customOrder && customOrder.length){
-            await playByCustomIndex(customIndex >= 0 ? customIndex : 0);
-          } else if (currentPlaylistUri || (playlistsMeta[0]?.uri)) {
-            await playPlaylist(currentPlaylistUri || playlistsMeta[0].uri, true);
-          }
-        } else {
-          player.togglePlay();
-        }
+  const state = await player.getCurrentState();
+  const nothingLoaded = !state || !state.track_window || !state.track_window.current_track;
+
+  if (nothingLoaded) {
+    const order = await ensureQueueLoaded();
+    if (order.length) {
+      const uris = order.map(t => t.uri);
+      const token = await getValidToken();
+      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ uris, offset: { position: 0 }, position_ms: 0 })
       });
+    }
+  } else {
+    await player.togglePlay();
+  }
+});
+
     });
 
     player.addListener('authentication_error', ({message}) => console.warn('auth_error', message));
@@ -717,21 +725,31 @@ function syncAllVolumeLabels(){
     let retries = 0, maxRetries = 5;
     const setNow = t => { if (nw) nw.textContent = t; };
 
-    async function playOnlyThis() {
-      try {
-        Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
-        if (player && player.pause) await player.pause();
-        setButtonLabel(buttons.sp, false);
+async function playOnlyThis() {
+  try {
+    // prvo zaustavi sve, ali pusti 1 frame prije .play()
+    Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
+    if (player?.pause) await player.pause();
+    setNow('Pokušavam reproducirati…');
 
-        setNow('Pokušavam reproducirati…');
-        await a.play();
-        setButtonLabel(b, true);
-        setActiveCard(cardKey);
-      } catch (e) {
-        setNow('Klikni “Play” (autoplay blokiran).');
-        console.warn(`[${label}] play error`, e);
-      }
+    await new Promise(r => requestAnimationFrame(r));
+    await a.play();
+    setButtonLabel(b, true);
+    setActiveCard(cardKey);
+  } catch (e) {
+    if (e?.name === 'AbortError') {
+      // benigno – nastaje kad se play prekine pauzom, ne spamuj konzolu
+      setNow('Spremno. Klikni “Play”.');
+    } else {
+      console.warn(`[${label}] play error`, e);
+      setNow('Klikni “Play” (autoplay blokiran).');
     }
+  }
+}
+
+a.addEventListener('stalled', () => { setNow('Veza je zastala… pokušavam ponovo.'); reconnect(); });
+a.addEventListener('error',   () => { setNow('Greška na streamu. Pokušavam ponovo…'); reconnect(); });
+
 
     function reconnect() {
       if (retries < maxRetries) {
@@ -889,6 +907,49 @@ Object.keys(buttons)
 
   // init volumeni
   syncAllVolumeLabels();
+
+
+  async function transferToDevice(devId, {play=false} = {}) {
+  const token = await getValidToken();
+  if (!token || !devId) return false;
+
+  const res = await fetch("https://api.spotify.com/v1/me/player", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+    body: JSON.stringify({ device_ids: [devId], play })
+  });
+  return res.ok;
+}
+
+async function ensureDeviceReady({play=false} = {}) {
+  // čekaj da SDK prijavi deviceId
+  for (let i = 0; i < 10 && !deviceId; i++) {
+    await new Promise(r => setTimeout(r, 150));
+  }
+  await transferToDevice(deviceId, {play});
+}
+
+async function ensureQueueLoaded() {
+  // ako ništa nije učitano – učitaj prvu playlistu i pripremi customOrder
+  if (!currentPlaylistUri && playlistsMeta[0]?.uri) {
+    currentPlaylistUri = playlistsMeta[0].uri;
+    setActivePlaylist(currentPlaylistUri);
+    await loadPlaylistTracks(playlistsMeta[0].id);
+  }
+  if (customOrder?.length) return customOrder;
+  if (currentTracks?.length) {
+    customOrder = currentTracks.slice();
+    return customOrder;
+  }
+  return [];
+}
+
+document.getElementById('shuffleBtn')?.addEventListener('click', async () => {
+  await shuffleTrackList();
+  await applyCustomQueueAtCurrentTrack({ preservePosition: true });
+});
+
+
   </script>
 </body>
 </html>
