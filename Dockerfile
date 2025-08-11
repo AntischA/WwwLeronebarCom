@@ -7,7 +7,7 @@ WORKDIR /app
 # Kopiraj potrebne fajlove
 COPY requirements.txt requirements.txt
 COPY app.py app.py
-COPY app_db.py app_db.py          # << OVO JE FALILO
+COPY app_db.py app_db.py
 COPY static static
 COPY templates templates
 COPY api api
