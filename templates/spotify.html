@@ -32,7 +32,7 @@ body{
 }
 
 .page{
-  /* suženo ~20%: 80% širine prozora, max 1280px, min 320px */
+  /* ~20% suženja: 80% širine prozora */
   width: clamp(320px, 80vw, 1280px);
   margin: 0 auto;
 
@@ -203,9 +203,6 @@ body{
   .radios-layout{ grid-template-columns: 1fr; }
   .content-grid{ grid-template-columns: 1fr; }
 }
-@media (max-width: 800px){
-  /* ništa posebno – već je 1 kolona iznad */
-}
 @media (max-width: 560px){
   .radio-controls{ flex-wrap:wrap; }
   .vol{ width:100%; }
@@ -238,6 +235,7 @@ body{
         </div>
         <div class="ticker"><span id="ra-now">Spreman za reprodukciju…</span></div>
 
+        <!-- VAŽNO: bez crossorigin da Naxi radi bez CORS headera -->
         <audio id="radio-audio" preload="none" playsinline></audio>
       </article>
 
@@ -299,15 +297,18 @@ body{
   }
 
   /* ====== RADIO: lista + jedan player ====== */
+  // cors: 'none' (default) ne postavlja CORS; 'anonymous' postavlja crossOrigin='anonymous'
   const stations = [
     {
       id: 'rd',
       name: 'Radio Dalmacija — Live',
+      cors: 'none',
       sources: [{ src: 'https://shoutcast.pondi.hr:9000/;', type: 'audio/aac' }]
     },
     {
       id: 'nx',
       name: 'Naxi Radio — Live',
+      cors: 'none', // Naxi NEMA CORS header -> mora biti bez crossOrigin
       sources: [
         { src: 'https://naxi128ssl.streaming.rs:9152/;', type: 'audio/mpeg' },
         { src: 'https://naxi64ssl.streaming.rs:9162/;',  type: 'audio/mpeg' }
@@ -316,6 +317,7 @@ body{
     {
       id: 'ot',
       name: 'Otvoreni Radio — Live',
+      cors: 'none', // može i anonymous ako želiš, ali nije potrebno
       sources: [{ src: 'https://stream2.otvoreni.hr/otvoreni', type: 'audio/mpeg' }]
     }
   ];
@@ -343,6 +345,15 @@ body{
     });
   }
 
+  function applyCrossOriginFor(station){
+    if (station.cors === 'anonymous'){
+      radioAudio.crossOrigin = 'anonymous';
+    } else {
+      try { radioAudio.removeAttribute('crossorigin'); } catch(_) {}
+      radioAudio.crossOrigin = null;
+    }
+  }
+
   function selectStation(stationId){
     const st = stations.find(s => s.id === stationId);
     if (!st) return;
@@ -356,7 +367,10 @@ body{
       li.classList.toggle('active', li.dataset.station === stationId);
     });
 
-    // učitaj prvi izvor (ne sviraj automatski dok ne klikne Play)
+    // CORS postavka prije promjene izvora
+    applyCrossOriginFor(st);
+
+    // učitaj prvi izvor (bez autoplaya)
     if (st.sources && st.sources.length){
       radioAudio.src = st.sources[0].src;
       try { radioAudio.load(); } catch(_){}
@@ -505,7 +519,6 @@ body{
       if (spVol) { try { player.setVolume(spVol.valueAsNumber); } catch(e) {} }
       loadPlaylists(); // bez autoplay
 
-      // fail-safe: ako je klik na Play prerano, pokreni prvu listu
       document.getElementById('playPause').addEventListener('click', async () => {
         // pauziraj radio
         try { radioAudio.pause(); } catch(_){}
@@ -536,7 +549,6 @@ body{
       setButtonLabel(document.getElementById('playPause'), !paused);
       if (!paused){ try { radioAudio.pause(); } catch(_){ } setActiveCard('sp'); }
       else {
-        // ako niti radio ne svira, makni highlight
         const radioIsPlaying = !(radioAudio.paused || radioAudio.ended);
         if (!radioIsPlaying) setActiveCard(null);
       }
