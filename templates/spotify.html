@@ -445,6 +445,7 @@ const META_PROXY = 'https://radio-proxy.maluma-d-o-o.workers.dev/?u=';
 // Meta izvori
 const BRAVO_META_URL = META_PROXY + encodeURIComponent('https://streaming.br.hr/stream/info/bravo_live_.txt');
 const RD_META_URL    = META_PROXY + encodeURIComponent('https://scraper2.onlineradiobox.com/hr.radiodalmacija?l=0');
+const OT_META_URL  = META_PROXY + encodeURIComponent('https://www.otvoreni.hr/umbraco/Surface/NowPlayingSurface/GetNowPlaying?stream=otvoreni');
 
 
 
@@ -981,6 +982,22 @@ Object.keys(buttons)
   setInterval(fetchRD, 15000); // svake 15 s
 })();
 
+// ===== Otvoreni (JSON) =====
+let lastOT = '';
+async function fetchOT() {
+  try {
+    const res = await fetch(OT_META_URL, { cache: 'no-store' });
+    const data = await res.json();
+    const title = [data?.artist, data?.title].filter(Boolean).join(' — ');
+    if (title && title !== lastOT) {
+      const el = document.getElementById('ot-now');
+      if (el) el.textContent = title;
+      lastOT = title;
+    }
+  } catch (_) { /* ignore */ }
+}
+fetchOT();
+setInterval(fetchOT, 15000); // svakih 15 s
 
 
 
