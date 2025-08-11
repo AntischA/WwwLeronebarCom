@@ -439,6 +439,14 @@ const audios  = {
   br: document.getElementById('br-audio')
 };
 
+// Proxy za CORS (već ga koristiš za streamove)
+const META_PROXY = 'https://radio-proxy.maluma-d-o-o.workers.dev/?u=';
+
+// Meta izvori
+const BRAVO_META_URL = META_PROXY + encodeURIComponent('https://streaming.br.hr/stream/info/bravo_live_.txt');
+const RD_META_URL    = META_PROXY + encodeURIComponent('https://scraper2.onlineradiobox.com/hr.radiodalmacija?l=0');
+
+
 
   function setButtonLabel(btn, playing){ if(!btn) return; btn.textContent = playing ? '⏸ Pause' : '▶ Play'; }
   function setActiveCard(name){ Object.keys(cards).forEach(k => cards[k].classList.toggle('is-active', k === name)); }
@@ -796,7 +804,7 @@ a.addEventListener('error',   () => { setNow('Greška na streamu. Pokušavam pon
     a.addEventListener('playing', () => {
       retries = 0;
       if (label === 'ot') setNow('Otvoreni Radio — uživo 🎶');
-      else setNow('Sviramo najbolje hitove 🎵');
+      else if (label !== 'br' && label !== 'rd') setNow('Sviramo najbolje hitove 🎵');
 
       setButtonLabel(b, true);
       setActiveCard(cardKey);
@@ -924,6 +932,56 @@ Object.keys(buttons)
 
   // init volumeni
   syncAllVolumeLabels();
+
+
+  (function startNowPlaying() {
+  // ===== Bravo (plain text) =====
+  let lastBravo = '';
+  async function fetchBravo() {
+    try {
+      const res = await fetch(BRAVO_META_URL, { cache: 'no-store' });
+      const text = await res.text();
+      // uzmi zadnju liniju, često je format "Artist - Title"
+      const line = (text || '').trim().split('\n').pop() || '';
+      if (line && line !== lastBravo) {
+        const el = document.getElementById('br-now');
+        if (el) el.textContent = line;
+        lastBravo = line;
+      }
+    } catch (e) {
+      // tiho ignoriraj; zadrži zadnji poznati
+    }
+  }
+  fetchBravo();
+  setInterval(fetchBravo, 15000); // svake 15 s
+
+  // ===== Radio Dalmacija (JSON) =====
+  let lastRD = '';
+  async function fetchRD() {
+    try {
+      const res = await fetch(RD_META_URL, { cache: 'no-store' });
+      const data = await res.json();
+      // preferiraj "title"; fallback na iArtist + iName
+      let title = (data && data.title) ? data.title.trim() : '';
+      if (!title) {
+        const n = (data?.iName || '').trim();
+        const a = (data?.iArtist || '').trim();
+        title = [a, n].filter(Boolean).join(' - ');
+      }
+      if (title && title !== lastRD) {
+        const el = document.getElementById('rd-now');
+        if (el) el.textContent = title;
+        lastRD = title;
+      }
+    } catch (e) {
+      // tiho ignoriraj
+    }
+  }
+  fetchRD();
+  setInterval(fetchRD, 15000); // svake 15 s
+})();
+
+
 
 
   async function transferToDevice(devId, {play=false} = {}) {
