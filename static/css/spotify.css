@@ -1,293 +1,204 @@
-/* ===== Layout & global ===== */
 :root{
-  --bg:#121212;
-  --panel:#1e1e1e;
-  --accent:#1db954;
-  --muted:#404040;
-  --text:#ffffff;
-  --sub:#aaaaaa;
-
+  --bg:#0b1020;
+  --card:#11182a;
+  --soft:#0f1526;
+  --text:#e8eef7;
+  --sub:#a7b2c6;
+  --accent:#10b981;
+  --accent-2:#1db954;
   --radius:16px;
-  --shadow:0 6px 20px rgba(0,0,0,.25);
-  --gutter:32px;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+  --gap:18px;
+  --gap-lg:22px;
+  --active-1:#16324a;
+  --active-2:#0f1f39;
 }
 
 *{box-sizing:border-box}
-
-html,body{
-  height:100%;
-}
-
+html,body{height:100%}
 body{
-  background-color: var(--bg);
-  color: var(--text);
-  font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
-  margin: 0;
+  margin:0;
+  background: radial-gradient(1200px 600px at 30% -10%, #17213f 0%, #0b1020 55%, #0b1020 100%);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial;
 }
 
-/* Glavni wrap: centriran, kontrolisana širina */
-.container{
-  display: grid;
-  grid-template-columns: 280px minmax(560px, 820px) 360px;
-  grid-template-areas: "playlists player tracks";
-  gap: var(--gutter);
-  max-width: 1440px;
-  padding: 32px 24px;
+.page{
+  /* suženo ~20%: 80% širine prozora, max 1280px, min 320px */
+  width: clamp(320px, 80vw, 1280px);
   margin: 0 auto;
-  align-items: stretch;
-  height: 100vh;        /* ⬅️ fiksna visina ekrana */
-  overflow: hidden;     /* ⬅️ spriječi rast zbog sadržaja */
+
+  padding: 22px var(--gap);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--gap-lg);
+  height: 100dvh;
+  min-height: 100svh;
 }
 
-/* Paneli */
-.playlist-section,
-.player,
-.tracks-section{
-  background: var(--panel);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  min-height: 0;     /* ⬅️ bitno da flex djeca smiju biti manja od sadržaja */
-  height: 100%;
-  overflow: hidden;  /* ⬅️ sav višak ide u unutrašnje scrolle */
+.btn{
+  appearance:none; border:0; cursor:pointer;
+  background:var(--accent-2); color:#062d16;
+  padding:20px 16px; border-radius:12px; font-weight:800;
+  transition:transform .06s ease, filter .12s ease, opacity .12s ease;
+  white-space:nowrap;
+  min-width:120px;
+  flex:0 0 auto;
+}
+.btn:active{ transform:translateY(1px) }
+.btn.alt{ background:var(--accent); color:#04281f }
+.btn:disabled{ opacity:.55; cursor:not-allowed }
+
+.radio-card{
+  background:linear-gradient(180deg, var(--card), var(--soft));
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px;
+  display:flex; flex-direction:column; gap:10px;
+  min-height:160px;
+  transition: background .2s ease, outline-color .2s ease, box-shadow .2s ease;
+  outline:2px solid transparent;
+}
+.radio-card.is-active{
+  background:linear-gradient(180deg, var(--active-1), var(--active-2));
+  outline-color: var(--accent);
+  box-shadow:0 12px 34px rgba(16,185,129,.25);
 }
 
-/* Grid područja */
-.playlist-section{ grid-area: playlists; }
-.player{ grid-area: player; }
-.tracks-section{ grid-area: tracks; }
+.radio-head{ display:flex; align-items:center; gap:10px; }
+.radio-title{ font-weight:800; letter-spacing:.2px; font-size:1.02rem; }
 
-/* ===== Playlists (lijevo) ===== */
-.playlist-section{
-  padding: 20px;
+.radio-controls{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:nowrap;
+  min-width:0;
 }
-.playlist-section h2{
-  margin: 0 0 12px 0;
-}
-#playlistList{
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  overflow-y: auto;    /* interni skrol */
-  flex: 1;
-}
-#playlistList li{
-  margin: 8px 0;
-  padding: 10px 12px;
-  background-color: #292929;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background .2s ease, transform .08s ease;
-}
-#playlistList li:hover{ background:#333; transform: translateY(-1px); }
 
-#playlistList,
-#tracksList{
-  flex: 1;
-  min-height: 0;     /* ⬅️ da skrol radi ispravno u flex kontejneru */
+.vol{
+  display:flex; align-items:center; gap:10px;
+  color:var(--sub); font-size:.95rem;
+  flex:1 1 auto;
+  min-width:0;
+  white-space:nowrap;
+}
+.vol span{
+  display:inline-block;
+  width:4ch;
+  text-align:right;
+}
+
+/* Touch-friendly range */
+.vol input[type="range"]{
+  flex:1 1 auto;
+  width:100%;
+  max-width:100%;
+  height:50px;
+  background:transparent;
+  -webkit-appearance:none;
+  appearance:none;
+}
+.vol input[type="range"]::-webkit-slider-runnable-track{
+  height:50px; border-radius:10px; background:#203055;
+}
+.vol input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:40px; height:40px; border-radius:50%;
+  background:#e8eef7; margin-top:5px; border:2px solid #0f1f39;
+}
+.vol input[type="range"]::-moz-range-track{
+  height:14px; border-radius:10px; background:#203055;
+}
+.vol input[type="range"]::-moz-range-thumb{
+  width:26px; height:26px; border-radius:50%;
+  background:#e8eef7; border:2px solid #0f1f39;
+}
+
+.ticker{
+  overflow:hidden; white-space:nowrap;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%);
+  mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%);
+  font-size:.95rem; color:#dfe8f7;
+}
+.ticker span{ display:inline-block; padding-left:100%; animation:ticker 12s linear infinite; }
+@keyframes ticker{ from{ transform:translateX(0);} to{ transform:translateX(-100%);} }
+
+/* RED 1: lijevo lista radija, desno jedan radio player */
+.radios-layout{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:var(--gap-lg);
+  align-items:stretch;
+  min-height:0;
+}
+
+/* RED 2: lijevo Spotify (player + playliste), desno pjesme */
+.content-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:var(--gap-lg);
+  align-items:stretch;
+  min-height:0;
+}
+.left-col{
+  display:flex;
+  flex-direction:column;
+  gap:var(--gap-lg);
+  min-height:0;
+}
+.left-col .radio-card{ flex:0 0 auto; }
+.left-col .panel{ flex:1 1 auto; min-height:0; }
+
+.panel{
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px;
+  display:flex; flex-direction:column;
+  height:100%;
+  min-height:0;
+  overflow:hidden;
+}
+.panel h3{
+  margin:0 0 10px 0; font-size:1.02rem; letter-spacing:.2px;
+  position:sticky; top:0; background:var(--card); z-index:1; padding-bottom:8px;
+}
+
+.list{
+  list-style:none; margin:0; padding:0;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
 }
-
-
-/* ===== Player (sredina) ===== */
-.player{
-  padding: 28px;
-  align-items: center;     /* centriraj sadržaj */
-  justify-content: center; /* vertikalno */
+.list li{
+  background:#17213b; margin:8px 0; padding:10px 12px; border-radius:10px;
+  cursor:pointer; transition:filter .12s ease, transform .06s ease;
+}
+.list li:hover{ filter:brightness(1.07); transform:translateY(-1px); }
+#radioList li.active{
+  outline:2px solid var(--accent);
+  background:#1a2747;
 }
 
-.player img{
-  width: clamp(240px, 55%, 460px); /* responzivno ograničenje */
-  border-radius: 14px;
-  margin-bottom: 20px;
-  object-fit: cover;
-  box-shadow: var(--shadow);
+.track-item{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; }
+.track-item:hover{ background:#1a2747; }
+.track-thumb{ width:44px;height:44px;border-radius:6px;object-fit:cover;background:#24345e;flex:0 0 44px; }
+.track-text{ min-width:0; }
+.track-title{ font-weight:700; font-size:.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.track-artist{ color:var(--sub); font-size:.82rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.track-item.playing{ outline:1px solid #3a7bd5; background:#15294f; }
+
+.sr-only{ display:none !important; }
+
+/* Responsive */
+@media (max-width: 1100px){
+  .radios-layout{ grid-template-columns: 1fr; }
+  .content-grid{ grid-template-columns: 1fr; }
+}
+@media (max-width: 800px){ }
+@media (max-width: 560px){
+  .radio-controls{ flex-wrap:wrap; }
+  .vol{ width:100%; }
 }
 
-.track-info{
-  margin-bottom: 12px;
-  text-align: center;
-}
-#trackName{
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1.2;
-}
-#artistName{
-  font-size: 15px;
-  color: var(--sub);
-}
-
-.controls{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin: 14px 0 6px;
-}
-.controls button,
-.volume-controls button,
-.tracks-header button{
-  background-color: var(--accent);
-  color: #fff;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 999px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform .06s ease, filter .15s ease;
-}
-.controls button:active,
-.volume-controls button:active,
-.tracks-header button:active{ transform: translateY(1px); }
-.tracks-header button{ background: var(--muted); }
-.tracks-header button:hover{ filter: brightness(1.1); }
-
-.seek-bar{
-  width: 100%;
-  max-width: 720px;
-  margin: 14px auto 10px;
-}
-.seek-bar input[type="range"]{
-  width: 100%;
-  appearance: none;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--accent);
-  outline: none;
-}
-
-.volume-controls{
-  margin-top: 10px;
-  width: 100%;
-  max-width: 720px;
-}
-.volume-buttons{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-}
-.volume-buttons button{
-  background-color: var(--muted);
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 13px;
-}
-.volume-buttons button:hover{ filter: brightness(1.15); }
-
-/* ===== Desna lista (tracks) ===== */
-.tracks-section{
-  padding: 16px;
-  min-width: 0;
-}
-.tracks-header{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.tracks-header h2{
-  margin: 0;
-  font-size: 18px;
-}
-
-#tracksList{
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  overflow-y: auto; /* interni skrol */
-  flex: 1;
-}
-
-.track-item{
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background .15s ease;
-}
-.track-item:hover{ background:#2a2a2a; }
-
-.track-thumb{
-  width: 44px;
-  height: 44px;
-  border-radius: 6px;
-  object-fit: cover;
-  background:#333;
-  flex: 0 0 44px;
-}
-
-.track-text{
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.track-title{
-  font-size: 14px;
-  font-weight: 700;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.track-artist{
-  font-size: 12px;
-  color: var(--sub);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Trenutna */
-.track-item.playing{
-  background-color:#1f3b70;
-  outline:1px solid #3a7bd5;
-}
-
-/* ===== Scrollbar (suptilno) ===== */
-#playlistList::-webkit-scrollbar,
-#tracksList::-webkit-scrollbar{ width: 8px; }
-#playlistList::-webkit-scrollbar-thumb,
-#tracksList::-webkit-scrollbar-thumb{
-  background:#2f2f2f; border-radius: 8px;
-}
-
-/* ===== Responsive ===== */
-
-/* Tablet: 2 kolone (playlists | player), tracks ispod preko cijele širine */
-@media (max-width: 1200px){
-  .container{
-    grid-template-columns: 240px 1fr;
-    grid-template-areas:
-      "playlists player"
-      "tracks tracks";
-  }
-  .tracks-section{ min-height: 360px; }
-}
-
-/* Mobilno: 1 kolona – player prvi (u fokusu) */
-@media (max-width: 760px){
-  .container{
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "player"
-      "playlists"
-      "tracks";
-    gap: 20px;
-    padding: 20px 16px 28px;
-    height: 100vh;     /* ⬅️ i ovdje zaključano */
-    overflow: hidden;
-  }
-  .player{ padding: 20px; }
-  .player img{ width: 100%; max-width: 520px; }
-  .tracks-section, .playlist-section{ padding: 14px; }
-  .controls{ gap: 8px; }
-}
-
-/* Sitni UI peglinzi */
-.controls button{ padding: 10px 18px; font-size: 14px; }
