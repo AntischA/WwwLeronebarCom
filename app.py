@@ -16,6 +16,8 @@ app = Flask(__name__, static_folder="static")
 
 # Učitaj API ključ iz okruženja
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+# --- gore u settingsima ---
+SPOTIFY_SCOPES = "streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state playlist-read-private playlist-read-collaborative"
 
 @app.route('/spotify_auth')
 def spotify_auth():
@@ -24,6 +26,7 @@ def spotify_auth():
         "response_type": "code",
         "redirect_uri": REDIRECT_URI,
         "scope": SPOTIFY_SCOPES,
+        "show_dialog": "true",  # prisili ekran dopuštenja (da dobiješ novi refresh_token s novim scopeovima)
     }
     url = f"https://accounts.spotify.com/authorize?{urllib.parse.urlencode(query_params)}"
     return redirect(url)
