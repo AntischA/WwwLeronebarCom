@@ -35,6 +35,8 @@
     text-align: center;
 }
 
+.grid-item > .controls { flex:1; width:100%; }
+
 /* Info o totalu */
 #welcomeTotalInfo {
     font-size: 3.2rem;
