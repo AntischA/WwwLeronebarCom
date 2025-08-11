@@ -133,20 +133,27 @@
               <input id="sp-vol" type="range" min="0" max="1" step="0.01" value="0.6">
             </div>
           </div>
+
           <div class="ticker"><span id="sp-now">Odaberi playlistu ispod pa klikni Play.</span></div>
 
+          <!-- VIDLJIVI seek slider + vremena -->
+          <div class="seek-wrap" style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+            <span id="sp-time-cur" style="min-width:42px;text-align:right;">0:00</span>
+            <input type="range" id="seekSlider" value="0" min="0" max="1000" step="1" style="flex:1 1 auto;">
+            <span id="sp-time-total" style="min-width:42px;">0:00</span>
+          </div>
+
+          <!-- (može ostati skriveno, koristimo samo za tekst/cover ako zatreba) -->
           <div class="sr-only">
             <img id="albumImage" alt="">
             <div id="trackName"></div>
             <div id="artistName"></div>
-            <input type="range" id="seekSlider" value="0" min="0" max="100" step="1">
           </div>
         </article>
 
         <!-- Playliste -->
         <article class="panel">
           <h3>📚 Moje playliste</h3>
-          <button id="shuffleBtn" class="btn" style="margin-bottom:8px;">♻️ Shuffle</button>
           <ul id="playlistList" class="list"></ul>
         </article>
       </div>
@@ -184,7 +191,45 @@
   let playlistsMeta = [];
   let playlistUriToIndex = new Map();
 
-  /* UI helperi – RD, Naxi, Otvoreni, Spotify */
+  // === Spotify seek UI refs ===
+  const seekSlider = document.getElementById('seekSlider');
+  const spTimeCur  = document.getElementById('sp-time-cur');
+  const spTimeTot  = document.getElementById('sp-time-total');
+  let spDurMs = 0;
+  let spProgressTimer = null;
+  let userSeeking = false;
+
+  function fmt(ms){
+    ms = Math.max(0, Math.floor(ms||0));
+    const s = Math.floor(ms/1000);
+    const m = Math.floor(s/60);
+    const ss = String(s%60).padStart(2,'0');
+    return `${m}:${ss}`;
+  }
+  function setSeekUI(posMs, durMs){
+    if (!userSeeking) {
+      const val = (durMs>0) ? Math.round((posMs/durMs)*1000) : 0;
+      seekSlider.value = String(Math.max(0, Math.min(1000, val)));
+    }
+    spTimeCur.textContent = fmt(posMs);
+    spTimeTot.textContent = fmt(durMs);
+    seekSlider.disabled = !durMs;
+  }
+  function startProgress(posMs){
+    stopProgress();
+    const baseT = Date.now();
+    const baseP = posMs;
+    spProgressTimer = setInterval(()=>{
+      const now = Date.now();
+      const est = baseP + (now - baseT);
+      if (!userSeeking) setSeekUI(est, spDurMs);
+    }, 250);
+  }
+  function stopProgress(){
+    if (spProgressTimer){ clearInterval(spProgressTimer); spProgressTimer=null; }
+  }
+
+  // UI helperi – RD, Naxi, Otvoreni, Spotify
   const cards = {
     rd: document.getElementById('rd-card'),
     nx: document.getElementById('nx-card'),
@@ -269,10 +314,26 @@
       loadPlaylists(); // bez autoplay
       syncAllVolumeLabels();
 
-      // fail-safe: ako je klik na Play prerano, pokreni prvu listu
+      // seek slider handlers
+      seekSlider.addEventListener('input', () => {
+        if (!spDurMs) return;
+        userSeeking = true;
+        const ms = (seekSlider.valueAsNumber / 1000) * spDurMs;
+        setSeekUI(ms, spDurMs); // pokaži trenutnu procjenu dok vučeš
+      });
+      seekSlider.addEventListener('change', async () => {
+        if (!spDurMs || !player) { userSeeking = false; return; }
+        const ms = Math.floor((seekSlider.valueAsNumber / 1000) * spDurMs);
+        try {
+          await ensureDeviceReady();
+          await player.seek(ms);
+        } catch(_) {}
+        userSeeking = false;
+      });
+
       document.getElementById('playPause').addEventListener('click', async () => {
         pauseAllRadios();
-        await ensureDeviceReady(); // ⇐ osiguraj aktivan web player
+        await ensureDeviceReady();
 
         const state = await player.getCurrentState();
         const nothingLoaded = !state || !state.track_window || !state.track_window.current_track;
@@ -292,7 +353,6 @@
           await player.togglePlay();
         }
       });
-
     });
 
     player.addListener('authentication_error', ({message}) => console.warn('auth_error', message));
@@ -308,27 +368,36 @@
       if (!paused){ pauseAllRadios(); setActiveCard('sp'); }
       else if (!anyRadioPlaying()) setActiveCard(null);
 
+      // progress & meta
+      const current = state.track_window?.current_track;
+      spDurMs = current?.duration_ms || 0;
+      setSeekUI(state.position || 0, spDurMs);
+
+      if (!paused) startProgress(state.position || 0);
+      else         stopProgress();
+
       // kraj playliste? pređi na sljedeću
       const atQueueEnd =
         !prevPaused && paused &&
         state.track_window.next_tracks.length === 0 &&
         customOrder && customOrder.length &&
-        state.track_window.current_track &&
-        state.track_window.current_track.uri === customOrder[customOrder.length - 1].uri &&
+        current &&
+        current.uri === customOrder[customOrder.length - 1].uri &&
         state.position < 1000;
 
       prevPaused = paused;
       if (atQueueEnd) { playNextPlaylist(); return; }
 
-      // update UI + “sada svira”
-      const current = state.track_window.current_track;
+      // UI "sada svira"
       if (current){
-        document.getElementById("trackName").textContent = current.name;
-        document.getElementById("artistName").textContent = current.artists.map(a => a.name).join(", ");
-        document.getElementById("albumImage").src = current.album.images[0]?.url || '';
+        document.getElementById("trackName").textContent = current.name || '';
+        document.getElementById("artistName").textContent = (current.artists||[]).map(a => a.name).join(", ");
+        document.getElementById("albumImage").src = current.album?.images?.[0]?.url || '';
         currentTrackUri = current.uri;
+
         const spNow = document.getElementById('sp-now');
-        if (spNow) spNow.textContent = `Sada svira: ${current.name} — ${current.artists.map(a => a.name).join(", ")}`;
+        if (spNow) spNow.textContent = `Sada svira: ${current.name} — ${(current.artists||[]).map(a => a.name).join(", ")}`;
+
         if (customOrder) {
           const idx = customOrder.findIndex(t => t.uri === current.uri);
           if (idx !== -1) customIndex = idx;
@@ -526,7 +595,6 @@
 
     async function playOnlyThis() {
       try {
-        // zaustavi sve drugo, pa play na ovom
         Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
         await safePauseSpotify();
 
@@ -536,36 +604,23 @@
         setActiveCard(cardKey);
       } catch (e) {
         if (e?.name === 'AbortError') {
-          /* ignoriraj benigni abort */
+          /* ignore */
         } else {
           console.warn(`[${label}] play error`, e);
-          // (ne postavljamo "Spremno/Pokušavam…")
         }
       }
     }
 
-    a.addEventListener('stalled', () => {
-      // po želji može ostati info o grešci
-      setNow('Veza je zastala… pokušavam ponovo.');
-      reconnect();
-    });
-    a.addEventListener('error', () => {
-      setNow('Greška na streamu. Pokušavam ponovo…');
-      reconnect();
-    });
+    a.addEventListener('stalled', () => { setNow('Veza je zastala… pokušavam ponovo.'); reconnect(); });
+    a.addEventListener('error',   () => { setNow('Greška na streamu. Pokušavam ponovo…'); reconnect(); });
 
     async function safePauseSpotify() {
-  if (!player || !player.getCurrentState) return;
-  try {
-    const st = await player.getCurrentState();
-    if (st && !st.paused) {
-      await player.pause();
+      if (!player || !player.getCurrentState) return;
+      try {
+        const st = await player.getCurrentState();
+        if (st && !st.paused) { await player.pause(); }
+      } catch (_) {}
     }
-  } catch (_) {
-    // ignoriraj - nema queue/device još
-  }
-}
-
 
     function reconnect() {
       if (retries < maxRetries) {
@@ -583,18 +638,18 @@
 
     if (vr){
       const labelEl = document.getElementById(`${label}-vol-label`);
+      a.volume = vr.valueAsNumber;            // inicijalni volume = slider
+      syncLabel(vr, labelEl);
       vr.addEventListener('input', () => {
         a.volume = vr.valueAsNumber;
         syncLabel(vr, labelEl);
       });
     }
 
-    // ponovo: zadržavamo samo kontrole, ne postavljamo generičke slogane
     a.addEventListener('playing', () => {
       retries = 0;
       setButtonLabel(b, true);
       setActiveCard(cardKey);
-      safePauseSpotify();
       Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
 
       Object.keys(buttons)
@@ -708,7 +763,6 @@
       playlistUriToIndex.set(pl.uri, index);
     });
 
-    // Učitaj i izmiješaj prvu – bez automatskog sviranja
     if (playlistsMeta.length) {
       currentPlaylistUri = playlistsMeta[0].uri;
       setActivePlaylist(currentPlaylistUri);
@@ -810,11 +864,6 @@
     }
     return [];
   }
-
-  document.getElementById('shuffleBtn')?.addEventListener('click', async () => {
-    await shuffleTrackList();
-    await applyCustomQueueAtCurrentTrack({ preservePosition: true });
-  });
 
   </script>
 </body>
