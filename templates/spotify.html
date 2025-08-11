@@ -273,6 +273,59 @@ body{
         </audio>
       </article>
 
+<!-- Naxi Fresh (preko Workera) -->
+<article class="radio-card" id="nf-card">
+  <div class="radio-head"><div class="radio-title">📻 Naxi Fresh — Live</div></div>
+  <div class="radio-controls">
+    <button id="nf-play" class="btn alt">▶ Play</button>
+    <div class="vol">
+      <span id="nf-vol-label">90%</span>
+      <input id="nf-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+    </div>
+  </div>
+  <div class="ticker"><span id="nf-now">Spremno</span></div>
+  <audio id="nf-audio" preload="none">
+    <source src="https://radio-proxy.maluma-d-o-o.workers.dev/?s=naxi-fresh" type="audio/mpeg">
+  </audio>
+</article>
+
+<!-- Naxi Mix (preko Workera) -->
+<article class="radio-card" id="nm-card">
+  <div class="radio-head"><div class="radio-title">📻 Naxi Mix — Live</div></div>
+  <div class="radio-controls">
+    <button id="nm-play" class="btn alt">▶ Play</button>
+    <div class="vol">
+      <span id="nm-vol-label">90%</span>
+      <input id="nm-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+    </div>
+  </div>
+  <div class="ticker"><span id="nm-now">Spremno</span></div>
+  <audio id="nm-audio" preload="none">
+    <source src="https://radio-proxy.maluma-d-o-o.workers.dev/?s=naxi-mix" type="audio/mpeg">
+  </audio>
+</article>
+
+<!-- Bravo Hrvatska (preko Workera) -->
+<article class="radio-card" id="br-card">
+  <div class="radio-head"><div class="radio-title">📻 Bravo Hrvatska — Live</div></div>
+  <div class="radio-controls">
+    <button id="br-play" class="btn alt">▶ Play</button>
+    <div class="vol">
+      <span id="br-vol-label">90%</span>
+      <input id="br-vol" type="range" min="0" max="1" step="0.01" value="0.9">
+    </div>
+  </div>
+  <div class="ticker"><span id="br-now">Spremno</span></div>
+  <audio id="br-audio" preload="none">
+    <!-- primarni alias -->
+    <source src="https://radio-proxy.maluma-d-o-o.workers.dev/?s=bravo" type="audio/mpeg">
+    <!-- opcionalni fallback na alternativni host (ako ga koristiš u ALLOWED) -->
+    <source src="https://radio-proxy.maluma-d-o-o.workers.dev/?u=http%3A%2F%2Fliveb.bravoportal.com%3A8000%2Fbravo" type="audio/mpeg">
+  </audio>
+</article>
+
+
+
     </section>
 
     <!-- RED 2: Lijevo (Spotify gore + Playliste dolje), Desno (Pjesme) -->
@@ -342,23 +395,33 @@ body{
   let playlistUriToIndex = new Map();
 
   /* UI helperi – RD, Naxi, Otvoreni, Spotify */
-  const cards = {
-    rd: document.getElementById('rd-card'),
-    nx: document.getElementById('nx-card'),
-    ot: document.getElementById('ot-card'),
-    sp: document.getElementById('sp-card')
-  };
-  const buttons = {
-    rd: document.getElementById('rd-play'),
-    nx: document.getElementById('nx-play'),
-    ot: document.getElementById('ot-play'),
-    sp: document.getElementById('playPause')
-  };
-  const audios  = {
-    rd: document.getElementById('rd-audio'),
-    nx: document.getElementById('nx-audio'),
-    ot: document.getElementById('ot-audio')
-  };
+const cards = {
+  rd: document.getElementById('rd-card'),
+  nx: document.getElementById('nx-card'),
+  ot: document.getElementById('ot-card'),
+  nf: document.getElementById('nf-card'),
+  nm: document.getElementById('nm-card'),
+  br: document.getElementById('br-card'),
+  sp: document.getElementById('sp-card')
+};
+const buttons = {
+  rd: document.getElementById('rd-play'),
+  nx: document.getElementById('nx-play'),
+  ot: document.getElementById('ot-play'),
+  nf: document.getElementById('nf-play'),
+  nm: document.getElementById('nm-play'),
+  br: document.getElementById('br-play'),
+  sp: document.getElementById('playPause')
+};
+const audios  = {
+  rd: document.getElementById('rd-audio'),
+  nx: document.getElementById('nx-audio'),
+  ot: document.getElementById('ot-audio'),
+  nf: document.getElementById('nf-audio'),
+  nm: document.getElementById('nm-audio'),
+  br: document.getElementById('br-audio')
+};
+
 
   function setButtonLabel(btn, playing){ if(!btn) return; btn.textContent = playing ? '⏸ Pause' : '▶ Play'; }
   function setActiveCard(name){ Object.keys(cards).forEach(k => cards[k].classList.toggle('is-active', k === name)); }
@@ -633,12 +696,16 @@ body{
   /* ===== Radio logika + volumeni ===== */
   function percent(val){ return Math.round((val||0)*100) + '%'; }
   function syncLabel(rangeEl, labelEl){ if (rangeEl && labelEl){ labelEl.textContent = percent(rangeEl.valueAsNumber); } }
-  function syncAllVolumeLabels(){
-    syncLabel(document.getElementById('rd-vol'), document.getElementById('rd-vol-label'));
-    syncLabel(document.getElementById('nx-vol'), document.getElementById('nx-vol-label'));
-    syncLabel(document.getElementById('ot-vol'), document.getElementById('ot-vol-label'));
-    syncLabel(document.getElementById('sp-vol'), document.getElementById('sp-vol-label'));
-  }
+function syncAllVolumeLabels(){
+  syncLabel(document.getElementById('rd-vol'), document.getElementById('rd-vol-label'));
+  syncLabel(document.getElementById('nx-vol'), document.getElementById('nx-vol-label'));
+  syncLabel(document.getElementById('ot-vol'), document.getElementById('ot-vol-label'));
+  syncLabel(document.getElementById('nf-vol'), document.getElementById('nf-vol-label'));
+  syncLabel(document.getElementById('nm-vol'), document.getElementById('nm-vol-label'));
+  syncLabel(document.getElementById('br-vol'), document.getElementById('br-vol-label'));
+  syncLabel(document.getElementById('sp-vol'), document.getElementById('sp-vol-label'));
+}
+
 
   function makeRadio({ audioId, playId, volId, nowId, label }) {
     const a  = document.getElementById(audioId);
@@ -701,7 +768,9 @@ body{
       if (player && player.pause) player.pause();
       Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
 
-      ['rd','nx','ot'].forEach(k => { if (buttons[k] !== b) setButtonLabel(buttons[k], false); });
+Object.keys(buttons)
+  .filter(k => k !== 'sp') // samo radio gumbi, ne Spotify
+  .forEach(k => { if (buttons[k] !== b) setButtonLabel(buttons[k], false); });
       setButtonLabel(buttons.sp, false);
     });
 
@@ -730,6 +799,9 @@ body{
   const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', nowId:'rd-now', label:'rd' });
   const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', nowId:'nx-now', label:'nx' });
   const OT = makeRadio({ audioId:'ot-audio', playId:'ot-play', volId:'ot-vol', nowId:'ot-now', label:'ot' });
+  const NF = makeRadio({ audioId:'nf-audio', playId:'nf-play', volId:'nf-vol', nowId:'nf-now', label:'nf' });
+  const NM = makeRadio({ audioId:'nm-audio', playId:'nm-play', volId:'nm-vol', nowId:'nm-now', label:'nm' });
+  const BR = makeRadio({ audioId:'br-audio', playId:'br-play', volId:'br-vol', nowId:'br-now', label:'br' });
 
   // Spotify glasnoća + label
   const spVol = document.getElementById('sp-vol');
