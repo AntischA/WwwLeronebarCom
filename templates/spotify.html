@@ -23,7 +23,7 @@
 }
 
 *{box-sizing:border-box}
-html,body{height:100%; width: 75%}
+html,body{height:100%}
 body{
   margin:0;
   background: radial-gradient(1200px 600px at 30% -10%, #17213f 0%, #0b1020 55%, #0b1020 100%);
@@ -32,16 +32,18 @@ body{
 }
 
 .page{
-  max-width:1280px;
-  margin:0 auto;
-  padding:22px var(--gap);
-  display:grid;
-  grid-template-rows:auto 1fr;
-  gap:var(--gap-lg);
+  /* suženo ~30%: 70% širine prozora, ali ne šire od 1000px i ne uže od 320px */
+  width: clamp(320px, 70vw, 1000px);
+  margin: 0 auto;                /* centriraj vodoravno */
+
+  /* ostatak tvog layouta */
+  padding: 22px var(--gap);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--gap-lg);
   height: 100dvh;
   min-height: 100svh;
 }
-
 .btn{
   appearance:none; border:0; cursor:pointer;
   background:var(--accent-2); color:#062d16;
