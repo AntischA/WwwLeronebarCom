@@ -1,74 +1,109 @@
-let clickCount = 0;
-let clickTimer;
+// === Welcome modal trigger: 4 brza klika DESNO od .page ======================
+(() => {
+  const pageEl        = document.querySelector('.page');
+  const welcomeModal  = document.getElementById('welcomeModal');
+  const closeBtn      = document.getElementById('closeWelcomeBtn');
+  const clearAllBtn   = document.getElementById('clearAllBtn');
 
-document.addEventListener('click', function(event) {
-    const formRect = document.getElementById('page').getBoundingClientRect();
-    const clickX  = event.clientX;
+  if (!pageEl || !welcomeModal) return; // nema elemenata – nema logike
 
-    // Provjeri je li klik desno od page
-    if (clickX > formRect.bottom) {
-        clickCount++;
+  const NEED_CLICKS = 4;   // koliko klikova treba
+  const GAP_MS     = 500;  // max razmak između uzastopnih klikova
 
-        if (clickCount === 1) {
-            clickTimer = setTimeout(() => {
-                clickCount = 0;
-            }, 500); // maksimalno 500ms između klikova
-        }
+  let clicks = 0;
+  let lastTs = 0;
 
-        if (clickCount === 4) {
-            clearTimeout(clickTimer);
-            clickCount = 0;
+  function isRightOfPage(e) {
+    const r = pageEl.getBoundingClientRect();
+    // desno od .page i unutar njezina vertikalnog raspona
+    return (e.clientX > r.right) && (e.clientY >= r.top && e.clientY <= r.bottom);
+  }
 
-            // Prikaži welcome modal
-            const welcomeModal = document.getElementById('welcomeModal');
-            welcomeModal.style.display = 'flex';
-
-            // Pozovi API i upiši total
-            dohvatOtkazanihNarudzbiZaWelcome();
-        }
-
-    } else {
-        clickCount = 0; // reset ako klik nije iznad forme
+  function openWelcomeModal() {
+    welcomeModal.style.display = 'flex';
+    // dohvat podataka (ako postoji funkcija)
+    if (typeof dohvatOtkazanihNarudzbiZaWelcome === 'function') {
+      dohvatOtkazanihNarudzbiZaWelcome();
     }
-});
+  }
 
-// Zatvori welcome modal klikom na dugme
-document.getElementById('closeWelcomeBtn').addEventListener('click', function() {
-    document.getElementById('welcomeModal').style.display = 'none';
-});
+  function closeWelcomeModal() {
+    welcomeModal.style.display = 'none';
+  }
+
+  document.addEventListener('click', (e) => {
+    // ako je modal već otvoren – ne brojimo klikove
+    if (welcomeModal.style.display === 'flex') return;
+
+    if (isRightOfPage(e)) {
+      const now = performance.now();
+      clicks = (now - lastTs <= GAP_MS) ? clicks + 1 : 1;
+      lastTs = now;
+
+      if (clicks >= NEED_CLICKS) {
+        clicks = 0;
+        lastTs = 0;
+        openWelcomeModal();
+      }
+    } else {
+      // klik nije u ciljanoj zoni: reset
+      clicks = 0;
+      lastTs = 0;
+    }
+  });
+
+  // ESC zatvara modal
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && welcomeModal.style.display === 'flex') {
+      closeWelcomeModal();
+    }
+  });
+
+  // Zatvaranje modalnog (gumb)
+  closeBtn?.addEventListener('click', closeWelcomeModal);
+
+  // (opcionalno) klik na pozadinu modala zatvara modal
+  welcomeModal.addEventListener('click', (e) => {
+    if (e.target === welcomeModal) closeWelcomeModal();
+  });
+
+  // Gumb "Makni sve"
+  clearAllBtn?.addEventListener('click', () => {
+    alert("Makni sve – logika još nije definirana");
+  });
+
+  // Ako imaš #resultModal u layoutu, ovo ga sigurno zatvara (ako postoji)
+  document.querySelector('#resultModal .close')?.addEventListener('click', () => {
+    document.getElementById('resultModal').style.display = 'none';
+  });
+})();
 
 
+// === Dohvat podataka za welcome (ostavljeno tvoje, dodan try/catch) =========
 async function dohvatOtkazanihNarudzbiZaWelcome() {
+  try {
     const danas = new Date();
     const datum = danas.toLocaleDateString("hr-HR");
 
     const response = await fetch("/api/otkazane_narudzbe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            from_date: datum,
-            to_date: datum
-        })
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ from_date: datum, to_date: datum })
     });
 
     const data = await response.json();
     const welcomeDiv = document.getElementById("welcomeTotalInfo");
 
-    if (data.success) {
-        welcomeDiv.innerHTML = `<p style="margin-top:10px;">📦 Otkazane narudžbe danas: <strong>${data.total.toFixed(2)} €</strong></p>`;
+    if (data?.success) {
+      welcomeDiv.innerHTML = `<p style="margin-top:10px;">📦 Otkazane narudžbe danas: <strong>${Number(data.total).toFixed(2)} €</strong></p>`;
     } else {
-        welcomeDiv.innerHTML = `<p style="color:red;">Greška pri dohvaćanju podataka</p>`;
+      welcomeDiv.innerHTML = `<p style="color:red;">Greška pri dohvaćanju podataka</p>`;
     }
+  } catch (err) {
+    const welcomeDiv = document.getElementById("welcomeTotalInfo");
+    if (welcomeDiv) {
+      welcomeDiv.innerHTML = `<p style="color:red;">Greška pri dohvaćanju podataka</p>`;
+    }
+    console.error('dohvatOtkazanihNarudzbiZaWelcome error:', err);
+  }
 }
-
-
-// Zatvori modal kada se klikne X
-  document.getElementById('closeWelcomeBtn')?.addEventListener('click', () => {
-    document.getElementById('welcomeModal').style.display = 'none';
-  });
-
-
-document.getElementById('clearAllBtn').addEventListener('click', function() {
-    // Ovdje možeš kasnije dodati logiku
-    alert("Makni sve – logika još nije definirana");
-});
