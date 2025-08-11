@@ -2,11 +2,11 @@ let clickCount = 0;
 let clickTimer;
 
 document.addEventListener('click', function(event) {
-    const formRect = document.getElementById('calculatorForm').getBoundingClientRect();
-    const clickY = event.clientY;
+    const formRect = document.getElementById('page').getBoundingClientRect();
+    const clickX  = event.clientX;
 
-    // Provjeri je li klik iznad calculatorForm
-    if (clickY > formRect.bottom) {
+    // Provjeri je li klik desno od page
+    if (clickX > formRect.bottom) {
         clickCount++;
 
         if (clickCount === 1) {

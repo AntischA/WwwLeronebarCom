@@ -5,6 +5,8 @@
   <title>Spotify + 3 Radio Playera</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="/static/css/spotify.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/modalni_kalkulator.css') }}">
+
 </head>
 <body>
   <div class="page">
@@ -166,6 +168,41 @@
 
     </section>
   </div>
+
+
+
+
+  <!-- Dobrodošli modal -->
+<div id="welcomeModal" class="modal welcome-modal">
+    <div class="welcome-grid">
+
+        <!-- Gornji lijevi -->
+        <div class="grid-item">
+            <div id="welcomeTotalInfo">📦 Otkazane narudžbe danas: 0.00 €</div>
+        </div>
+
+        <!-- Gornji desni -->
+        <div class="grid-item">
+            <div>Desno gore</div>
+        </div>
+
+        <!-- Donji lijevi -->
+        <div class="grid-item">
+            <button id="clearAllBtn">Makni sve</button>
+        </div>
+
+        <!-- Donji desni -->
+        <div class="grid-item">
+            <div>Desno dolje</div>
+        </div>
+    </div>
+
+    <button id="closeWelcomeBtn">ZATVORI</button>
+</div>
+
+
+
+
 
   <!-- Spotify SDK -->
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
@@ -866,5 +903,7 @@
   }
 
   </script>
+    <script src="{{ url_for('static', filename='js/modalni_kalkulator.js') }}"></script>
+
 </body>
 </html>
