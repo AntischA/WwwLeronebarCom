@@ -4,6 +4,7 @@ from api.dohvat_radnja_korisnika import radnje_korisnika
 from api.dohvat_otkazanih_narudzbi import dohvati_ukupni_total_otkazanih_narudzbi
 import urllib.parse
 import requests
+from app_db import init_db, get_day, upsert_day
 
 CLIENT_ID = "1984f9c1fdff48d3b5ecc493152dc5c4"
 CLIENT_SECRET = "e82cf9f67fca4450a68a85ce6ab2f253"
@@ -13,6 +14,7 @@ SPOTIFY_SCOPES = "streaming user-read-email user-read-private user-modify-playba
 
 
 app = Flask(__name__, static_folder="static")
+init_db()
 
 # Učitaj API ključ iz okruženja
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
@@ -138,6 +140,29 @@ def cjenik():
 @app.route("/<path:filename>")
 def serve_static(filename):
     return send_from_directory("static", filename)
+
+
+
+
+@app.get('/api/danasnje_pjesme')
+def get_today():
+    day = request.args.get('date')
+    if not day: return jsonify(success=False, error='missing date'), 400
+    total, listened = get_day(day)
+    return jsonify(success=True, date=day, total_secs=total, listened_secs=listened)
+
+@app.post('/api/danasnje_pjesme')
+def post_today():
+    data = request.get_json(force=True)
+    day = data.get('date')
+    if not day: return jsonify(success=False, error='missing date'), 400
+    set_total = data.get('set_total_secs')
+    delta = data.get('delta_listened_secs')
+    total, listened = upsert_day(day, total=set_total, delta=delta)
+    return jsonify(success=True, date=day, total_secs=total, listened_secs=listened)
+
+
+
 
 
 if __name__ == "__main__":

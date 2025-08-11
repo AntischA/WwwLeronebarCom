@@ -188,32 +188,59 @@
 
 
 
-  <!-- Dobrodošli modal -->
+<!-- Današnje pjesme — modal -->
 <div id="welcomeModal" class="modal welcome-modal">
-    <div class="welcome-grid">
-
-        <!-- Gornji lijevi -->
-        <div class="grid-item">
-            <div id="welcomeTotalInfo">📦 Otkazane narudžbe danas: 0.00 €</div>
+  <div class="welcome-grid">
+    <!-- Gornji lijevi: Današnje pjesme (preostalo) + postavi ukupno -->
+    <div class="grid-item">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="title-row">
+          <span class="pill pill-accent">🎵 Današnje pjesme</span>
         </div>
+        <div id="todayRemaining" class="big-num">0 <span>sek.</span></div>
 
-        <!-- Gornji desni -->
-        <div class="grid-item">
-            <div>Desno gore</div>
+        <div class="meta-row">
+          <label for="totalInput">Ukupno danas:</label>
+          <input id="totalInput" type="number" min="0" step="1" placeholder="npr. 3600" />
+          <button id="setTotalBtn" class="btn-ghost">Spremi</button>
         </div>
-
-        <!-- Donji lijevi -->
-        <div class="grid-item">
-            <button id="clearAllBtn">Makni sve</button>
-        </div>
-
-        <!-- Donji desni -->
-        <div class="grid-item">
-            <div>Desno dolje</div>
-        </div>
+      </div>
     </div>
 
-    <button id="closeWelcomeBtn">ZATVORI</button>
+    <!-- Gornji desni: Današnje odslušane pjesme -->
+    <div class="grid-item">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="title-row">
+          <span class="pill">✅ Današnje odslušane pjesme</span>
+        </div>
+        <div id="todayListened" class="big-num">0 <span>sek.</span></div>
+      </div>
+    </div>
+
+    <!-- Donji lijevi: Odsušaj do kraja -->
+    <div class="grid-item">
+      <button id="finishAllBtn" class="finish-btn">Odsušaj do kraja</button>
+    </div>
+
+    <!-- Donji desni: Kontrole (+ sekunde) -->
+    <div class="grid-item">
+      <div class="controls">
+        <div class="btn-row">
+          <button class="pill-btn" data-sec="5">+5s</button>
+          <button class="pill-btn" data-sec="10">+10s</button>
+          <button class="pill-btn" data-sec="30">+30s</button>
+          <button class="pill-btn" data-sec="60">+60s</button>
+        </div>
+        <div class="custom-row">
+          <input id="customSec" type="number" min="1" step="1" placeholder="npr. 120" />
+          <button id="addCustomBtn" class="pill-btn">+sek</button>
+          <button id="undoBtn" class="btn-ghost">Undo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button id="closeWelcomeBtn">ZATVORI</button>
 </div>
 
 
