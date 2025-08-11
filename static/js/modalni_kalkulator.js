@@ -1,70 +1,55 @@
+
 // === Welcome modal: današnje pjesme / odslušane pjesme ======================
-// očekuje elemente:
-//  #welcomeModal, #closeWelcomeBtn
-//  #welcomeTotalInfo        (lijevo gore)           -> "Današnje pjesme X.X sekundi"
-//  #welcomeListenedInfo     (desno gore)            -> "Današnje odslušane pjesme Y.Y sekundi"
-//  gumbi u desnom dolje: #btnPlus5, #btnPlus10, #btnPlus30, #btnPlus60, #btnFinish
-//  (trigger otvaranja modala – zadržavam tvoj "klik desno od .page" ako ga već imaš)
-
-// #### Klijent drži jedinicu: desetinka sekunde (deciseconds) ####
-//   - u DB šaljemo INTEGER = sekunde * 10
-//   - s DB-a čitamo INTEGER i prikazujemo /10 s jednom decimalom
-
 (() => {
-  const SCALE = 10; // 1 = 0.1 sek
-  const todayISO = new Date().toISOString().slice(0, 10); // YYYY-MM-DD (za /api/danasnje_pjesme)
-  const todayHR  = new Date().toLocaleDateString("hr-HR"); // za /api/otkazane_narudzbe (ako ga koristiš)
+  const SCALE = 10; // radimo u "decisekundama"
+  const todayISO = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const todayHR  = new Date().toLocaleDateString("hr-HR");
 
   // UI refs
   const modalEl      = document.getElementById('welcomeModal');
   const closeBtn     = document.getElementById('closeWelcomeBtn');
   const totalEl      = document.getElementById('welcomeTotalInfo');     // lijevo gore
   const listenedEl   = document.getElementById('welcomeListenedInfo');  // desno gore
+  const finishBtn    = document.getElementById('btnFinish');
+  const finishRemainingEl = document.getElementById('finishRemaining'); // 🔧 DODANO
 
   // kontrole (desno dolje)
   const btnPlus5     = document.getElementById('btnPlus5');
   const btnPlus10    = document.getElementById('btnPlus10');
-  const btnPlus30    = document.getElementById('btnPlus30');
-  const btnPlus60    = document.getElementById('btnPlus60');
-  const btnFinish    = document.getElementById('btnFinish');
+  const btnPlus15    = document.getElementById('btnPlus30'); // id ostao, ali je label "+15s"
+  const btnPlus20    = document.getElementById('btnPlus60'); // id ostao, ali je label "+20s"
 
   // lokalno stanje (u decisekundama)
-  const state = {
-    date: todayISO,
-    total_ds: 0,
-    listened_ds: 0,
-  };
+  const state = { date: todayISO, total_ds: 0, listened_ds: 0 };
 
-  // --------- Helpers ---------
-  const fmtSec = (ds) => (ds / SCALE).toFixed(1);     // "X.X"
+  // Helpers
+  const fmtSec = (ds) => (ds / SCALE).toFixed(1); // X.X
   const remaining_ds = () => Math.max(0, state.total_ds - state.listened_ds);
 
   function render() {
-    if (totalEl)    totalEl.textContent    = `${fmtSec(state.total_ds)} sekundi`;
-    if (listenedEl) listenedEl.textContent = `${fmtSec(state.listened_ds)} sekundi`;
-
-    const rem = remaining_ds(); // total - listened (u decisekundama)
+    const rem = remaining_ds();
+    // zadrži mali "sek." span
+    if (totalEl)    totalEl.innerHTML    = `${fmtSec(state.total_ds)}<span> sek.</span>`;
+    if (listenedEl) listenedEl.innerHTML = `${fmtSec(state.listened_ds)}<span> sek.</span>`;
     if (finishRemainingEl) finishRemainingEl.textContent = `${fmtSec(rem)} sekundi`;
-    if (btnFinish) btnFinish.disabled = rem <= 0; // opcionalno
+    if (finishBtn) finishBtn.disabled = rem <= 0;
   }
 
-
   async function refreshFromDB() {
-    const res = await fetch(`/api/danasnje_pjesme?date=${encodeURIComponent(state.date)}`, { cache: 'no-store' });
-    const json = await res.json().catch(() => ({}));
-    if (json && json.success) {
-      // backend vraća integer; držimo u decisekundama
-      state.total_ds    = Number(json.total_secs)    || 0;
-      state.listened_ds = Number(json.listened_secs) || 0;
-      render();
+    try {
+      const res = await fetch(`/api/danasnje_pjesme?date=${encodeURIComponent(state.date)}`, { cache: 'no-store' });
+      const json = await res.json();
+      if (json?.success) {
+        state.total_ds    = Number(json.total_secs)    || 0; // backend vraća int (držimo ga kao decisekunde)
+        state.listened_ds = Number(json.listened_secs) || 0;
+        render();
+      }
+    } catch (e) {
+      console.error('refreshFromDB error:', e);
     }
   }
 
-  // Postavi TOTAL iz vanjskog izvora (tvoja postojeća funkcija – ime zadržano)
-  // Ova funkcija sada:
-  // 1) dohvaća "sekunde" iz /api/otkazane_narudzbe (tvoj postojeći endpoint)
-  // 2) postavlja taj total u našu tablicu /api/danasnje_pjesme (set_total_secs)
-  // 3) refresha prikaz
+  // dohvat total-a (u sekundama) pa postavi u našu tablicu
   async function dohvatOtkazanihNarudzbiZaWelcome() {
     try {
       const response = await fetch("/api/otkazane_narudzbe", {
@@ -73,15 +58,19 @@
         body: JSON.stringify({ from_date: todayHR, to_date: todayHR })
       });
       const data = await response.json();
-      const secs = Number(data?.total) || 0;  // npr. 10.7
 
-      // upiši u našu DB (kao decisekunde)
+      // robustno parsiranje (podrži "10,7" i broj)
+      const secsRaw = data?.total;
+      const secs = typeof secsRaw === 'number'
+        ? secsRaw
+        : parseFloat(String(secsRaw).replace(',', '.')) || 0;
+
       await fetch('/api/danasnje_pjesme', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date: state.date,
-          set_total_secs: Math.round(secs * SCALE)
+          set_total_secs: Math.round(secs * SCALE) // spremamo u decisekundama
         })
       });
 
@@ -91,7 +80,6 @@
     }
   }
 
-  // Povećaj odslušane za delta sekundi (float dozvoljen); clamp radi backend
   async function addListenedSeconds(deltaSecs) {
     const delta_ds = Math.round(Number(deltaSecs || 0) * SCALE);
     if (!delta_ds) return;
@@ -106,7 +94,6 @@
     await refreshFromDB();
   }
 
-  // Odsušaj do kraja – prebaci sve što je ostalo
   async function finishAll() {
     const rem = remaining_ds();
     if (rem <= 0) return;
@@ -121,28 +108,25 @@
     await refreshFromDB();
   }
 
-  // --------- Wire-up kontrola ---------
+  // Wire-up kontrole (usklađeno s novim labelima)
   btnPlus5  ?.addEventListener('click', () => addListenedSeconds(5));
   btnPlus10 ?.addEventListener('click', () => addListenedSeconds(10));
-  btnPlus30 ?.addEventListener('click', () => addListenedSeconds(30));
-  btnPlus60 ?.addEventListener('click', () => addListenedSeconds(60));
-  btnFinish ?.addEventListener('click', finishAll);
-
+  btnPlus15 ?.addEventListener('click', () => addListenedSeconds(15)); // 🔧
+  btnPlus20 ?.addEventListener('click', () => addListenedSeconds(20)); // 🔧
+  finishBtn ?.addEventListener('click', finishAll);
   closeBtn  ?.addEventListener('click', () => { modalEl.style.display = 'none'; });
 
-  // Ako modal otvaraš “klikom desno od .page”, kad se otvori – povuci podatke i postavi total:
+  // Otvaranje + inicijalni dohvat
   function openWelcomeModal() {
     modalEl.style.display = 'flex';
-    // 1) povuci što već postoji u DB (ako je bilo ranije)
+    // 1) povuci već upisano iz DB
     refreshFromDB().then(() => {
-      // 2) zatim DOHVATI današnji total iz vanjske funkcije i upiši kao "Današnje pjesme"
-      //    (ako endpoint ne vrati ništa, ostat će prethodno stanje)
+      // 2) pa ažuriraj današnji total iz vanjskog endpointa
       dohvatOtkazanihNarudzbiZaWelcome();
     });
   }
 
-  // Ako već imaš svoj trigger, pozovi openWelcomeModal() iz njega.
-  // Primjer (otvaranje na 3 brza klika desno od .page):
+  // Primjer trigera: 3 brza klika desno od .page
   (function initTripleClickRightOfPage() {
     const pageEl = document.querySelector('.page');
     if (!pageEl) return;

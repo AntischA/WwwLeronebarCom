@@ -38,7 +38,7 @@
 /* Info o totalu */
 #welcomeTotalInfo {
     font-size: 3.2rem;
-    font-weight: bold;
+    font-weight: 800;
 }
 
 /* Gumb Makni sve */
@@ -71,7 +71,6 @@
 /* “Spotify-ish” sitnice */
 .big-num {
   font-size: 3.2rem;
-  font-weight: 800;
   letter-spacing: .5px;
 }
 .big-num span { font-size: 1.6rem; font-weight: 600; opacity: .8; }
@@ -110,16 +109,16 @@
 .finish-btn:hover{ filter:brightness(1.05); }
 
 .controls{ display:flex; flex-direction:column; gap:12px; width:100%; }
-.btn-row{ display:flex; gap:10px; flex-wrap:wrap; }
-.pill-btn{
-  padding:10px 14px; border-radius:999px; border:0; cursor:pointer;
-  background:#2a3a66; color:#e8eef7; font-weight:800;
+.btn-row{
+  display:flex;
+  gap:12px;
+  width:100%;
+  flex-wrap:wrap;            /* po želji: prelamanje u više redova */
 }
-.pill-btn:hover{ filter:brightness(1.07); transform:translateY(-1px); }
-
-.custom-row{ display:flex; gap:10px; align-items:center; }
-.custom-row input[type="number"]{
-  width: 120px;
-  padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,.15);
-  background: rgba(0,0,0,.25); color:#fff; outline:none;
+.pill-btn{
+  flex: 1 1 0;               /* svi dijele širinu ravnomjerno */
+  min-width: 120px;          /* granica prije preloma u novi red */
+  padding:10px 14px;
+  border-radius:999px; border:0; cursor:pointer;
+  background:#2a3a66; color:#e8eef7; font-weight:800;
 }
