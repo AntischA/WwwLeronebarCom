@@ -4,8 +4,210 @@
   <meta charset="UTF-8" />
   <title>Spotify + Radio (lista + jedan player)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/spotify.css') }}">
 
+  <style>
+:root{
+  --bg:#0b1020;
+  --card:#11182a;
+  --soft:#0f1526;
+  --text:#e8eef7;
+  --sub:#a7b2c6;
+  --accent:#10b981;
+  --accent-2:#1db954;
+  --radius:16px;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+  --gap:18px;
+  --gap-lg:22px;
+  --active-1:#16324a;
+  --active-2:#0f1f39;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background: radial-gradient(1200px 600px at 30% -10%, #17213f 0%, #0b1020 55%, #0b1020 100%);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial;
+}
+
+.page{
+  /* ~20% suženja: 80% širine prozora */
+  width: clamp(320px, 80vw, 1280px);
+  margin: 0 auto;
+
+  padding: 22px var(--gap);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--gap-lg);
+  height: 100dvh;
+  min-height: 100svh;
+}
+
+.btn{
+  appearance:none; border:0; cursor:pointer;
+  background:var(--accent-2); color:#062d16;
+  padding:20px 16px; border-radius:12px; font-weight:800;
+  transition:transform .06s ease, filter .12s ease;
+  white-space:nowrap;
+  min-width:120px;
+  flex:0 0 auto;
+}
+.btn:active{ transform:translateY(1px) }
+.btn.alt{ background:var(--accent); color:#04281f }
+
+.radio-card{
+  background:linear-gradient(180deg, var(--card), var(--soft));
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px;
+  display:flex; flex-direction:column; gap:10px;
+  min-height:160px;
+  transition: background .2s ease, outline-color .2s ease, box-shadow .2s ease;
+  outline:2px solid transparent;
+}
+.radio-card.is-active{
+  background:linear-gradient(180deg, var(--active-1), var(--active-2));
+  outline-color: var(--accent);
+  box-shadow:0 12px 34px rgba(16,185,129,.25);
+}
+
+.radio-head{ display:flex; align-items:center; gap:10px; }
+.radio-title{ font-weight:800; letter-spacing:.2px; font-size:1.02rem; }
+
+.radio-controls{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:nowrap;
+  min-width:0;
+}
+
+.vol{
+  display:flex; align-items:center; gap:10px;
+  color:var(--sub); font-size:.95rem;
+  flex:1 1 auto;
+  min-width:0;
+  white-space:nowrap;
+}
+.vol span{
+  display:inline-block;
+  width:4ch;
+  text-align:right;
+}
+
+/* Touch-friendly range */
+.vol input[type="range"]{
+  flex:1 1 auto;
+  width:100%;
+  max-width:100%;
+  height:50px;
+  background:transparent;
+  -webkit-appearance:none;
+  appearance:none;
+}
+.vol input[type="range"]::-webkit-slider-runnable-track{
+  height:50px; border-radius:10px; background:#203055;
+}
+.vol input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:40px; height:40px; border-radius:50%;
+  background:#e8eef7; margin-top:5px; border:2px solid #0f1f39;
+}
+.vol input[type="range"]::-moz-range-track{
+  height:14px; border-radius:10px; background:#203055;
+}
+.vol input[type="range"]::-moz-range-thumb{
+  width:26px; height:26px; border-radius:50%;
+  background:#e8eef7; border:2px solid #0f1f39;
+}
+
+.ticker{
+  overflow:hidden; white-space:nowrap;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%);
+  mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%);
+  font-size:.95rem; color:#dfe8f7;
+}
+.ticker span{ display:inline-block; padding-left:100%; animation:ticker 12s linear infinite; }
+@keyframes ticker{ from{ transform:translateX(0);} to{ transform:translateX(-100%);} }
+
+/* RED 1: lijevo lista radija, desno jedan radio player */
+.radios-layout{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:var(--gap-lg);
+  align-items:stretch;
+  min-height:0;
+}
+
+/* RED 2: lijevo Spotify (player + playliste), desno pjesme */
+.content-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:var(--gap-lg);
+  align-items:stretch;
+  min-height:0;
+}
+.left-col{
+  display:flex;
+  flex-direction:column;
+  gap:var(--gap-lg);
+  min-height:0;
+}
+.left-col .radio-card{ flex:0 0 auto; }
+.left-col .panel{ flex:1 1 auto; min-height:0; }
+
+.panel{
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px;
+  display:flex; flex-direction:column;
+  height:100%;
+  min-height:0;
+  overflow:hidden;
+}
+.panel h3{
+  margin:0 0 10px 0; font-size:1.02rem; letter-spacing:.2px;
+  position:sticky; top:0; background:var(--card); z-index:1; padding-bottom:8px;
+}
+
+.list{
+  list-style:none; margin:0; padding:0;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.list li{
+  background:#17213b; margin:8px 0; padding:10px 12px; border-radius:10px;
+  cursor:pointer; transition:filter .12s ease, transform .06s ease;
+}
+.list li:hover{ filter:brightness(1.07); transform:translateY(-1px); }
+#radioList li.active{
+  outline:2px solid var(--accent);
+  background:#1a2747;
+}
+
+.track-item{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; }
+.track-item:hover{ background:#1a2747; }
+.track-thumb{ width:44px;height:44px;border-radius:6px;object-fit:cover;background:#24345e;flex:0 0 44px; }
+.track-text{ min-width:0; }
+.track-title{ font-weight:700; font-size:.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.track-artist{ color:var(--sub); font-size:.82rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.track-item.playing{ outline:1px solid #3a7bd5; background:#15294f; }
+
+.sr-only{ display:none !important; }
+
+/* Responsive */
+@media (max-width: 1100px){
+  .radios-layout{ grid-template-columns: 1fr; }
+  .content-grid{ grid-template-columns: 1fr; }
+}
+@media (max-width: 560px){
+  .radio-controls{ flex-wrap:wrap; }
+  .vol{ width:100%; }
+}
+  </style>
 </head>
 <body>
   <div class="page">
@@ -33,8 +235,8 @@
         </div>
         <div class="ticker"><span id="ra-now">Spreman za reprodukciju…</span></div>
 
-        <!-- VAŽNO: bez crossorigin, da ne traži CORS na Naxi streamovima -->
-        <audio id="radio-audio" preload="none"></audio>
+        <!-- VAŽNO: bez crossorigin da Naxi radi bez CORS headera -->
+        <audio id="radio-audio" preload="none" playsinline></audio>
       </article>
 
     </section>
@@ -49,7 +251,7 @@
             <div class="radio-title">🎵 Spotify — Player</div>
           </div>
           <div class="radio-controls">
-            <button id="playPause" class="btn alt" disabled>▶ Play</button>
+            <button id="playPause" class="btn alt">▶ Play</button>
             <div class="vol">
               <span id="sp-vol-label">90%</span>
               <input id="sp-vol" type="range" min="0" max="1" step="0.01" value="0.9">
@@ -95,15 +297,18 @@
   }
 
   /* ====== RADIO: lista + jedan player ====== */
+  // cors: 'none' (default) ne postavlja CORS; 'anonymous' postavlja crossOrigin='anonymous'
   const stations = [
     {
       id: 'rd',
       name: 'Radio Dalmacija — Live',
+      cors: 'none',
       sources: [{ src: 'https://shoutcast.pondi.hr:9000/;', type: 'audio/aac' }]
     },
     {
       id: 'nx',
       name: 'Naxi Radio — Live',
+      cors: 'none', // Naxi NEMA CORS header -> mora biti bez crossOrigin
       sources: [
         { src: 'https://naxi128ssl.streaming.rs:9152/;', type: 'audio/mpeg' },
         { src: 'https://naxi64ssl.streaming.rs:9162/;',  type: 'audio/mpeg' }
@@ -112,6 +317,7 @@
     {
       id: 'ot',
       name: 'Otvoreni Radio — Live',
+      cors: 'none', // može i anonymous ako želiš, ali nije potrebno
       sources: [{ src: 'https://stream2.otvoreni.hr/otvoreni', type: 'audio/mpeg' }]
     }
   ];
@@ -126,9 +332,9 @@
   const raVol = document.getElementById('ra-vol');
   const raVolLabel = document.getElementById('ra-vol-label');
   const radioAudio = document.getElementById('radio-audio');
-
-  // Guardovi
-  let isRadioStarting = false;
+// --- Guard varijable ---
+let isRadioStarting = false;
+let spReady = false;
 
   function renderRadioList(){
     radioListEl.innerHTML = '';
@@ -140,6 +346,15 @@
       if (st.id === currentStationId) li.classList.add('active');
       radioListEl.appendChild(li);
     });
+  }
+
+  function applyCrossOriginFor(station){
+    if (station.cors === 'anonymous'){
+      radioAudio.crossOrigin = 'anonymous';
+    } else {
+      try { radioAudio.removeAttribute('crossorigin'); } catch(_) {}
+      radioAudio.crossOrigin = null;
+    }
   }
 
   function selectStation(stationId){
@@ -155,75 +370,78 @@
       li.classList.toggle('active', li.dataset.station === stationId);
     });
 
-    // kratko onemogući Play dok se promijeni src (sprječava dvostruke klikove)
-    raPlayBtn.disabled = true;
-    setTimeout(()=> { raPlayBtn.disabled = false; }, 150);
+    // CORS postavka prije promjene izvora
+    applyCrossOriginFor(st);
 
     // učitaj prvi izvor (bez autoplaya)
     if (st.sources && st.sources.length){
       radioAudio.src = st.sources[0].src;
       try { radioAudio.load(); } catch(_){}
       setButtonLabel(raPlayBtn, false);
-      raNow.textContent = 'Spreman: ' + st.name;
     }
   }
 
-  function tryPlayCurrentSource(){
-    if (isRadioStarting) return;
-    isRadioStarting = true;
+async function tryPlayCurrentSource(){
+  if (isRadioStarting) return;
+  isRadioStarting = true;
 
-    // Pauziraj Spotify U POZADINI (bez await) da ne izgubiš user gesture
-    if (player && player.pause) { player.pause().catch(()=>{}); }
+  // Pauziraj Spotify U POZADINI (bez await) da ne izgubiš user gesture
+  if (player && player.pause) { player.pause().catch(()=>{}); }
 
-    const st = stations.find(s => s.id === currentStationId);
-
-    const success = () => {
-      setButtonLabel(raPlayBtn, true);
-      setActiveCard('radio');
-      raNow.textContent = 'Slušate: ' + (st?.name || 'Radio') + ' 🎶';
-      isRadioStarting = false;
-    };
-
-    const attemptPlay = () => {
-      let p;
-      try { p = radioAudio.play(); } catch (e) { failover(e); return; }
-      if (p && p.then) {
-        p.then(() => success())
-         .catch(err => failover(err));
+  const st = stations.find(s => s.id === currentStationId);
+  const success = () => {
+    setButtonLabel(raPlayBtn, true);
+    setActiveCard('radio');
+    raNow.textContent = 'Slušate: ' + (st?.name || 'Radio') + ' 🎶';
+  };
+  const failover = (err) => {
+    // ako ovaj izvor ne radi -> probaj sljedeći
+    if (st && currentSourceIndex < st.sources.length - 1){
+      currentSourceIndex++;
+      radioAudio.src = st.sources[currentSourceIndex].src;
+      try { radioAudio.load(); } catch(_){}
+      // novi pokušaj BEZ await-a
+      const p2 = radioAudio.play();
+      if (p2 && p2.then) {
+        p2.then(()=>success()).catch(()=> {
+          raNow.textContent = 'Ne mogu reproducirati stream. Pokušaj ponovno.';
+          setButtonLabel(raPlayBtn, false);
+        }).finally(()=> { isRadioStarting = false; });
       } else {
-        success();
+        success(); isRadioStarting = false;
       }
-    };
+      return;
+    }
+    // ništa od fallbacka
+    raNow.textContent = (err?.name === 'NotAllowedError')
+      ? 'Preglednik blokira zvuk. Klikni još jednom.'
+      : 'Ne mogu reproducirati stream. Pokušaj ponovno.';
+    setButtonLabel(raPlayBtn, false);
+    isRadioStarting = false;
+  };
 
-    const failover = (err) => {
-      // probaj sljedeći izvor
-      if (st && currentSourceIndex < st.sources.length - 1){
-        currentSourceIndex++;
-        radioAudio.src = st.sources[currentSourceIndex].src;
-        try { radioAudio.load(); } catch(_){}
-        attemptPlay();
-        return;
-      }
-      // nema više fallbacka
-      raNow.textContent = (err && err.name === 'NotAllowedError')
-        ? 'Preglednik blokira zvuk. Klikni još jednom.'
-        : 'Ne mogu reproducirati stream. Pokušaj ponovno.';
-      setButtonLabel(raPlayBtn, false);
-      isRadioStarting = false;
-    };
+  // KLJUČNO: prvo pokreni play u istom “klik” ticku — bez await!
+  let p;
+  try { p = radioAudio.play(); } catch (e) { failover(e); return; }
 
-    attemptPlay();
+  if (p && p.then) {
+    p.then(() => { success(); })
+     .catch(err => { failover(err); })
+     .finally(()=> { isRadioStarting = false; });
+  } else {
+    success(); isRadioStarting = false;
   }
+}
 
   // kontrole
-  raPlayBtn.addEventListener('click', () => {
+  raPlayBtn.addEventListener('click', async () => {
     // ako nije odabrana stanica – odaberi prvu
     if (!currentStationId && stations.length){
       selectStation(stations[0].id);
     }
 
     if (radioAudio.paused) {
-      tryPlayCurrentSource();
+      await tryPlayCurrentSource();
     } else {
       radioAudio.pause();
     }
@@ -273,15 +491,13 @@
     syncLabel(document.getElementById('sp-vol'), document.getElementById('sp-vol-label'));
   }
 
-  // inicijalno nacrtaj listu i postavi prvu stanicu (bez autoplaya)
+  // inicijalno nacrtaj listu (bez auto-playa)
   renderRadioList();
-  if (stations.length) selectStation(stations[0].id);
   syncAllVolumeLabels();
 
   /* ====== SPOTIFY ====== */
   let player;
   let deviceId = null;
-  let spReady = false;
 
   let currentPlaylistUri = null;
   let currentTracks = [];
@@ -330,17 +546,12 @@
 
     player.addListener('ready', ({ device_id }) => {
       deviceId = device_id;
-      spReady = true;
-      document.getElementById('playPause').disabled = false;
-
       const spVol = document.getElementById('sp-vol');
       if (spVol) { try { player.setVolume(spVol.valueAsNumber); } catch(e) {} }
       loadPlaylists(); // bez autoplay
 
-      // fail-safe: ako je klik na Play prerano, pokreni prvu listu
       document.getElementById('playPause').addEventListener('click', async () => {
-        if (!spReady) return;
-        // pauziraj radio (bez await)
+        // pauziraj radio
         try { radioAudio.pause(); } catch(_){}
         const st = await player.getCurrentState();
         const nothingLoaded = !st || !st.track_window || !st.track_window.current_track;
@@ -369,7 +580,6 @@
       setButtonLabel(document.getElementById('playPause'), !paused);
       if (!paused){ try { radioAudio.pause(); } catch(_){ } setActiveCard('sp'); }
       else {
-        // ako niti radio ne svira, makni highlight
         const radioIsPlaying = !(radioAudio.paused || radioAudio.ended);
         if (!radioIsPlaying) setActiveCard(null);
       }
