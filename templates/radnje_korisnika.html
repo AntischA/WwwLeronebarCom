@@ -109,6 +109,10 @@
 let resultNaplatePoSatu = null;
 let aktivniFilteri = new Set();
 
+// ⬇️ NOVO: globalne mape po danu i satu
+let naplataStolaPoSatuGlobal = {};
+let naStolPoSatuGlobal = {};
+
 const nazivMap = {
     "Dodavanje na stol": "Na stol",
     "Otkazivanje narudžbe": "Otkaz stola"
@@ -186,7 +190,12 @@ function resetPrikaz() {
     document.getElementById("results-container").innerHTML = "";
     document.getElementById("summary-list").innerHTML = "";
     aktivniFilteri.clear();
+
+    // ⬇️ NOVO:
+    naplataStolaPoSatuGlobal = {};
+    naStolPoSatuGlobal = {};
 }
+
 
 function sortirajDatume(a, b) {
     const [da, ma, ya] = a.split(".");
@@ -237,14 +246,17 @@ function prikaziPodatkePoDatumima(data_po_datumima) {
     ];
 
     let tjedniZbroj = 0;
-    let daniPodaci = []; // za prosjek
+    let daniPodaci = [];
 
-    const sviDatumi = Object.keys(data_po_datumima).sort(sortirajDatume); // od najnovijeg prema starom
+    const sviDatumi = Object.keys(data_po_datumima).sort(sortirajDatume);
 
-    // 📌 1. Prolazak kroz sve dane
     sviDatumi.forEach((datum) => {
         const items = data_po_datumima[datum];
         const totalsByType = {};
+
+        // lokalni zbir po periodima
+        let naplataStolaJutro = 0, naplataStolaPopodne = 0;
+        let naStolJutro = 0, naStolPopodne = 0;
 
         const dateSection = document.createElement("div");
         dateSection.classList.add("date-section");
@@ -271,31 +283,74 @@ function prikaziPodatkePoDatumima(data_po_datumima) {
         ostaliWrapper.style.flexWrap = "wrap";
         ostaliWrapper.style.gap = "8px";
 
-        items.forEach(item => {
-            dodajKarticu(resultsContainer, item, totalsByType, datum);
-        });
+        // Prolaz kroz stavke: punimo kartice + zbirke po periodima
+      items.forEach(item => {
+          const vrstaNorm = nazivMap[item.vrsta_akcije] || item.vrsta_akcije;
+          const iznos = parseFloat(item.iznos.replace(" €", "").replace(",", ".")) || 0;
+          const sat = parseInt(item.vrijeme.split(":")[0], 10);
+          const jeJutro = (sat >= 6 && sat <= 15);
 
+          if (vrstaNorm === "Naplata stola") {
+              if (jeJutro) naplataStolaJutro += iznos;
+              else naplataStolaPopodne += iznos; // 15–23 i 00h
+          }
+          if (vrstaNorm === "Na stol") {
+              if (jeJutro) naStolJutro += iznos;
+              else naStolPopodne += iznos;
+          }
+
+          dodajKarticu(resultsContainer, item, totalsByType, datum);
+              // ⬇️ NOVO: saberi po SATU (HH) za grafikon
+    const satHH = item.vrijeme ? item.vrijeme.split(":")[0].padStart(2, "0") : null;
+    if (satHH) {
+        if (vrstaNorm === "Naplata stola") {
+            if (!naplataStolaPoSatuGlobal[datum]) naplataStolaPoSatuGlobal[datum] = {};
+            naplataStolaPoSatuGlobal[datum][satHH] = (naplataStolaPoSatuGlobal[datum][satHH] || 0) + iznos;
+        }
+        if (vrstaNorm === "Na stol") {
+            if (!naStolPoSatuGlobal[datum]) naStolPoSatuGlobal[datum] = {};
+            naStolPoSatuGlobal[datum][satHH] = (naStolPoSatuGlobal[datum][satHH] || 0) + iznos;
+        }
+    }
+
+      });
+        // Jutro/Popodne ukupno (iz naplate_po_satu ako postoji; fallback na totalsByType)
         let jutroSuma = 0, popodneSuma = 0;
         const sati = pronadiPodatkeNaplate(datum);
         if (sati) {
-            for (let h = 6; h <= 14; h++) jutroSuma += sati[h.toString().padStart(2, '0')] || 0;
-            for (let h = 15; h <= 23; h++) popodneSuma += sati[h.toString().padStart(2, '0')] || 0;
+            for (let h = 6; h <= 15; h++) jutroSuma += sati[h.toString().padStart(2, '0')] || 0;
+            for (let h = 16; h <= 23; h++) popodneSuma += sati[h.toString().padStart(2, '0')] || 0;
             popodneSuma += sati["00"] || 0;
         } else {
             if (totalsByType["Jutro"]) jutroSuma = totalsByType["Jutro"];
             if (totalsByType["Popodne"]) popodneSuma = totalsByType["Popodne"];
         }
 
-        const ukupnoVrijednost = jutroSuma + popodneSuma;
+        const razlikaJutro = naStolJutro - naplataStolaJutro;
+        const razlikaPopodne = naStolPopodne - naplataStolaPopodne;
+        const ukupnoVrijednost = jutroSuma + popodneSuma + razlikaJutro + razlikaPopodne;
 
-        dateList.appendChild(kreirajWidgetVrste("Jutro", jutroSuma, datum));
-        dateList.appendChild(kreirajWidgetVrste("Popodne", popodneSuma, datum));
-        dateList.appendChild(kreirajWidgetVrste("Ukupno", ukupnoVrijednost, datum));
+        // Kućice Jutro/Popodne sa dodatnim redom: "Na stol − Naplata stola = ..."
+        dateList.appendChild(
+            kreirajWidgetVrste("Jutro", jutroSuma, datum, {
+                diff: { naStol: naStolJutro, naplataStola: naplataStolaJutro },
+                period: "Jutro"
+            })
+        );
+        dateList.appendChild(
+            kreirajWidgetVrste("Popodne", popodneSuma, datum, {
+                diff: { naStol: naStolPopodne, naplataStola: naplataStolaPopodne },
+                period: "Popodne"
+            })
+        );
+        dateList.appendChild(
+            kreirajWidgetVrste("Ukupno", ukupnoVrijednost, datum)
+        );
 
         tjedniZbroj += ukupnoVrijednost;
-
         daniPodaci.push({ datum, jutro: jutroSuma, popodne: popodneSuma, ukupno: ukupnoVrijednost });
 
+        // Ostali widgeti (osim Jutro/Popodne i ignorisanih)
         Object.entries(totalsByType)
             .filter(([vrsta]) => vrsta !== "Jutro" && vrsta !== "Popodne" && !ignoriraneVrste.includes(vrsta))
             .sort((a, b) => b[1] - a[1])
@@ -312,25 +367,14 @@ function prikaziPodatkePoDatumima(data_po_datumima) {
         summaryList.appendChild(dateSection);
     });
 
-    // 📌 2. Računanje prosjeka za sve osim prvog dana
-// 📌 2. Računanje prosjeka za sve osim prvog (najnovijeg) dana
-if (daniPodaci.length > 1) {
-    // Izbaci prvi dan iz liste
-    const ostatakDana = [...daniPodaci].slice(1);
+    // Prosjek (bez prvog dana)
+    if (daniPodaci.length > 1) {
+        const ostatakDana = [...daniPodaci].slice(1);
+        const brojDana = ostatakDana.length;
 
-    const brojDana = ostatakDana.length;
-
-    const prosjekJutro = brojDana > 0
-        ? ostatakDana.reduce((sum, d) => sum + d.jutro, 0) / brojDana
-        : 0;
-
-    const prosjekPopodne = brojDana > 0
-        ? ostatakDana.reduce((sum, d) => sum + d.popodne, 0) / brojDana
-        : 0;
-
-    const prosjekUkupno = brojDana > 0
-        ? ostatakDana.reduce((sum, d) => sum + d.ukupno, 0) / brojDana
-        : 0;
+        const prosjekJutro = brojDana > 0 ? ostatakDana.reduce((sum, d) => sum + d.jutro, 0) / brojDana : 0;
+        const prosjekPopodne = brojDana > 0 ? ostatakDana.reduce((sum, d) => sum + d.popodne, 0) / brojDana : 0;
+        const prosjekUkupno = brojDana > 0 ? ostatakDana.reduce((sum, d) => sum + d.ukupno, 0) / brojDana : 0;
 
         const prosjekList = document.createElement("ul");
         prosjekList.classList.add("summary-date", "prosjek-red");
@@ -341,14 +385,13 @@ if (daniPodaci.length > 1) {
             <li><div class="iznos">${prosjekUkupno.toFixed(2)} €</div></li>
         `;
 
-        // Umetni ga odmah nakon prvog datuma
         const prviElement = summaryList.querySelector(".date-section");
         if (prviElement && prviElement.nextSibling) {
             summaryList.insertBefore(prosjekList, prviElement.nextSibling);
         }
     }
 
-    // 📌 3. Dodaj tjedni zbroj
+    // Tjedni ukupno
     const tjedniWidget = document.createElement("div");
     tjedniWidget.classList.add("tjedni-ukupno");
     tjedniWidget.innerHTML = `<strong>📅 Tjedan ukupno: ${tjedniZbroj.toFixed(2)} €</strong>`;
@@ -369,30 +412,37 @@ function dodajKarticu(resultsContainer, item, totalsByType, datum) {
     const iznos = parseFloat(item.iznos.replace(" €", "").replace(",", ".")) || 0;
     let vrsta = nazivMap[item.vrsta_akcije] || item.vrsta_akcije;
 
-    // Ako je naplata ili naplata stola → dodaj u jutro/popodne
-    if (vrsta === "Naplata" || vrsta === "Naplata stola") {
-        const sati = parseInt(item.vrijeme.split(":")[0], 10);
-        const jeJutro = (sati >= 6 && sati <= 14);
+    // pokušaj izvući sat (za period Jutro/Popodne)
+    const sat = item.vrijeme ? parseInt(item.vrijeme.split(":")[0], 10) : NaN;
+    const jeJutro = !isNaN(sat) && sat >= 6 && sat <= 14;
 
+    let dataVrsta = vrsta;
+    let dataDnevno = vrsta; // default (za većinu akcija ostaje naziv vrste)
+
+    if (vrsta === "Naplata" || vrsta === "Naplata stola") {
+        // OVO ostaje kao do sada: ove vrste pune Jutro/Popodne total
         const vrstaDnevno = jeJutro ? "Jutro" : "Popodne";
         if (!totalsByType[vrstaDnevno]) totalsByType[vrstaDnevno] = 0;
         totalsByType[vrstaDnevno] += iznos;
 
-        // Dodaj u originalnu vrstu samo ako NIJE "Naplata"
+        // "Naplata" se ne zbraja pod svojom vrstom, "Naplata stola" se zbraja
         if (vrsta !== "Naplata") {
             if (!totalsByType[vrsta]) totalsByType[vrsta] = 0;
             totalsByType[vrsta] += iznos;
         }
 
-        var dataVrsta = vrsta; // original
-        var dataDnevno = vrstaDnevno; // za filtriranje
+        dataDnevno = vrstaDnevno; // bitno za filtriranje po periodu
     } else {
-        // Sve ostale vrste normalno dodaj
+        // Sve ostale vrste pune svoj vlastiti total
         if (!totalsByType[vrsta]) totalsByType[vrsta] = 0;
         totalsByType[vrsta] += iznos;
 
-        var dataVrsta = vrsta;
-        var dataDnevno = vrsta;
+        // KLJUČNA IZMJENA: za "Na stol" obavezno tagujemo period za filtriranje
+        if (vrsta === "Na stol" && !isNaN(sat)) {
+            dataDnevno = jeJutro ? "Jutro" : "Popodne";
+        } else {
+            dataDnevno = vrsta; // ostale ostaju kao što jesu
+        }
     }
 
     const cardHTML = document.createElement("div");
@@ -404,7 +454,7 @@ function dodajKarticu(resultsContainer, item, totalsByType, datum) {
 
     cardHTML.innerHTML = `
         <div class="card-header">
-            <span class="vrijeme">${item.vrijeme}</span>
+            <span class="vrijeme">${item.vrijeme || ""}</span>
             <span class="vrsta">${vrsta}</span>
             <span class="iznos">${item.iznos}</span>
         </div>
@@ -419,30 +469,162 @@ function dodajKarticu(resultsContainer, item, totalsByType, datum) {
 
 
 
-function kreirajWidgetVrste(vrsta, suma, datum) {
+function kreirajWidgetVrste(vrsta, suma, datum, options = {}) {
+    const { diff = null, period = null } = options;
+
     const item = document.createElement("li");
     item.setAttribute("data-vrsta", vrsta);
     item.setAttribute("data-datum", datum);
 
-    item.addEventListener("click", () => toggleFiltriranje(vrsta, datum, item));
+    // Klik na cijeli widget
+    item.addEventListener("click", () => {
+        toggleFiltriranje(vrsta, datum, item);
+    });
 
     const prikazIznosa =
         vrsta === "Čitanje totala"
             ? `${suma} čitanja`
-            : `${suma.toFixed(2)} €`;
+            : `${Number(suma).toFixed(2)} €`;
+
+    // Pod-iznos: prikaži SAMO razliku (Na stol − Naplata stola)
+    let podHTML = "";
+    if ((vrsta === "Jutro" || vrsta === "Popodne") && diff && typeof diff.naStol === "number" && typeof diff.naplataStola === "number") {
+        const naStol = Number(diff.naStol) || 0;
+        const napStola = Number(diff.naplataStola) || 0;
+        const razlika = naStol - napStola;
+        podHTML = `<div class="podiznos">${razlika.toFixed(2)} €</div>`;
+    }
 
     item.innerHTML = `
         <div class="naziv">${nazivMap[vrsta] || vrsta}</div>
         <div class="iznos">${prikazIznosa}</div>
+        ${podHTML}
     `;
 
-    // Ako je Ukupno → bold
     if (vrsta === "Ukupno") {
         item.classList.add("ukupno-bold");
     }
 
     return item;
 }
+
+
+
+
+
+
+// GLOBAL: specijalni filter za pod-iznos (null ili {period, datum, vrste: [...]})
+let customFilter = null;
+
+// Primijeni trenutne filtere na kartice
+function applyFilters(beforeApplyHook) {
+    const cards = document.querySelectorAll("#results-container .card");
+
+    if (typeof beforeApplyHook === "function") {
+        beforeApplyHook();
+    }
+
+    // Ako je aktivan specijalni (pod-iznos) filter – on ima prednost i ignoriše aktivniFilteri
+    if (customFilter) {
+        const { period, datum, vrste } = customFilter;
+        cards.forEach(card => {
+            const cardDatum = card.getAttribute("data-datum");
+            const cardDnevno = card.getAttribute("data-dnevno");
+            const cardVrsta = card.getAttribute("data-vrsta");
+            const match = (cardDatum === datum) &&
+                          (cardDnevno === period) &&
+                          (vrste.includes(cardVrsta));
+            card.style.display = match ? "block" : "none";
+        });
+        return;
+    }
+
+    // Inače – stari režim (OR logika)
+    if (aktivniFilteri.size === 0) {
+        cards.forEach(card => card.style.display = "none");
+    } else {
+        cards.forEach(card => {
+            const cardVrsta = card.getAttribute("data-vrsta");
+            const cardDnevno = card.getAttribute("data-dnevno");
+            const cardDatum = card.getAttribute("data-datum");
+
+            const cardKeyVrsta = `${cardVrsta}_${cardDatum}`;
+            const cardKeyDnevno = `${cardDnevno}_${cardDatum}`;
+
+            card.style.display = (aktivniFilteri.has(cardKeyVrsta) || aktivniFilteri.has(cardKeyDnevno))
+                ? "block"
+                : "none";
+        });
+    }
+}
+
+// Klik na pod-iznos (Na stol − Naplata stola)
+function toggleSubLineFilter(period, datum, liElement, buttonEl) {
+    // ako je već aktivan isti specijalni filter – ugasi
+    const isSame =
+        customFilter &&
+        customFilter.period === period &&
+        customFilter.datum === datum;
+
+    if (isSame) {
+        customFilter = null;
+        liElement.classList.remove("active-sub");
+    } else {
+        customFilter = {
+            period,
+            datum,
+            vrste: ["Naplata", "Naplata stola", "Na stol"]
+        };
+        // Po želji možeš očistiti postojeće standard filtere
+        aktivniFilteri.clear();
+        // UI naglasak
+        liElement.classList.add("active-sub");
+    }
+
+    applyFilters();
+}
+
+// (ZAMJENA) – malo prepakujemo postojeći toggle da koristi applyFilters()
+function toggleFiltriranje(vrsta, datum, element) {
+    const isPeriod = (vrsta === "Jutro" || vrsta === "Popodne");
+
+    if (isPeriod) {
+        // Klik na Jutro/Popodne – prikaži samo Naplata, Naplata stola i Na stol u tom periodu
+        const isSame = customFilter && customFilter.period === vrsta && customFilter.datum === datum;
+
+        if (isSame) {
+            customFilter = null;
+            element.classList.remove("active", "active-sub");
+        } else {
+            customFilter = {
+                period: vrsta,
+                datum,
+                vrste: ["Naplata", "Naplata stola", "Na stol"]
+            };
+            aktivniFilteri.clear(); // da ne smeta staro stanje
+            element.classList.add("active", "active-sub");
+        }
+        applyFilters();
+        return;
+    }
+
+    // Ostali widgeti – standardno ponašanje
+    customFilter = null;
+    element.classList.remove("active-sub");
+
+    const key = `${vrsta}_${datum}`;
+    if (aktivniFilteri.has(key)) {
+        aktivniFilteri.delete(key);
+        element.classList.remove("active");
+    } else {
+        aktivniFilteri.add(key);
+        element.classList.add("active");
+    }
+    applyFilters();
+}
+
+
+
 
 
 function prikaziPorukuBezPodataka() {
@@ -474,9 +656,10 @@ function prikaziPotrosnjuArtikala(potrosnja_artikala) {
 
 function prikaziGrafikone(naplate_po_satu) {
     if (!naplate_po_satu) return;
-    prikaziGrafikon("modal-chart06_15", naplate_po_satu, 6, 14); // jutro do 14h
-    prikaziGrafikon("modal-chart15_01_b", naplate_po_satu, 15, 23); // popodne od 15h
+    prikaziGrafikon("modal-chart06_15", naplate_po_satu, 6, 15, naStolPoSatuGlobal, naplataStolaPoSatuGlobal);
+    prikaziGrafikon("modal-chart15_01_b", naplate_po_satu, 16, 23, naStolPoSatuGlobal, naplataStolaPoSatuGlobal);
 }
+
 
 
 
@@ -504,37 +687,6 @@ function prikaziGrafikone(naplate_po_satu) {
 
 
 
-function toggleFiltriranje(vrsta, datum, element) {
-    const cards = document.querySelectorAll("#results-container .card");
-
-    const key = `${vrsta}_${datum}`;
-
-    if (aktivniFilteri.has(key)) {
-        aktivniFilteri.delete(key);
-        element.classList.remove("active");
-    } else {
-        aktivniFilteri.add(key);
-        element.classList.add("active");
-    }
-
-    if (aktivniFilteri.size === 0) {
-        cards.forEach(card => card.style.display = "none");
-    } else {
-        cards.forEach(card => {
-            const cardVrsta = card.getAttribute("data-vrsta");
-            const cardDnevno = card.getAttribute("data-dnevno");
-            const cardDatum = card.getAttribute("data-datum");
-
-            const cardKeyVrsta = `${cardVrsta}_${cardDatum}`;
-            const cardKeyDnevno = `${cardDnevno}_${cardDatum}`;
-
-            // Prikazuj ako filter odgovara originalnoj vrsti ili jutro/popodne grupi
-            card.style.display = (aktivniFilteri.has(cardKeyVrsta) || aktivniFilteri.has(cardKeyDnevno))
-                ? "block"
-                : "none";
-        });
-    }
-}
 
 
 

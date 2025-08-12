@@ -287,15 +287,21 @@ button:hover { background-color: #1b262f; }
   background-color: rgba(0,0,0,0.4);
   }
 
-.modal-content {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 5px;
-  width: 100%;
-  max-width: 500px;
-  position: relative;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-  }
+/* Fullscreen sadržaj modala */
+.modal .modal-content {
+  width: 100vw;             /* puna širina prozora */
+  height: 100vh;            /* puna visina prozora */
+  margin: 0;                /* bez centriranja sa margin:auto */
+  padding: 0;               /* makni padding da canvas dobije sve */
+  max-width: none;          /* skini eventualni max-width */
+  max-height: none;         /* skini eventualni max-height */
+  border-radius: 0;         /* opcionalno */
+  box-sizing: border-box;
+  display: flex;            /* da canvas može ispuniti */
+  flex-direction: column;
+    background-color: white;
+}
+
 
 .modal-content h3 {
   margin-top: 0;
@@ -420,6 +426,37 @@ button:hover { background-color: #1b262f; }
 
 
 
+
+.summary-date li .podiznos {
+  margin-top: 2px;
+  font-size: 0.85em;
+  opacity: 0.8;
+  line-height: 1.2;
+}
+
+.summary-date li .podiznos {
+  margin-top: 4px;
+  line-height: 1.2;
+}
+
+.summary-date li .podiznos-btn {
+  border: none;
+    color: black;
+  background: transparent;
+  font-size: 2em;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.summary-date li .podiznos-btn:hover {
+  text-decoration: underline;
+}
+
+.summary-date li.active-sub .podiznos-btn {
+  font-weight: 600;
+  text-decoration: underline;
+}
 
 
 
