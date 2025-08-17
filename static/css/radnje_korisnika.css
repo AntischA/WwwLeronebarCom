@@ -144,10 +144,12 @@ button:hover { background-color: #1b262f; }
   opacity: 0.9;
 }
 
-.summary-date li .ukupno-final {
+.summary-date li .ukupno-bottom {
   margin-top: 6px;
   font-size: 1.05em;
   font-weight: 700;
+      color: #003366;
+
 }
 
 .summary-date li[data-vrsta="Jutro"] .naziv,
@@ -476,6 +478,10 @@ button:hover { background-color: #1b262f; }
 }
 
 
+#artikli-modal .summary-date li.active {
+  background-color: #93c5fd;
+  transform: scale(1.02);
+}
 
 
 

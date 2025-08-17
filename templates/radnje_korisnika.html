@@ -105,6 +105,9 @@
 
 
  <script>
+let potrosnjaArtikalaPoDanuGlobal = null;
+let sviDatumiGlobal = [];
+let potrosnjaArtikalaGlobal = null;
 
 let resultNaplatePoSatu = null;
 let aktivniFilteri = new Set();
@@ -139,6 +142,8 @@ async function fetchData() {
     const { fromDate, toDate } = getDateRange();
     const result = await dohvatiPodatkeSaServera(fromDate, toDate);
     if (!result) return;
+    potrosnjaArtikalaPoDanuGlobal = result.potrosnja_artikala_po_danu || null;
+    potrosnjaArtikalaGlobal = result.potrosnja_artikala || null;
 
     prikaziPodatkePoDatumima(result.data_po_datumima);
     prikaziPotrosnjuArtikala(result.potrosnja_artikala);
@@ -249,6 +254,7 @@ function prikaziPodatkePoDatumima(data_po_datumima) {
     let daniPodaci = [];
 
     const sviDatumi = Object.keys(data_po_datumima).sort(sortirajDatume);
+    sviDatumiGlobal = sviDatumi;
 
     sviDatumi.forEach((datum) => {
         const items = data_po_datumima[datum];
@@ -332,6 +338,8 @@ function prikaziPodatkePoDatumima(data_po_datumima) {
         const gornjiZbroj = jutroSuma + popodneSuma;
         const donjiZbroj  = razlikaJutro + razlikaPopodne;
         const ukupnoVrijednost = gornjiZbroj + donjiZbroj;
+        const jutroBottom    = jutroSuma + razlikaJutro;       // = "ukupno-bottom" za Jutro
+        const popodneBottom  = popodneSuma + razlikaPopodne;   // = "ukupno-bottom" za Popodne
 
         // Kućice Jutro/Popodne (ostaju kao do sada, ali J/P imaju razliku i combined)
         dateList.appendChild(
@@ -355,7 +363,12 @@ function prikaziPodatkePoDatumima(data_po_datumima) {
         );
 
         tjedniZbroj += ukupnoVrijednost;
-        daniPodaci.push({ datum, jutro: jutroSuma, popodne: popodneSuma, ukupno: ukupnoVrijednost });
+        daniPodaci.push({
+          datum,
+          jutro: jutroBottom,
+          popodne: popodneBottom,
+          ukupno: ukupnoVrijednost
+        });
 
         // Ostali widgeti (osim Jutro/Popodne i ignorisanih)
         Object.entries(totalsByType)
@@ -487,43 +500,45 @@ function kreirajWidgetVrste(vrsta, suma, datum, options = {}) {
     toggleFiltriranje(vrsta, datum, item);
   });
 
-  const prikazIznosa =
-    vrsta === "Čitanje totala"
-      ? `${suma} čitanja`
-      : `${Number(suma).toFixed(2)} €`;
+  // glavni ukupni iznos (koristi se i za dno Ukupno widgeta)
+  const mainTotalHTML = `<div class="iznos ukupno-bottom">${Number(suma).toFixed(2)} €</div>`;
 
-  let extraHTML = "";
+  let bodyHTML = "";
 
-  // Jutro/Popodne: prikaži razliku i combined (suma + razlika)
+  // Jutro/Popodne: razlika i combined (suma + razlika) ostaju kako jesu
   if ((vrsta === "Jutro" || vrsta === "Popodne") && diff) {
     const naStol   = Number(diff.naStol) || 0;
     const napStola = Number(diff.naplataStola) || 0;
     const razlika  = naStol - napStola;
     const combined = Number(suma) + razlika;
 
-    extraHTML += `
+    bodyHTML += `
+      <div class="iznos">${Number(suma).toFixed(2)} €</div>
       <div class="podiznos">${razlika.toFixed(2)} €</div>
       <div class="podiznos ukupno-red">${combined.toFixed(2)} €</div>
     `;
   }
 
-  // Ukupno: prikaži zbroj gornjih, zbroj donjih i završni total
-  if (vrsta === "Ukupno" && components && typeof components.upper === "number" && typeof components.lower === "number") {
+  // UKUPNO: prvo prikaži dva sub reda, pa NA DNU glavni ukupni iznos
+  else if (vrsta === "Ukupno" && components && typeof components.upper === "number" && typeof components.lower === "number") {
     const upper = Number(components.upper) || 0;
     const lower = Number(components.lower) || 0;
-    const grand = upper + lower; // ovo bi trebalo biti jednako "suma"
 
-    extraHTML += `
-      <div class="ukupno-sub">Gornji zbroj: ${upper.toFixed(2)} €</div>
-      <div class="ukupno-sub">Donji zbroj: ${lower.toFixed(2)} €</div>
-      <div class="ukupno-final">${grand.toFixed(2)} €</div>
+    bodyHTML += `
+      <div class="ukupno-sub">${upper.toFixed(2)} €</div>
+      <div class="ukupno-sub">${lower.toFixed(2)} €</div>
+      ${mainTotalHTML}
     `;
+  }
+
+  // Svi ostali widgeti (default)
+  else {
+    bodyHTML += `<div class="iznos">${Number(suma).toFixed(2)} €</div>`;
   }
 
   item.innerHTML = `
     <div class="naziv">${nazivMap[vrsta] || vrsta}</div>
-    <div class="iznos">${prikazIznosa}</div>
-    ${extraHTML}
+    ${bodyHTML}
   `;
 
   if (vrsta === "Ukupno") {
@@ -773,9 +788,136 @@ function prikaziGrafikone(naplate_po_satu) {
   });
 
 
-  document.getElementById("artikli-button").addEventListener("click", () => {
-  document.getElementById("artikli-modal").style.display = "block";
+document.getElementById("artikli-button").addEventListener("click", () => {
+  otvoriArtikliModal();
+});
+
+function pronadiPotrosnjuZaDatum(datum) {
+  if (!potrosnjaArtikalaPoDanuGlobal) return null;
+
+  // 1) direktno
+  if (potrosnjaArtikalaPoDanuGlobal[datum]) return potrosnjaArtikalaPoDanuGlobal[datum];
+
+  // 2) bez vodećih nula -> "1.8.2025"
+  const parts = datum.split(".");
+  if (parts.length >= 3) {
+    const d = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    const y = parts[2];
+    const bezNula = `${d}.${m}.${y}`;
+    if (potrosnjaArtikalaPoDanuGlobal[bezNula]) return potrosnjaArtikalaPoDanuGlobal[bezNula];
+
+    // 3) ISO -> "2025-08-01"
+    const iso = `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    if (potrosnjaArtikalaPoDanuGlobal[iso]) return potrosnjaArtikalaPoDanuGlobal[iso];
+  }
+
+  return null;
+}
+
+
+function otvoriArtikliModal() {
+  const modal = document.getElementById("artikli-modal");
+  const listRoot = document.getElementById("artikli-summary-list");
+  listRoot.innerHTML = "";
+
+  // Ako NEMAMO per-dan strukturu -> fallback na staru ukupnu listu
+  if (!potrosnjaArtikalaPoDanuGlobal || Object.keys(potrosnjaArtikalaPoDanuGlobal).length === 0) {
+    if (!potrosnjaArtikalaGlobal || Object.keys(potrosnjaArtikalaGlobal).length === 0) {
+      listRoot.innerHTML = `<li><i>Nema potrošnje artikala za odabrani period.</i></li>`;
+    } else {
+      Object.entries(potrosnjaArtikalaGlobal)
+        .sort((a,b) => (b[1]?.kolicina || 0) - (a[1]?.kolicina || 0))
+        .forEach(([naziv, s]) => {
+          const li = document.createElement("li");
+          li.className = "card";
+          li.style.display = "block";
+          li.style.marginBottom = "6px";
+          li.innerHTML = `
+            <div class="card-header">
+              <span class="vrsta">${naziv}</span>
+              <span class="iznos">${(s?.kolicina ?? 0).toFixed(2)} kom</span>
+            </div>
+            <div class="card-opis">Puta: ${s?.broj ?? 0}</div>
+          `;
+          listRoot.appendChild(li);
+        });
+    }
+    modal.style.display = "block";
+    return; // <- bitno!
+  }
+
+  // U suprotnom: imamo per-dan podatke -> prikaži widgete dana
+  const daniWrap = document.createElement("ul");
+  daniWrap.className = "summary-date";
+  daniWrap.style.marginBottom = "10px";
+
+  const dani = Object.keys(potrosnjaArtikalaPoDanuGlobal).sort(sortirajDatume);
+
+  if (!dani || dani.length === 0) {
+    listRoot.innerHTML = `<li><i>Nema potrošnje artikala za odabrani period.</i></li>`;
+    modal.style.display = "block";
+    return;
+  }
+
+  const karticeWrap = document.createElement("ul");
+  karticeWrap.id = "artikli-kartice";
+  karticeWrap.style.listStyle = "none";
+  karticeWrap.style.padding = "0";
+  karticeWrap.style.margin = "8px 0 0 0";
+
+  let aktivniLi = null;
+
+  const renderDan = (datum) => {
+    if (aktivniLi) aktivniLi.classList.remove("active");
+    const found = Array.from(daniWrap.children).find(li => li.getAttribute("data-datum") === datum);
+    if (found) { aktivniLi = found; aktivniLi.classList.add("active"); }
+
+    karticeWrap.innerHTML = "";
+    const dataZaDan = pronadiPotrosnjuZaDatum(datum);
+
+    if (!dataZaDan || Object.keys(dataZaDan).length === 0) {
+      karticeWrap.innerHTML = `<li><i>Nema artikala za ${datum}.</i></li>`;
+      return;
+    }
+
+    Object.entries(dataZaDan)
+      .sort((a,b) => (b[1]?.kolicina || 0) - (a[1]?.kolicina || 0))
+      .forEach(([naziv, s]) => {
+        const li = document.createElement("li");
+        li.className = "card";
+        li.style.display = "block";
+        li.style.marginBottom = "6px";
+        li.innerHTML = `
+          <div class="card-header">
+            <span class="vrsta">${naziv}</span>
+            <span class="iznos">${(s?.kolicina ?? 0).toFixed(2)} kom</span>
+          </div>
+          <div class="card-opis">Puta: ${s?.broj ?? 0}</div>
+        `;
+        karticeWrap.appendChild(li);
+      });
+  };
+
+  dani.forEach(datum => {
+    const li = document.createElement("li");
+    li.setAttribute("data-datum", datum);
+    li.innerHTML = `
+      <div class="naziv">Dan</div>
+      <div class="iznos">${datum}</div>
+    `;
+    li.addEventListener("click", () => renderDan(datum));
+    daniWrap.appendChild(li);
   });
+
+  listRoot.appendChild(daniWrap);
+  listRoot.appendChild(karticeWrap);
+
+  renderDan(dani[0]); // auto-prvi
+  modal.style.display = "block";
+}
+
+
 
 </script>
 
