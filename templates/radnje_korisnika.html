@@ -328,23 +328,30 @@ function prikaziPodatkePoDatumima(data_po_datumima) {
 
         const razlikaJutro = naStolJutro - naplataStolaJutro;
         const razlikaPopodne = naStolPopodne - naplataStolaPopodne;
-        const ukupnoVrijednost = jutroSuma + popodneSuma + razlikaJutro + razlikaPopodne;
+        // ▶ zbroj gornjih (naplate) i donjih (razlike)
+        const gornjiZbroj = jutroSuma + popodneSuma;
+        const donjiZbroj  = razlikaJutro + razlikaPopodne;
+        const ukupnoVrijednost = gornjiZbroj + donjiZbroj;
 
-        // Kućice Jutro/Popodne sa dodatnim redom: "Na stol − Naplata stola = ..."
+        // Kućice Jutro/Popodne (ostaju kao do sada, ali J/P imaju razliku i combined)
         dateList.appendChild(
-            kreirajWidgetVrste("Jutro", jutroSuma, datum, {
-                diff: { naStol: naStolJutro, naplataStola: naplataStolaJutro },
-                period: "Jutro"
-            })
+          kreirajWidgetVrste("Jutro", jutroSuma, datum, {
+            diff: { naStol: naStolJutro, naplataStola: naplataStolaJutro },
+            period: "Jutro"
+          })
         );
         dateList.appendChild(
-            kreirajWidgetVrste("Popodne", popodneSuma, datum, {
-                diff: { naStol: naStolPopodne, naplataStola: naplataStolaPopodne },
-                period: "Popodne"
-            })
+          kreirajWidgetVrste("Popodne", popodneSuma, datum, {
+            diff: { naStol: naStolPopodne, naplataStola: naplataStolaPopodne },
+            period: "Popodne"
+          })
         );
+
+        // ▶ Ukupno sa komponentama (gornji, donji)
         dateList.appendChild(
-            kreirajWidgetVrste("Ukupno", ukupnoVrijednost, datum)
+          kreirajWidgetVrste("Ukupno", ukupnoVrijednost, datum, {
+            components: { upper: gornjiZbroj, lower: donjiZbroj }
+          })
         );
 
         tjedniZbroj += ukupnoVrijednost;
@@ -470,50 +477,61 @@ function dodajKarticu(resultsContainer, item, totalsByType, datum) {
 
 
 function kreirajWidgetVrste(vrsta, suma, datum, options = {}) {
-    const { diff = null, period = null } = options;
+  const { diff = null, components = null } = options;
 
-    const item = document.createElement("li");
-    item.setAttribute("data-vrsta", vrsta);
-    item.setAttribute("data-datum", datum);
+  const item = document.createElement("li");
+  item.setAttribute("data-vrsta", vrsta);
+  item.setAttribute("data-datum", datum);
 
-    item.addEventListener("click", () => {
-        toggleFiltriranje(vrsta, datum, item);
-    });
+  item.addEventListener("click", () => {
+    toggleFiltriranje(vrsta, datum, item);
+  });
 
-    const prikazIznosa =
-        vrsta === "Čitanje totala"
-            ? `${suma} čitanja`
-            : `${Number(suma).toFixed(2)} €`;
+  const prikazIznosa =
+    vrsta === "Čitanje totala"
+      ? `${suma} čitanja`
+      : `${Number(suma).toFixed(2)} €`;
 
-    // Pod-iznos: razlika Na stol − Naplata stola
-    let podHTML = "";
-    let totalHTML = "";
-    if ((vrsta === "Jutro" || vrsta === "Popodne") && diff) {
-        const naStol = Number(diff.naStol) || 0;
-        const napStola = Number(diff.naplataStola) || 0;
-        const razlika = naStol - napStola;
+  let extraHTML = "";
 
-        podHTML = `<div class="podiznos">${razlika.toFixed(2)} €</div>`;
+  // Jutro/Popodne: prikaži razliku i combined (suma + razlika)
+  if ((vrsta === "Jutro" || vrsta === "Popodne") && diff) {
+    const naStol   = Number(diff.naStol) || 0;
+    const napStola = Number(diff.naplataStola) || 0;
+    const razlika  = naStol - napStola;
+    const combined = Number(suma) + razlika;
 
-        // 👇 Novi treći red – suma + razlika
-        const combined = Number(suma) + razlika;
-        totalHTML = `<div class="podiznos ukupno-red">${combined.toFixed(2)} €</div>`;
-    }
-
-    item.innerHTML = `
-        <div class="naziv">${nazivMap[vrsta] || vrsta}</div>
-        <div class="iznos">${prikazIznosa}</div>
-        ${podHTML}
-        ${totalHTML}
+    extraHTML += `
+      <div class="podiznos">${razlika.toFixed(2)} €</div>
+      <div class="podiznos ukupno-red">${combined.toFixed(2)} €</div>
     `;
+  }
 
-    if (vrsta === "Ukupno") {
-        item.classList.add("ukupno-bold");
-    }
+  // Ukupno: prikaži zbroj gornjih, zbroj donjih i završni total
+  if (vrsta === "Ukupno" && components && typeof components.upper === "number" && typeof components.lower === "number") {
+    const upper = Number(components.upper) || 0;
+    const lower = Number(components.lower) || 0;
+    const grand = upper + lower; // ovo bi trebalo biti jednako "suma"
 
-    return item;
+    extraHTML += `
+      <div class="ukupno-sub">Gornji zbroj: ${upper.toFixed(2)} €</div>
+      <div class="ukupno-sub">Donji zbroj: ${lower.toFixed(2)} €</div>
+      <div class="ukupno-final">${grand.toFixed(2)} €</div>
+    `;
+  }
+
+  item.innerHTML = `
+    <div class="naziv">${nazivMap[vrsta] || vrsta}</div>
+    <div class="iznos">${prikazIznosa}</div>
+    ${extraHTML}
+  `;
+
+  if (vrsta === "Ukupno") {
+    item.classList.add("ukupno-bold");
+  }
+
+  return item;
 }
-
 
 
 

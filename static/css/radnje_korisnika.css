@@ -138,6 +138,17 @@ button:hover { background-color: #1b262f; }
   color: #003366;
 }
 
+.summary-date li .ukupno-sub {
+  margin-top: 4px;
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+
+.summary-date li .ukupno-final {
+  margin-top: 6px;
+  font-size: 1.05em;
+  font-weight: 700;
+}
 
 .summary-date li[data-vrsta="Jutro"] .naziv,
 .summary-date li[data-vrsta="Popodne"] .naziv,
