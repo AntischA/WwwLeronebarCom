@@ -493,11 +493,11 @@ function kreirajWidgetVrste(vrsta, suma, datum, options = {}) {
         const napStola = Number(diff.naplataStola) || 0;
         const razlika = naStol - napStola;
 
-        podHTML = `<div class="podiznos">Razlika: ${razlika.toFixed(2)} €</div>`;
+        podHTML = `<div class="podiznos">${razlika.toFixed(2)} €</div>`;
 
         // 👇 Novi treći red – suma + razlika
         const combined = Number(suma) + razlika;
-        totalHTML = `<div class="podiznos ukupno-red">Ukupno: ${combined.toFixed(2)} €</div>`;
+        totalHTML = `<div class="podiznos ukupno-red">${combined.toFixed(2)} €</div>`;
     }
 
     item.innerHTML = `
