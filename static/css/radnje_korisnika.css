@@ -131,6 +131,12 @@ button:hover { background-color: #1b262f; }
   transform: scale(1.03);
   }
 
+.summary-date li .ukupno-red {
+  margin-top: 4px;
+  font-size: 0.9em;
+  font-weight: bold;
+  color: #003366;
+}
 
 
 .summary-date li[data-vrsta="Jutro"] .naziv,

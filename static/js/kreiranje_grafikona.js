@@ -48,55 +48,108 @@ function satneOznake(odSat, doSat) {
   return labels;
 }
 
-// PRIMAJ i naStolPoSatu i naplataStolaPoSatu
 function prikaziGrafikon(canvasId, naplate_po_satu, odSat, doSat, naStolPoSatu = {}, naplataStolaPoSatu = {}) {
   const labels = satneOznake(odSat, doSat);
 
   if (grafikonCache[canvasId]) grafikonCache[canvasId].destroy();
 
-  // --- Odredi koja 2 datuma trebaju biti VIDljiva (zadnji i pretposljednji) ---
-  const entries = Object.entries(naplate_po_satu || {});
-  const sortirano = entries
+  // Sortiraj datume kronološki (+ priprema za vidljivost i boje)
+  const sortirano = Object.entries(naplate_po_satu || {})
     .map(([datum, sati]) => ({ datum, sati, d: parseDatum(datum) }))
     .filter(o => !isNaN(o.d))
     .sort((a, b) => a.d - b.d);
 
+  // Vidljivi samo zadnji i pretposljednji
   const lastTwo = sortirano.slice(-2).map(o => o.datum);
-  const vidljiviSet = new Set(lastTwo); // samo ova dva su vidljiva inicijalno
+  const vidljiviSet = new Set(lastTwo);
+
+  // Odredi referentne datume za boje
+  const lastIdx = sortirano.length - 1;
+  const prevIdx = sortirano.length - 2;
+
+  const lastDateStr = lastIdx >= 0 ? sortirano[lastIdx].datum : null;
+  const prevDateStr = prevIdx >= 0 ? sortirano[prevIdx].datum : null;
+
+  function sameDay(a, b) {
+    return a.getFullYear() === b.getFullYear() &&
+           a.getMonth() === b.getMonth() &&
+           a.getDate() === b.getDate();
+  }
+  let sevenDateStr = null;
+  if (lastIdx >= 0) {
+    const target = new Date(sortirano[lastIdx].d);
+    target.setDate(target.getDate() - 7);
+    const found = sortirano.find(o => sameDay(o.d, target));
+    if (found) {
+      sevenDateStr = found.datum;
+    } else if (sortirano.length >= 8) {
+      sevenDateStr = sortirano[sortirano.length - 8].datum;
+    }
+  }
 
   const datasets = [];
-  let globalMin = Infinity;
-  let globalMax = -Infinity;
 
-  entries.forEach(([datum, sati], index) => {
+  // Sad = lokalno vrijeme; koristimo za "rezanje" budućih sati
+  const now = new Date();
+  const nowHour = now.getHours();
+
+  sortirano.forEach(({ datum, sati }, index) => {
     const plusMapa  = naStolPoSatu[datum] || {};
     const minusMapa = naplataStolaPoSatu[datum] || {};
 
-    const data = labels.map((hh) => {
-      const naplate = Number((sati && sati[hh]) || 0);    // + Naplate po satu
-      const naStol  = Number(plusMapa[hh] || 0);          // + Na stol po satu
-      const napStol = Number(minusMapa[hh] || 0);         // − Naplata stola po satu
-      const v = naplate + naStol - napStol;
-      if (v < globalMin) globalMin = v;
-      if (v > globalMax) globalMax = v;
-      return v;
+    const isLast = datum === lastDateStr;
+    const isToday = sameDay(parseDatum(datum), now);
+
+    // Izračun po satu
+    let data = labels.map((hh) => {
+      const naplate = Number((sati && sati[hh]) || 0);
+      const naStol  = Number(plusMapa[hh] || 0);
+      const napStol = Number(minusMapa[hh] || 0);
+      return naplate + naStol - napStol;
     });
 
-    const zbroj = data.reduce((a, b) => a + b, 0);
+    // 🚫 Reži buduće sate za zadnji datum ako je to DANAS
+    if (isLast && isToday) {
+      data = labels.map((hh, i) => {
+        if (hh === "00") return null; // ponoć sutrašnjeg dana – nikad ne crtamo za "danas"
+        const h = parseInt(hh, 10);
+        return (h > nowHour) ? null : data[i];
+      });
+    }
+
+    // Zbroj (ignorira null)
+    const zbroj = data.reduce((a, b) => a + (b ?? 0), 0);
     const label = formatDatumZaLabelu(datum, zbroj);
+
+    // 🎨 Boja linije
+    let borderColor;
+    if (datum === lastDateStr)       borderColor = "#000000"; // crna
+    else if (datum === prevDateStr)  borderColor = "#e53935"; // crvena
+    else if (datum === sevenDateStr) borderColor = "#1e88e5"; // plava
+    else borderColor = `hsl(${(index * 67) % 360}, 70%, 50%)`;
 
     datasets.push({
       label,
       data,
-      hidden: !vidljiviSet.has(datum), // 🔥 sakrij sve osim zadnja 2 datuma
+      hidden: !vidljiviSet.has(datum), // sakrij sve osim zadnja 2 datuma
       fill: false,
-      borderColor: `hsl(${(index * 67) % 360}, 70%, 50%)`,
+      borderColor,
+      borderWidth: 2,
       tension: 0,
       pointRadius: 0,
       pointHoverRadius: 6,
     });
   });
 
+  // Dinamički Y-raspon, računaj samo nad postojećim (ne-null) vrijednostima
+  let globalMin = +Infinity, globalMax = -Infinity;
+  datasets.forEach(ds => {
+    ds.data.forEach(v => {
+      if (v == null) return;
+      if (v < globalMin) globalMin = v;
+      if (v > globalMax) globalMax = v;
+    });
+  });
   if (!isFinite(globalMin)) { globalMin = 0; globalMax = 10; }
   const yMax = Math.ceil((globalMax + 10) / 10) * 10;
   const yMin = Math.floor((globalMin - 10) / 10) * 10;
@@ -109,19 +162,20 @@ function prikaziGrafikon(canvasId, naplate_po_satu, odSat, doSat, naStolPoSatu =
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      spanGaps: false, // važno: ne spajaj preko null vrijednosti
       interaction: { mode: "index", intersect: false },
       plugins: {
-        legend: { position: "top" }, // korisnik i dalje može uključiti ostale datume
+        legend: { position: "top" },
         tooltip: {
           callbacks: {
-            label: (c) => `${Number(c.raw || 0).toFixed(2)} €`,
+            label: (c) => `${Number(c.raw ?? 0).toFixed(2)} €`,
           },
         },
         datalabels: {
           color: "#333",
           align: "top",
           anchor: "end",
-          formatter: (v) => (v !== 0 ? `${Number(v).toFixed(2)} €` : ""),
+          formatter: (v) => (v != null && v !== 0 ? `${Number(v).toFixed(2)} €` : ""),
         },
       },
       scales: {
