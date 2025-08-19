@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="hr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Korisnici (admin)</title>
+  <style>
+    body { font-family: ui-sans-serif, system-ui; margin: 24px; }
+    .btn { padding:12px 16px; border:0; border-radius:10px; cursor:pointer; box-shadow:0 6px 16px rgba(0,0,0,.08); }
+    table { border-collapse: collapse; width: 100%; margin-top:16px; }
+    th, td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; }
+    img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+    .topbar { display:flex; align-items:center; gap:12px; }
+    .spacer { flex:1; }
+    .muted { color:#666; font-size:14px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <h1 style="margin:0">Korisnici</h1>
+    <div class="spacer"></div>
+    <div id="whoami" class="muted"></div>
+    <button id="loginBtn" class="btn">Prijavi se Google-om</button>
+    <button id="logoutBtn" class="btn" style="display:none">Odjava</button>
+  </div>
+
+  <table id="tbl" style="display:none"><thead>
+    <tr><th>Avatar</th><th>Ime</th><th>E-mail</th><th>Zadnja prijava</th></tr>
+  </thead><tbody></tbody></table>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth, onAuthStateChanged, GoogleAuthProvider,
+      signInWithRedirect, getRedirectResult, signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore, collection, query, orderBy, onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // === TVOJ Firebase config (isti kao na login.html) ===
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpihyfvNSSC66e9i5iWAzEu2MnmZPwPLk",
+      authDomain: "leronebar-com.firebaseapp.com",
+      projectId: "leronebar-com",
+      storageBucket: "leronebar-com.appspot.com",
+      messagingSenderId: "663579114142",
+      appId: "1:663579114142:web:10b1a380cb561395e3198f"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    // Ako se vratimo sa Google redirect-a, ovo hvata rezultat (nije obavezno da nešto radi ovde)
+    getRedirectResult(auth).catch(console.warn);
+
+    const loginBtn  = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const whoami    = document.getElementById("whoami");
+    const tbody     = document.querySelector("#tbl tbody");
+    const table     = document.getElementById("tbl");
+
+    loginBtn.addEventListener("click", () => signInWithRedirect(auth, provider));
+    logoutBtn.addEventListener("click", () => signOut(auth));
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        whoami.textContent = "Niste prijavljeni.";
+        table.style.display = "none";
+        loginBtn.style.display = "inline-block";
+        logoutBtn.style.display = "none";
+        return;
+      }
+
+      whoami.textContent = `${user.email || user.displayName || "Prijavljeni"}`;
+      loginBtn.style.display = "none";
+      logoutBtn.style.display = "inline-block";
+      table.style.display = "table";
+
+      // Firestore upit (pretpostavlja se da Firestore rules dozvoljavaju read samo adminu)
+      const q = query(collection(db, "users"), orderBy("lastLogin", "desc"));
+      onSnapshot(q, (snap) => {
+        tbody.innerHTML = "";
+        snap.forEach(docu => {
+          const u = docu.data();
+          const last = u.lastLogin?.toDate ? u.lastLogin.toDate().toLocaleString() : "";
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${u.photoURL ? `<img src="${u.photoURL}" alt="">` : ""}</td>
+            <td>${u.displayName || ""}</td>
+            <td>${u.email || ""}</td>
+            <td>${last}</td>`;
+          tbody.appendChild(tr);
+        });
+      }, (err) => {
+        alert("Nemate ovlasti za čitanje liste korisnika (provjeri Firestore rules).");
+        console.error(err);
+      });
+    });
+  </script>
+</body>
+</html>

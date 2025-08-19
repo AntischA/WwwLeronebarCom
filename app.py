@@ -98,6 +98,10 @@ def prikaz_kalkulator():
 def prikaz_dalmacija():
     return render_template('dalmacija.html')
 
+@app.route('/wifi')
+def prikaz_wifi():
+    return render_template('users.html')
+
 @app.route('/spotify')
 def prikaz_spotify():
     return render_template('spotify.html')
