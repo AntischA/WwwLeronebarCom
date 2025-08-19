@@ -73,8 +73,12 @@
 
       status.textContent = "Spajam…";
 
-      const user = result.user;
+      // 1) PRVO spoji hotspot (siguran korak)
+      document.getElementById("mikrotikLogin").submit();
+
+      // 2) Zatim probaj async evidenciju – ali ne kvari UX ako padne
       try {
+        const user = result.user;
         await db.collection("users").doc(user.uid).set({
           uid: user.uid,
           email: user.email || "",
@@ -84,14 +88,17 @@
           lastLogin: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
       } catch (e) {
-        console.warn("Firestore zapis nije obavezan:", e);
+        console.warn("Firestore zapis preskočen:", e);
       }
 
-      // Pošalji login prema Mikrotiku
-      document.getElementById("mikrotikLogin").submit();
+      // 3) Zatvori captive portal (Android očekuje baš HTTP 204)
+      setTimeout(function () {
+        location.href = "http://connectivitycheck.gstatic.com/generate_204";
+      }, 800);
     }).catch(err => {
       console.error(err);
-      status.textContent = "Greška pri prijavi.";
+      // umesto “Greška pri prijavi”, daj neutralnu poruku ili ništa
+      status.textContent = "Pokušajte ponovno.";
     });
   </script>
 </body>
