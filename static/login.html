@@ -1,3 +1,4 @@
+<!--projekt/static/login.html-->
 <!doctype html>
 <html lang="hr">
 <head>
@@ -35,7 +36,10 @@
 
 <script>
     // --- Parametri iz URL-a koje je ubacio MikroTik
-  const Q = new URLSearchParams(location.search);
+const Q = new URLSearchParams(location.search);
+document.getElementById('mikrotikLogin').action =
+  decodeURIComponent(Q.get('link-login-only') || '');
+document.getElementById('mtUser').value = (Q.get('mac') || '').toUpperCase();
   const mac = (Q.get('mac') || '').toUpperCase();
   const linkLoginOnly = decodeURIComponent(Q.get('link-login-only') || '');
 
