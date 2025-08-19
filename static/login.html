@@ -35,18 +35,15 @@
   <iframe name="mtFrame" style="display:none"></iframe>
 
 <script>
-    // --- Parametri iz URL-a koje je ubacio MikroTik
-const Q = new URLSearchParams(location.search);
-document.getElementById('mikrotikLogin').action =
-  decodeURIComponent(Q.get('link-login-only') || '');
-document.getElementById('mtUser').value = (Q.get('mac') || '').toUpperCase();
+  const Q = new URLSearchParams(location.search);
   const mac = (Q.get('mac') || '').toUpperCase();
   const linkLoginOnly = decodeURIComponent(Q.get('link-login-only') || '');
 
-  document.getElementById('mtUser').value = mac;        // MAC kao username
+  document.getElementById('mtUser').value = mac;
   if (linkLoginOnly) {
-    document.getElementById('mikrotikLogin').action = linkLoginOnly; // <— BITNO
+    document.getElementById('mikrotikLogin').action = linkLoginOnly;
   }
+
 
   // --- Odbrojavanje (2:00 lokalno – informativno)
   (function(){

@@ -7,8 +7,17 @@ from api.dohvat_otkazanih_narudzbi import dohvati_ukupni_total_otkazanih_narudzb
 import urllib.parse
 import requests
 from app_db import init_db, get_day, upsert_day
+from routeros_api import RouterOsApiPool
 
+MT_HOST = os.getenv("MT_HOST", "192.168.88.1")
+MT_USER = os.getenv("MT_USER", "admin")
+MT_PASS = os.getenv("MT_PASS", "password")
+MT_PORT = int(os.getenv("MT_PORT", "8728"))
 
+def mt_connect():
+    pool = RouterOsApiPool(MT_HOST, username=MT_USER, password=MT_PASS,
+                           port=MT_PORT, plaintext_login=True)
+    return pool, pool.get_api()
 
 CLIENT_ID = "1984f9c1fdff48d3b5ecc493152dc5c4"
 CLIENT_SECRET = "e82cf9f67fca4450a68a85ce6ab2f253"
@@ -171,7 +180,78 @@ def post_today():
     return jsonify(success=True, date=day, total_secs=total, listened_secs=listened)
 
 
+# --- DODAJ: /api/trial (prima i form i json)
+@app.post("/api/trial")
+def api_trial():
+    if request.is_json:
+        data = request.get_json(force=True)
+        mac = (data.get("mac") or "").upper().strip()
+        minutes = int(data.get("minutes") or 2)
+    else:
+        mac = (request.form.get("mac") or "").upper().strip()
+        minutes = int(request.form.get("minutes") or 2)
 
+    if not mac:
+        return jsonify(success=False, error="missing mac"), 400
+    if minutes <= 0 or minutes > 180:
+        return jsonify(success=False, error="invalid minutes"), 400
+
+    pool, api = mt_connect()
+    try:
+        users = api.get_resource("/ip/hotspot/user")
+        try:
+            existing = users.get(name=mac)
+        except Exception:
+            existing = []
+
+        if existing:
+            users.set(id=existing[0][".id"], profile="trial",
+                      limit_uptime=f"{minutes}m", password="google",
+                      comment="auto-trial")
+        else:
+            users.add(name=mac, password="google", profile="trial",
+                      limit_uptime=f"{minutes}m", comment="auto-trial")
+        return jsonify(success=True)
+    except Exception as e:
+        return jsonify(success=False, error=str(e)), 500
+    finally:
+        pool.disconnect()
+
+# --- DODAJ: /api/grant (ostaje isto, samo u app.py i vraća success)
+@app.post("/api/grant")
+def api_grant():
+    try:
+        data = request.get_json(force=True)
+    except Exception:
+        return jsonify(success=False, error="invalid json"), 400
+
+    mac = (data or {}).get("mac", "").upper().strip()
+    hours = int((data or {}).get("hours", 5))
+    if not mac:
+        return jsonify(success=False, error="missing mac"), 400
+    if hours <= 0 or hours > 24*24:
+        return jsonify(success=False, error="invalid hours"), 400
+
+    pool, api = mt_connect()
+    try:
+        users = api.get_resource("/ip/hotspot/user")
+        try:
+            existing = users.get(name=mac)
+        except Exception:
+            existing = []
+
+        if existing:
+            users.set(id=existing[0][".id"], profile="standard",
+                      limit_uptime=f"{hours}h", password="google",
+                      comment="auto-grant")
+        else:
+            users.add(name=mac, password="google", profile="standard",
+                      limit_uptime=f"{hours}h", comment="auto-grant")
+        return jsonify(success=True)
+    except Exception as e:
+        return jsonify(success=False, error=str(e)), 500
+    finally:
+        pool.disconnect()
 
 
 if __name__ == "__main__":
