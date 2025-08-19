@@ -23,12 +23,14 @@
   <a href="#" class="muted" id="openInBrowser" style="text-decoration:underline">Ne radi? Otvori u pregledniku</a>
 
   <!-- MikroTik forma (skrivena) – ne diraj $(...) varijable -->
-  <form id="mikrotikLogin" method="post" action="$(link-login-only)" style="display:none">
-    <input type="hidden" name="username" id="mtUser" value="google" />
-    <input type="hidden" name="password" id="mtPass" value="google" />
-    <input type="hidden" name="dst" value="$(link-orig)" />
-    <input type="hidden" name="popup" value="true" />
-  </form>
+<form id="mikrotikLogin" method="post" action="$(link-login-only)" target="mtFrame" style="display:none">
+  <input type="hidden" name="username" value="google">
+  <input type="hidden" name="password" value="google">
+  <input type="hidden" name="dst" value="$(link-orig)">
+  <input type="hidden" name="popup" value="true">
+</form>
+<iframe name="mtFrame" style="display:none"></iframe>
+
 
   <script>
     const firebaseConfig = {
@@ -73,28 +75,28 @@
 
       status.textContent = "Spajam…";
 
-      // 1) PRVO spoji hotspot (siguran korak)
-      document.getElementById("mikrotikLogin").submit();
+// 1) login prema Mikrotiku u pozadini (iframe)
+document.getElementById("mikrotikLogin").submit();
 
-      // 2) Zatim probaj async evidenciju – ali ne kvari UX ako padne
-      try {
-        const user = result.user;
-        await db.collection("users").doc(user.uid).set({
-          uid: user.uid,
-          email: user.email || "",
-          displayName: user.displayName || "",
-          photoURL: user.photoURL || "",
-          provider: "google",
-          lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-      } catch (e) {
-        console.warn("Firestore zapis preskočen:", e);
-      }
+// 2) evidencija u Firestore (try/catch da ne kvari UX)
+try {
+  const user = result.user;
+  await db.collection("users").doc(user.uid).set({
+    uid: user.uid,
+    email: user.email || "",
+    displayName: user.displayName || "",
+    photoURL: user.photoURL || "",
+    provider: "google",
+    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+} catch (e) {
+  console.warn("Firestore zapis preskočen:", e);
+}
 
-      // 3) Zatvori captive portal (Android očekuje baš HTTP 204)
-      setTimeout(function () {
-        location.href = "http://connectivitycheck.gstatic.com/generate_204";
-      }, 800);
+// 3) zatvori captive portal
+setTimeout(() => {
+  location.href = "http://connectivitycheck.gstatic.com/generate_204";
+}, 1500);
     }).catch(err => {
       console.error(err);
       // umesto “Greška pri prijavi”, daj neutralnu poruku ili ništa
