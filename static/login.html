@@ -3,38 +3,34 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Prijava ovo se servira sada</title>
+  <title>Wi-Fi prijava</title>
   <style>
     body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
            display:flex; flex-direction:column; gap:14px; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
-    button { padding:14px 18px; border:0; border-radius:12px; font-size:16px; cursor:pointer; box-shadow:0 6px 16px rgba(0,0,0,.08); }
-    .muted { color:#666; font-size:14px; }
+    button, a.btn { padding:14px 18px; border:0; border-radius:12px; font-size:16px; cursor:pointer; text-decoration:none; box-shadow:0 6px 16px rgba(0,0,0,.08); display:inline-block; }
+    .muted { color:#666; font-size:14px; text-align:center; max-width:520px; }
   </style>
+
+  <!-- Firebase compat SDK (bez ES modula) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <h1 style="margin:0">Wi-Fi prijava</h1>
-  <p class="muted" id="status">Povežite se Google računom da biste dobili internet pristup.</p>
-  <button id="googleBtn">Prijavi se Google-om</button>
+  <p class="muted" id="status">Prijavite se Google računom da biste dobili internet pristup.</p>
+  <a href="#" class="btn" id="googleBtn">Prijavi se Google-om</a>
+  <a href="#" class="muted" id="openInBrowser" style="text-decoration:underline">Ne radi? Otvori u pregledniku</a>
 
-  <!-- ⚠️ OVO MORA POSTOJATI: MikroTik zamjenjuje $(link-*) varijable pri učitavanju -->
+  <!-- MikroTik forma (skrivena) – ne diraj $(...) varijable -->
   <form id="mikrotikLogin" method="post" action="$(link-login-only)" style="display:none">
-    <!-- Koristićemo zajednički hotspot korisnik "google"/"google" (vidi upute ispod) -->
     <input type="hidden" name="username" id="mtUser" value="google" />
     <input type="hidden" name="password" id="mtPass" value="google" />
     <input type="hidden" name="dst" value="$(link-orig)" />
     <input type="hidden" name="popup" value="true" />
   </form>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import {
-      getFirestore, doc, setDoc, serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    // 🔑 Tvoj Firebase config (isti kao u users.html)
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDpihyfvNSSC66e9i5iWAzEu2MnmZPwPLk",
       authDomain: "leronebar-com.firebaseapp.com",
@@ -45,68 +41,58 @@
     };
 
     // Init
-    const app  = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
-    const provider = new GoogleAuthProvider();
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
+    const provider = new firebase.auth.GoogleAuthProvider();
+
     const btn = document.getElementById("googleBtn");
     const status = document.getElementById("status");
+    const openInBrowser = document.getElementById("openInBrowser");
 
-    // 1) Dugme → Google redirect (otpornije od popup-a na captive portalima)
-    btn.addEventListener("click", async () => {
-      try {
-        status.textContent = "Otvaram Google prijavu…";
-        await signInWithRedirect(auth, provider);
-      } catch (e) {
-        alert("Ne mogu otvoriti Google prijavu: " + (e?.message || e));
-        console.error(e);
-      }
+    // Dugme: redirect (bolje od popup u captive portalima)
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      status.textContent = "Otvaram Google prijavu…";
+      auth.signInWithRedirect(provider).catch(err => {
+        console.error(err);
+        alert("Ne mogu otvoriti Google prijavu: " + (err && err.message ? err.message : err));
+      });
     });
 
-    // 2) Po povratku sa Google-a (redirect), završavamo prijavu
-    (async () => {
+    // Link koji korisniku otvara istu stranicu u punom pregledniku (Chrome)
+    openInBrowser.addEventListener("click", function (e) {
+      e.preventDefault();
+      // pokušaj otvoriti u novom tabu
+      window.open(window.location.href, "_blank");
+    });
+
+    // Nakon povratka sa Google-a:
+    auth.getRedirectResult().then(async (result) => {
+      if (!result || !result.user) return;
+
+      status.textContent = "Spajam…";
+
+      const user = result.user;
       try {
-        const result = await getRedirectResult(auth);
-        if (!result) return; // još nismo se vratili iz redirecta
-
-        const user = result.user;
-        status.textContent = "Spajam…";
-
-        // upiši/azuriraj korisnika u Firestore
-        await setDoc(doc(db, "users", user.uid), {
+        await db.collection("users").doc(user.uid).set({
           uid: user.uid,
-          email: user.email ?? "",
-          displayName: user.displayName ?? "",
-          photoURL: user.photoURL ?? "",
+          email: user.email || "",
+          displayName: user.displayName || "",
+          photoURL: user.photoURL || "",
           provider: "google",
-          lastLogin: serverTimestamp()
+          lastLogin: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
-
-        // (opcija) možeš obavijestiti i svoj backend:
-        // const idToken = await user.getIdToken(true);
-        // await fetch("https://leronebar.com/api/register_user", {
-        //   method: "POST",
-        //   headers: { "Content-Type":"application/json", "Authorization":"Bearer " + idToken },
-        //   body: JSON.stringify({ uid: user.uid })
-        // });
-
-        // 3) Sad prijavi korisnika na MikroTik hotspot (auto-submit forme)
-        const form = document.getElementById("mikrotikLogin");
-        // Ako želiš, ovdje možeš zamijeniti zajedničko korisničko ime "google"
-        // npr. na "google-" + user.uid radi evidencije, ali tada mora postojati takav user na Hotspotu.
-        form.submit();
       } catch (e) {
-        if (e && e.code === "auth/popup-blocked") {
-          // ne koristimo popup, ali za svaki slučaj:
-          status.textContent = "Popup blokiran. Pokušajte ponovno.";
-        } else if (e && e.code === "auth/redirect-cancelled-by-user") {
-          status.textContent = "Prijava otkazana.";
-        } else if (e) {
-          console.error(e);
-          status.textContent = "Greška pri prijavi.";
-        }
+        console.warn("Firestore zapis nije obavezan:", e);
       }
-    })();
+
+      // Pošalji login prema Mikrotiku
+      document.getElementById("mikrotikLogin").submit();
+    }).catch(err => {
+      console.error(err);
+      status.textContent = "Greška pri prijavi.";
+    });
   </script>
 </body>
 </html>
