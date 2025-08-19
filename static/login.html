@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="hr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Prijava ovo se servira sada</title>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+           display:flex; flex-direction:column; gap:14px; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+    button { padding:14px 18px; border:0; border-radius:12px; font-size:16px; cursor:pointer; box-shadow:0 6px 16px rgba(0,0,0,.08); }
+    .muted { color:#666; font-size:14px; }
+  </style>
+</head>
+<body>
+  <h1 style="margin:0">Wi-Fi prijava</h1>
+  <p class="muted" id="status">Povežite se Google računom da biste dobili internet pristup.</p>
+  <button id="googleBtn">Prijavi se Google-om</button>
+
+  <!-- ⚠️ OVO MORA POSTOJATI: MikroTik zamjenjuje $(link-*) varijable pri učitavanju -->
+  <form id="mikrotikLogin" method="post" action="$(link-login-only)" style="display:none">
+    <!-- Koristićemo zajednički hotspot korisnik "google"/"google" (vidi upute ispod) -->
+    <input type="hidden" name="username" id="mtUser" value="google" />
+    <input type="hidden" name="password" id="mtPass" value="google" />
+    <input type="hidden" name="dst" value="$(link-orig)" />
+    <input type="hidden" name="popup" value="true" />
+  </form>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore, doc, setDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // 🔑 Tvoj Firebase config (isti kao u users.html)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpihyfvNSSC66e9i5iWAzEu2MnmZPwPLk",
+      authDomain: "leronebar-com.firebaseapp.com",
+      projectId: "leronebar-com",
+      storageBucket: "leronebar-com.appspot.com",
+      messagingSenderId: "663579114142",
+      appId: "1:663579114142:web:10b1a380cb561395e3198f"
+    };
+
+    // Init
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+    const btn = document.getElementById("googleBtn");
+    const status = document.getElementById("status");
+
+    // 1) Dugme → Google redirect (otpornije od popup-a na captive portalima)
+    btn.addEventListener("click", async () => {
+      try {
+        status.textContent = "Otvaram Google prijavu…";
+        await signInWithRedirect(auth, provider);
+      } catch (e) {
+        alert("Ne mogu otvoriti Google prijavu: " + (e?.message || e));
+        console.error(e);
+      }
+    });
+
+    // 2) Po povratku sa Google-a (redirect), završavamo prijavu
+    (async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (!result) return; // još nismo se vratili iz redirecta
+
+        const user = result.user;
+        status.textContent = "Spajam…";
+
+        // upiši/azuriraj korisnika u Firestore
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          email: user.email ?? "",
+          displayName: user.displayName ?? "",
+          photoURL: user.photoURL ?? "",
+          provider: "google",
+          lastLogin: serverTimestamp()
+        }, { merge: true });
+
+        // (opcija) možeš obavijestiti i svoj backend:
+        // const idToken = await user.getIdToken(true);
+        // await fetch("https://leronebar.com/api/register_user", {
+        //   method: "POST",
+        //   headers: { "Content-Type":"application/json", "Authorization":"Bearer " + idToken },
+        //   body: JSON.stringify({ uid: user.uid })
+        // });
+
+        // 3) Sad prijavi korisnika na MikroTik hotspot (auto-submit forme)
+        const form = document.getElementById("mikrotikLogin");
+        // Ako želiš, ovdje možeš zamijeniti zajedničko korisničko ime "google"
+        // npr. na "google-" + user.uid radi evidencije, ali tada mora postojati takav user na Hotspotu.
+        form.submit();
+      } catch (e) {
+        if (e && e.code === "auth/popup-blocked") {
+          // ne koristimo popup, ali za svaki slučaj:
+          status.textContent = "Popup blokiran. Pokušajte ponovno.";
+        } else if (e && e.code === "auth/redirect-cancelled-by-user") {
+          status.textContent = "Prijava otkazana.";
+        } else if (e) {
+          console.error(e);
+          status.textContent = "Greška pri prijavi.";
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
