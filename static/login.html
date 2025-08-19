@@ -5,103 +5,106 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Wi-Fi prijava</title>
   <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-           display:flex; flex-direction:column; gap:14px; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
-    button, a.btn { padding:14px 18px; border:0; border-radius:12px; font-size:16px; cursor:pointer; text-decoration:none; box-shadow:0 6px 16px rgba(0,0,0,.08); display:inline-block; }
-    .muted { color:#666; font-size:14px; text-align:center; max-width:520px; }
+    body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+    button,a.btn{padding:14px 18px;border:0;border-radius:12px;font-size:16px;cursor:pointer;text-decoration:none;box-shadow:0 6px 16px rgba(0,0,0,.08);display:inline-block}
+    .muted{color:#666;font-size:14px;text-align:center;max-width:560px}
+    .timer{font-variant-numeric:tabular-nums;font-weight:600}
   </style>
 
-  <!-- Firebase compat SDK (bez ES modula) -->
+  <!-- Firebase compat CDN -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <h1 style="margin:0">Wi-Fi prijava</h1>
-  <p class="muted" id="status">Prijavite se Google računom da biste dobili internet pristup.</p>
+  <p class="muted" id="status">
+    Imate <span class="timer" id="t">02:00</span> probnog pristupa. Prijavite se Google računom da biste dobili
+    <b>5 sati</b> neprekidnog interneta.
+  </p>
   <a href="#" class="btn" id="googleBtn">Prijavi se Google-om</a>
   <a href="#" class="muted" id="openInBrowser" style="text-decoration:underline">Ne radi? Otvori u pregledniku</a>
 
-  <!-- MikroTik forma (skrivena) – ne diraj $(...) varijable -->
-<form id="mikrotikLogin" method="post" action="$(link-login-only)" target="mtFrame" style="display:none">
-  <input type="hidden" name="username" value="google">
-  <input type="hidden" name="password" value="google">
-  <input type="hidden" name="dst" value="$(link-orig)">
-  <input type="hidden" name="popup" value="true">
-</form>
-<iframe name="mtFrame" style="display:none"></iframe>
+  <!-- Hidden forma prema MikroTiku: koristimo MAC kao username -->
+  <form id="mikrotikLogin" method="post" action="$(link-login-only)" target="mtFrame" style="display:none">
+    <input type="hidden" name="username" id="mtUser" value="">
+    <input type="hidden" name="password" value="google">
+    <input type="hidden" name="dst" value="$(link-orig)">
+    <input type="hidden" name="popup" value="true">
+  </form>
+  <iframe name="mtFrame" style="display:none"></iframe>
 
+<script>
+    // --- Parametri iz URL-a koje je ubacio MikroTik
+  const Q = new URLSearchParams(location.search);
+  const mac = (Q.get('mac') || '').toUpperCase();
+  const linkLoginOnly = decodeURIComponent(Q.get('link-login-only') || '');
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDpihyfvNSSC66e9i5iWAzEu2MnmZPwPLk",
-      authDomain: "leronebar-com.firebaseapp.com",
-      projectId: "leronebar-com",
-      storageBucket: "leronebar-com.appspot.com",
-      messagingSenderId: "663579114142",
-      appId: "1:663579114142:web:10b1a380cb561395e3198f"
-    };
+  document.getElementById('mtUser').value = mac;        // MAC kao username
+  if (linkLoginOnly) {
+    document.getElementById('mikrotikLogin').action = linkLoginOnly; // <— BITNO
+  }
 
-    // Init
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db   = firebase.firestore();
-    const provider = new firebase.auth.GoogleAuthProvider();
+  // --- Odbrojavanje (2:00 lokalno – informativno)
+  (function(){
+    let s = 120; const el = document.getElementById('t');
+    const pad = n => (n<10?'0':'')+n;
+    const tick = () => { const m=Math.floor(s/60), r=s%60; el.textContent = pad(m)+':'+pad(r); if(s>0){s--; setTimeout(tick,1000);} };
+    tick();
+  })();
 
-    const btn = document.getElementById("googleBtn");
-    const status = document.getElementById("status");
-    const openInBrowser = document.getElementById("openInBrowser");
+  // --- Firebase init
+  firebase.initializeApp({
+    apiKey: "AIzaSyDpihyfvNSSC66e9i5iWAzEu2MnmZPwPLk",
+    authDomain: "leronebar-com.firebaseapp.com",
+    projectId: "leronebar-com"
+  });
+  const auth = firebase.auth();
+  const provider = new firebase.auth.GoogleAuthProvider();
 
-    // Dugme: redirect (bolje od popup u captive portalima)
-    btn.addEventListener("click", function (e) {
-      e.preventDefault();
-      status.textContent = "Otvaram Google prijavu…";
-      auth.signInWithRedirect(provider).catch(err => {
-        console.error(err);
-        alert("Ne mogu otvoriti Google prijavu: " + (err && err.message ? err.message : err));
-      });
+  // Dugme → redirect (u captive portalu je stabilnije nego popup)
+  document.getElementById("googleBtn").addEventListener("click", e => {
+    e.preventDefault();
+    document.getElementById("status").textContent = "Otvaram Google prijavu…";
+    auth.signInWithRedirect(provider).catch(err => alert("Ne mogu otvoriti Google prijavu: " + (err?.message||err)));
+  });
+
+  // Otvori u full browser (ponekad pomaže)
+  document.getElementById("openInBrowser").addEventListener("click", e => {
+    e.preventDefault();
+    window.open(window.location.href, "_blank");
+  });
+
+  // Nakon povratka sa Google-a:
+  auth.getRedirectResult().then(async res => {
+    if (!res || !res.user) return;
+    document.getElementById("status").textContent = "Dodjeljujem 5h pristupa…";
+
+    // 1) Javi serveru da kreira/azurira Hotspot user (MAC → standard, 5h)
+    try {
+    const r = await fetch("/api/grant", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ mac, hours: 5 })
     });
+    if (!r.ok) throw new Error("grant HTTP " + r.status);
+    const data = await r.json();
+    if (!data.success) throw new Error(data.error || "grant error");
+    } catch (e) {
+      console.warn("Grant nije uspio:", e);
+      // i dalje pokušaj login – često će raditi
+    }
 
-    // Link koji korisniku otvara istu stranicu u punom pregledniku (Chrome)
-    openInBrowser.addEventListener("click", function (e) {
-      e.preventDefault();
-      // pokušaj otvoriti u novom tabu
-      window.open(window.location.href, "_blank");
-    });
+    // 2) Login prema MikroTiku (u iframeu, da stranica ostane živa)
+    try {
+      document.getElementById("mikrotikLogin").submit();
+    } catch(e){}
 
-    // Nakon povratka sa Google-a:
-    auth.getRedirectResult().then(async (result) => {
-      if (!result || !result.user) return;
-
-      status.textContent = "Spajam…";
-
-// 1) login prema Mikrotiku u pozadini (iframe)
-document.getElementById("mikrotikLogin").submit();
-
-// 2) evidencija u Firestore (try/catch da ne kvari UX)
-try {
-  const user = result.user;
-  await db.collection("users").doc(user.uid).set({
-    uid: user.uid,
-    email: user.email || "",
-    displayName: user.displayName || "",
-    photoURL: user.photoURL || "",
-    provider: "google",
-    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge: true });
-} catch (e) {
-  console.warn("Firestore zapis preskočen:", e);
-}
-
-// 3) zatvori captive portal
-setTimeout(() => {
-  location.href = "http://connectivitycheck.gstatic.com/generate_204";
-}, 1500);
-    }).catch(err => {
-      console.error(err);
-      // umesto “Greška pri prijavi”, daj neutralnu poruku ili ništa
-      status.textContent = "Pokušajte ponovno.";
-    });
-  </script>
+    // 3) Zatvori captive portal (Android očekuje HTTP 204)
+    setTimeout(()=>{ location.href = "http://connectivitycheck.gstatic.com/generate_204"; }, 1200);
+  }).catch(err => {
+    console.error(err);
+    document.getElementById("status").textContent = "Pokušajte ponovno.";
+  });
+</script>
 </body>
 </html>
