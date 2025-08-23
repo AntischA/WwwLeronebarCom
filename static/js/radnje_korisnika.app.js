@@ -542,6 +542,12 @@ async function fetchData(){
     $("#grafikon2-button").addEventListener("click", ()=> openModal("grafikon2-modal"));
   }
 
+  function openFullscreenModal(id){
+  const m = document.getElementById(id);
+  m.classList.add("fullscreen");        // dodaj fullscreen klasu
+  openModal(id);                        // koristi tvoju postojeću funkciju
+}
+
   // START
   window.addEventListener("DOMContentLoaded", () => {
     initUI();
