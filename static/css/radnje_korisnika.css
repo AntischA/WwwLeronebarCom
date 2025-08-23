@@ -41,7 +41,7 @@ body{
 .range-nav .btn {
   flex: 1;              /* oba gumba iste širine */
   text-align: center;   /* centriraj tekst unutar gumba */
-  font-size: 22px;
+  font-size: 18px;
       padding: 10px 0 10px 0;
 
 }
