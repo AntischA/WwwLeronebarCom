@@ -164,6 +164,8 @@ function prikaziGrafikon(canvasId, naplate_po_satu, odSat, doSat, naStolPoSatu =
       maintainAspectRatio: false,
       spanGaps: false, // važno: ne spajaj preko null vrijednosti
       interaction: { mode: "index", intersect: false },
+        backgroundColor: "#ffffff",  // bela pozadina za chart area
+
       plugins: {
         legend: { position: "top" },
         tooltip: {
@@ -207,10 +209,10 @@ function zatvoriGrafikonModal() { const el = document.getElementById("grafikon-m
 function zatvoriGrafikon2Modal() { const el = document.getElementById("grafikon2-modal"); if (el) el.style.display = "none"; }
 
 document.getElementById("grafikon-button")?.addEventListener("click", () => {
-  const modal = document.getElementById("grafikon-modal");
-  if (modal) { modal.style.display = "block"; resizeChartToScreen("modal-chart06_15"); }
+  openModal("grafikon-modal");
+  resizeChartToScreen("modal-chart06_15");
 });
 document.getElementById("grafikon2-button")?.addEventListener("click", () => {
-  const modal = document.getElementById("grafikon2-modal");
-  if (modal) { modal.style.display = "block"; resizeChartToScreen("modal-chart15_01_b"); }
+  openModal("grafikon2-modal");
+  resizeChartToScreen("modal-chart15_01_b");
 });

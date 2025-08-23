@@ -146,9 +146,18 @@ body{
   background:rgba(0,0,0,.45);
 }
 .modal[aria-hidden="false"]{display:grid}
-.modal-content{
-  width:min(900px,95vw); max-height:85vh; overflow:auto; background:var(--card);
-  border:1px solid #232a3c; border-radius:18px; padding:16px; box-shadow:var(--shadow);
+.modal-content {
+  width: 100%;         /* cijela širina ekrana */
+  height: 93%;        /* cijela visina ekrana */
+  max-width: 100vw;
+  margin: 0;            /* makni marginu */
+  border-radius: 0;     /* makni zaobljene rubove */
+  padding: 0;           /* makni padding da grafikon ide od ruba do ruba */
+  background: #fff;     /* bela pozadina */
+  border: none;         /* ukloni okvir */
+  box-shadow: none;     /* ukloni shadow */
+  position: relative;
+  z-index: 9999;        /* uvek iznad svega */
 }
 .close{
   float:right; border:0; background:#2a3348; color:#fff; width:36px; height:36px;
@@ -215,4 +224,14 @@ body{
   color: var(--acc-2);
   font-size: 1.1rem;   /* npr. veći broj */
 
+}
+
+/* bela pozadina za canvas */
+#modal-chart06_15,
+#modal-chart15_01_b {
+  background: #fff;
+}
+
+body.modal-open .toolbar {
+  display: none !important;
 }

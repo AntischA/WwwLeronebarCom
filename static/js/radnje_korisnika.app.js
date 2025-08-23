@@ -461,8 +461,17 @@ function applyFilters(){
   }
 
   // ===== MODALS =====
-  function openModal(id){ const m = document.getElementById(id); m.setAttribute("aria-hidden","false"); }
-  function closeModal(id){ const m = document.getElementById(id); m.setAttribute("aria-hidden","true"); }
+function openModal(id){
+  const m = document.getElementById(id);
+  m.setAttribute("aria-hidden","false");
+  document.body.classList.add("modal-open");   // ➕ sakrij toolbar
+}
+
+function closeModal(id){
+  const m = document.getElementById(id);
+  m.setAttribute("aria-hidden","true");
+  document.body.classList.remove("modal-open"); // ➖ vrati toolbar
+}
 
   // Delegirano zatvaranje
   document.addEventListener("click",(e)=>{
