@@ -240,30 +240,3 @@ body.modal-open .toolbar {
 
 
 
-.modal.fullscreen {
-  position: fixed;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: #fff;         /* bijela pozadina */
-  z-index: 99999;           /* preko svega */
-}
-
-.modal.fullscreen .modal-content {
-  width: 100vw;             /* cijela širina */
-  height: 100vh;            /* cijela visina */
-  max-width: none;
-  max-height: none;
-  margin: 0;
-  border-radius: 0;         /* bez zaobljenja */
-  border: none;
-  padding: 0;
-  background: #fff;         /* bijela pozadina i unutra */
-  box-shadow: none;         /* bez sjene */
-  display: flex;
-  flex-direction: column;
-}
-
-.modal.fullscreen canvas {
-  flex: 1;                  /* grafikon zauzima sav prostor */
-}
