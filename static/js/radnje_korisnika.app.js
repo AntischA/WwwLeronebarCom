@@ -163,26 +163,30 @@ function widget(vrsta, suma, datum, opts = {}) {
   const mainTotal = `<div class="iznos ukupno-bottom">${Number(suma).toFixed(2)} €</div>`;
   let body = "";
 
-    if ((vrsta === "Jutro" || vrsta === "Popodne") && opts.diff) {
-      const naStol = Number(opts.diff.naStol) || 0;
-      const napStola = Number(opts.diff.naplataStola) || 0;
-      const razlika = naStol - napStola;
-      const combined = Number(suma) + razlika;
-      body = `
-        <div class="iznos jp-prim">${Number(suma).toFixed(2)} €</div>
-        <div class="podiznos jp-sec">${razlika.toFixed(2)} €</div>
-        <div class="iznos jp-total">${combined.toFixed(2)} €</div>
-      `;
-  } else if (vrsta === "Ukupno" && opts.components) {
-    const { upper = 0, lower = 0 } = opts.components;
-    body = `
-      <div class="ukupno-sub">${upper.toFixed(2)}€</div>
-  <div class="ukupno-sub lower">${lower.toFixed(2)}€</div>
-      ${mainTotal}
-    `;
-  } else {
-    body = `<div class="iznos">${Number(suma).toFixed(2)}€</div>`;
-  }
+if ((vrsta === "Jutro" || vrsta === "Popodne") && opts.diff) {
+  const naStol = Number(opts.diff.naStol) || 0;
+  const napStola = Number(opts.diff.naplataStola) || 0;
+  const razlika = naStol - napStola;
+  const combined = Number(suma) + razlika;
+
+  body = `
+    <div class="iznos jp-prim">${Number(suma).toFixed(1)} €</div>
+    <div class="podiznos jp-sec">${razlika.toFixed(1)} €</div>
+    <div class="iznos jp-total">${combined.toFixed(1)} €</div>
+  `;
+}
+else if (vrsta === "Ukupno" && opts.components) {
+  const { upper = 0, lower = 0 } = opts.components;
+  body = `
+    <div class="ukupno-sub">${upper.toFixed(1)}€</div>
+    <div class="ukupno-sub lower">${lower.toFixed(1)}€</div>
+    <div class="iznos ukupno-bottom">${Number(suma).toFixed(1)} €</div>
+  `;
+}
+else {
+  body = `<div class="iznos">${Number(suma).toFixed(1)}€</div>`;
+}
+
 
   // ⬇️ ne prikazuj naslov za Jutro/Popodne/Ukupno
   const hideTitle = (vrsta === "Jutro" || vrsta === "Popodne" || vrsta === "Ukupno");
@@ -213,20 +217,33 @@ function widget(vrsta, suma, datum, opts = {}) {
       const section = document.createElement("li");
       section.className = "date-section";
 
-      const list = document.createElement("ul");
-      list.className = "summary-date";
+const list = document.createElement("ul");
+list.className = "summary-date";
 
-      const [d,m,y] = datum.split(".");
-      const jsDate = new Date(`${y}-${m}-${d}`);
-      const dayName = daniUTjednu[jsDate.getDay()];
-      const dateWidget = document.createElement("li");
-      dateWidget.className = "date-widget";
+const [d,m,y] = datum.split(".");
+const jsDate = new Date(`${y}-${m}-${d}`);
+const dayName = daniUTjednu[jsDate.getDay()];
+const dateWidget = document.createElement("li");
+dateWidget.className = "date-widget";
+dateWidget.innerHTML = `<div class="naziv">${dayName}</div><div class="iznos">${d.padStart(2,"0")}.${m.padStart(2,"0")}.</div>`;
+
+// ➡️ OVO JE NEDOSTAJALO
+list.appendChild(dateWidget);
       dateWidget.innerHTML = `<div class="naziv">${dayName}</div><div class="iznos">${d.padStart(2,"0")}.${m.padStart(2,"0")}.</div>`;
-      dateWidget.addEventListener("click", () => {
+dateWidget.addEventListener("click", () => {
+  // 1) Ostali mini-widgeti (tvoj wrap) – kao i do sada
   wrap.style.display = (wrap.style.display === "none" || !wrap.style.display) ? "grid" : "none";
-      });
-      list.appendChild(dateWidget);
 
+  // 2) Otvori/zatvori detalje (zelene/crvene) u Jutro/Popodne/Ukupno
+  section.classList.toggle("expanded");
+
+  // 3) Prikaži kartice za taj dan
+  const container = document.getElementById("results-container");
+  container.hidden = false;                 // pokaži kontejner s karticama
+  document.querySelectorAll("#results-container .card").forEach(c => {
+    c.style.display = (c.dataset.datum === datum) ? "block" : "none";
+  });
+});
       const wrap = document.createElement("div");
       wrap.className = "ostali-wrapper";
       wrap.style.display = "none";

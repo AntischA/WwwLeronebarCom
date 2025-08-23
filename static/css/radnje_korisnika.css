@@ -32,7 +32,20 @@ body{
   position:sticky; top:0; z-index:10; background:rgba(15,17,21,.7); backdrop-filter:blur(8px);
   box-shadow:var(--shadow);
 }
-.range-nav{display:flex; gap:var(--gap)}
+.range-nav {
+  display: flex;
+  justify-content: space-between;
+  flex: 1;
+
+}
+.range-nav .btn {
+  flex: 1;              /* oba gumba iste širine */
+  text-align: center;   /* centriraj tekst unutar gumba */
+  font-size: 22px;
+      padding: 10px 0 10px 0;
+
+}
+
 .range-form{display:flex; gap:var(--gap); margin-left:auto}
 .range-form input{background:#0f141f; border:1px solid #2b3345; color:var(--fg); padding:.5rem .6rem; border-radius:8px}
 
@@ -60,7 +73,7 @@ body{
 
 .summary-date li,.card{
   background:var(--card); border:1px solid #22283a; border-radius:var(--radius);
-  padding:10px 12px; margin-left: 0; box-shadow: var(--shadow);
+  padding:3px 12px; margin-left: 0; box-shadow: var(--shadow);
 }
 
 .summary-date li,
@@ -151,3 +164,54 @@ body{
 .podiznos.ukupno-red{color:var(--acc-2)}
 .active, .active-sub{outline:2px solid var(--acc); outline-offset:2px}
 
+/* 1) Zadrži skrivene detalje (zelene/crvene) dok nije otvoreno */
+#summary-list .date-section .jp-prim,
+#summary-list .date-section .jp-sec,
+#summary-list .date-section .ukupno-sub { display: none; }
+
+#summary-list .date-section.expanded .jp-prim,
+#summary-list .date-section.expanded .jp-sec,
+#summary-list .date-section.expanded .ukupno-sub { display: block; }
+
+/* 2) VRATI datum ćeliju — osiguraj da je vidljiva i u prvoj koloni */
+#summary-list .summary-date .date-widget {
+  display: flex !important;          /* nikad je ne sakrivaj */
+  align-items: center;
+  justify-content: center;
+  grid-column: 1 / span 1;           /* zauzmi prvu kolonu grida */
+  cursor: pointer;
+}
+
+/* (kozmetika) mali fade-in kad se otvore detalji */
+#summary-list .date-section.expanded .jp-prim,
+#summary-list .date-section.expanded .jp-sec,
+#summary-list .date-section.expanded .ukupno-sub { animation: fadeIn .15s ease-in; }
+@keyframes fadeIn { from {opacity:0} to {opacity:1} }
+
+
+
+/* cijeli red "Prosjek" drugačije pozadine i teksta */
+#summary-list .prosjek-red li {
+  background: #222a38;   /* tamnija plava pozadina */
+  color: #ffd54f;        /* žuto slova */
+  font-weight: 600;
+  padding: 5px 0 5px 0;
+}
+
+/* samo brojke (iznosi) unutar Prosjek reda */
+#summary-list .prosjek-red .iznos {
+  color: #4ade80;        /* zelene cifre */
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+/* naslov "Prosjek" posebno */
+#summary-list .prosjek-red .naziv {
+  color: #f87171;        /* crveno */
+  font-weight: 800;
+}
+
+#summary-list .ukupno-bold .ukupno-bottom {
+  color: var(--acc-2);
+  font-size: 1.3rem;   /* npr. veći broj */
+}
