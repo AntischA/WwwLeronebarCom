@@ -391,6 +391,8 @@ body{
 
 /* Neka svako dugme bude visoko koliko i .btn-row */
 #welcomeModal .controls .btn-row .pill-btn{
+      font-size:1.8rem;
+
   height: 100%;
   display: flex;              /* vertikalno centriranje teksta */
   align-items: center;
