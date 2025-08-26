@@ -264,7 +264,7 @@ body{
 
 /* Zatvori gumb */
 #welcomeModal #closeWelcomeBtn {
-    width: 100%;
+    width: 50%;
     height: 160px; /* duplo viši */
     font-size: 2.5rem;
     background-color: #4CAF50;
