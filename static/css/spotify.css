@@ -204,14 +204,6 @@ body{
 
 
 
-/* Donji red – preko cijele širine modala */
-#welcomeModal .grid-item.actions-host{
-  grid-column: 1 / -1;       /* SPAN 2 kolone */
-  background: transparent;   /* bez kartice, po želji */
-  box-shadow: none;
-  padding: 0;
-}
-
 
 /* Po potrebi stilovi boja (možeš zadržati svoje postojeće) */
 #welcomeModal #btnPrintUkupnoDan{
