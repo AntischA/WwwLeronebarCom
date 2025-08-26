@@ -66,11 +66,22 @@ RADNJE_LOGIN_HTML = """
     <form method="post">
       <input type="hidden" name="next" value="{{ next }}">
       <label for="pin">Kod</label>
-      <input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="one-time-code" required>
+      <input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="one-time-code" required autofocus>
       <button type="submit">Otključaj</button>
       {% if error %}<div class="error">{{ error }}</div>{% endif %}
     </form>
   </div>
+
+  <script>
+    // Fallback za preglednike koji ignoriraju 'autofocus'
+    document.addEventListener('DOMContentLoaded', function(){
+      var el = document.getElementById('pin');
+      if (el) {
+        try { el.focus({ preventScroll: true }); } catch(_) { el.focus(); }
+        try { el.select(); } catch(_) {}
+      }
+    });
+  </script>
 </body>
 </html>
 """
