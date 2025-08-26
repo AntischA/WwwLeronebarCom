@@ -168,6 +168,17 @@ body{
   position:sticky; top:0; background:var(--card); z-index:1; padding-bottom:8px;
 }
 
+
+/* red s 2 kolone: 10% i ostatak */
+.actions-row{
+  display: grid;
+  grid-template-columns: minmax(70px, 10%) 1fr; /* 10% uz sigurni minimum */
+  gap: 8px; /* ili var(--gap) ako želiš */
+  align-items: stretch;
+}
+.actions-row > button{ width: 100%; }
+
+
 .list{
   list-style:none; margin:0; padding:0;
   flex: 1 1 auto;
