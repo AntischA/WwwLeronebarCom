@@ -175,8 +175,8 @@ body{
 #welcomeModal .actions-row{
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 12px;
-  width: 90%;
+  gap: 10px;
+  width: 85%;
 }
 
 /* Nateraj obje tipke da ISPUNE svoje ćelije i poništi “okrugle” stilove */
@@ -184,11 +184,8 @@ body{
 #welcomeModal .actions-row .btn-ghost{
   display: block;
   inline-size: 100% !important;   /* = width */
-  max-width: none !important;
   min-height: 60px;               /* ugodno za klik */
-  aspect-ratio: auto !important;  /* skini 1/1 “krušku” */
   border-radius: 12px !important; /* više nije krug */
-  place-self: stretch;            /* rastegni u gridu */
   background:var(--accent-2); color:#062d16;
 }
 
