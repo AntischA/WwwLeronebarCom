@@ -221,7 +221,7 @@ body{
     display: grid;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr auto; /* nova treća vrsta za actions-row */
-    width: 50%;
+    width: 70%;
     height: 80%;
     gap: 20px;
     padding: 20px;
