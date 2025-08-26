@@ -177,6 +177,7 @@ body{
   grid-template-columns: auto 1fr;
   width: 88%;
   gap: 5px;
+  margin-top: 20px;
 }
 
 /* Nateraj obje tipke da ISPUNE svoje ćelije i poništi “okrugle” stilove */
