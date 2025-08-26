@@ -221,7 +221,7 @@ body{
     display: grid;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr auto; /* nova treća vrsta za actions-row */
-    width: 80%;
+    width: 50%;
     height: 80%;
     gap: 20px;
     padding: 20px;
@@ -264,7 +264,7 @@ body{
 
 /* Zatvori gumb */
 #welcomeModal #closeWelcomeBtn {
-    width: 50%;
+    width: 100%;
     height: 160px; /* duplo viši */
     font-size: 2.5rem;
     background-color: #4CAF50;
