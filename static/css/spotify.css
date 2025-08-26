@@ -174,8 +174,7 @@ body{
 /* Red s 2 kolone: lijeva mala, desna ostatak */
 #welcomeModal .actions-row{
   display: grid;
-  grid-template-columns: max(180px, 12%) minmax(0, 1fr);
-  gap: 12px;
+  gap: 10px;
   width: 90%;
 }
 
@@ -198,10 +197,6 @@ body{
   overflow: hidden;
 }
 
-/* Mobilno: jedan ispod drugog */
-@media (max-width:560px){
-  #welcomeModal .actions-row{ grid-template-columns: 1fr; }
-}
 
 
 
