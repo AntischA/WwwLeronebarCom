@@ -366,7 +366,7 @@ body{
   display:flex; align-items:center; justify-content:center;
 }
 #welcomeModal .actions-row #closeWelcomeBtn{
-  flex:1 1 90%;
+  flex:1 1 50%;
   width:auto;              /* pregazi staro width:90% */
   margin-top:0 !important; /* pregazi staro margin-top:30px; */
   border:0;                /* pregazi btn-ghost border */
