@@ -215,3 +215,40 @@ body{
   .radio-controls{ flex-wrap:wrap; }
   .vol{ width:100%; }
 }
+
+
+/* Red s dva gumba: lijevi ~10%, desni ostatak */
+#welcomeModal .actions-row{
+  display:flex;
+  gap:12px;
+  align-items:stretch;
+  width:100%;
+  /* NIJE wrap – želimo jedan red */
+  flex-wrap:nowrap;
+}
+
+/* Lijevi gumb (print): fiksni udio; skini “krušku” iz .pill-btn */
+#welcomeModal #btnPrintUkupnoDan{
+  flex: 0 0 10%;
+  min-width: 80px;          /* osiguraj da stane ikona/tekst */
+  aspect-ratio: auto !important;
+  width: auto !important;
+  height: auto !important;
+  border-radius: 12px !important;
+}
+
+/* Desni gumb (zatvori): uzmi sav ostatak */
+#welcomeModal #closeWelcomeBtn{
+  flex: 1 1 0;
+  min-width: 0;             /* dopušta skupljanje u flexu */
+  width: auto !important;
+  height: auto !important;
+  border-radius: 12px !important;
+}
+
+/* (opcionalno) na malim ekranima neka idu jedan ispod drugog */
+@media (max-width:560px){
+  #welcomeModal .actions-row{ flex-wrap:wrap; }
+  #welcomeModal #btnPrintUkupnoDan{ flex:1 1 100%; }
+  #welcomeModal #closeWelcomeBtn{   flex:1 1 100%; }
+}
