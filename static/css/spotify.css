@@ -176,7 +176,7 @@ body{
   display: grid;
   grid-template-columns: max(180px, 12%) minmax(0, 1fr);
   gap: 12px;
-  width: 80%;
+  width: 90%;
 }
 
 /* Nateraj obje tipke da ISPUNE svoje ćelije i poništi “okrugle” stilove */
@@ -189,7 +189,7 @@ body{
   min-height: 56px;               /* ugodno za klik */
   aspect-ratio: auto !important;  /* skini 1/1 “krušku” */
   border-radius: 12px !important; /* više nije krug */
-  padding: 14px 16px;
+  padding: 20px 30px 20px 30px;
   place-self: stretch;            /* rastegni u gridu */
 }
 
