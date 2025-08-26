@@ -185,10 +185,9 @@ body{
   display: block;
   inline-size: 100% !important;   /* = width */
   max-width: none !important;
-  min-height: 56px;               /* ugodno za klik */
+  min-height: 60px;               /* ugodno za klik */
   aspect-ratio: auto !important;  /* skini 1/1 “krušku” */
   border-radius: 12px !important; /* više nije krug */
-  padding: 20px 40px 20px 40px;
   place-self: stretch;            /* rastegni u gridu */
 }
 
