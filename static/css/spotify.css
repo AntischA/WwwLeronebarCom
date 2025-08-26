@@ -373,3 +373,27 @@ body{
   margin-top:0 !important; /* pregazi staro margin-top:30px; */
   border:0;                /* pregazi btn-ghost border */
 }
+
+/* Neka .controls zauzme punu visinu svog grid-itema */
+#welcomeModal .grid-item .controls{
+  align-self: stretch;   /* pregazi align-items:center roditelja */
+  height: 100%;
+}
+
+/* Neka .btn-row ispuni visinu .controls */
+#welcomeModal .controls .btn-row{
+  flex: 1 1 auto;
+  height: 100%;
+  align-items: stretch;  /* djeca (dugmad) se rastežu po visini */
+  /* ako želiš da dugmad BUDU UVIJEK u JEDNOM redu: */
+  /* flex-wrap: nowrap; */
+}
+
+/* Neka svako dugme bude visoko koliko i .btn-row */
+#welcomeModal .controls .btn-row .pill-btn{
+  height: 100%;
+  display: flex;              /* vertikalno centriranje teksta */
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;            /* visinu određuje height, zadržavamo horizontalni pad */
+}
