@@ -42,6 +42,7 @@ GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 SPOTIFY_SCOPES = "streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state playlist-read-private playlist-read-collaborative"
 
 
+
 RADNJE_LOGIN_HTML = """
 <!doctype html>
 <html lang="hr">
