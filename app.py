@@ -1,6 +1,6 @@
 # app.py
 
-from flask import Flask, render_template, send_from_directory, redirect, request, jsonify
+from flask import Flask, render_template, send_from_directory, redirect, request, jsonify, session, url_for, render_template_string
 import os
 from api.dohvat_radnja_korisnika import radnje_korisnika
 from api.dohvat_otkazanih_narudzbi import dohvati_ukupni_total_otkazanih_narudzbi
@@ -9,6 +9,8 @@ import requests
 from app_db import init_db, get_day, upsert_day
 from routeros_api import RouterOsApiPool
 import hmac
+import secrets
+
 
 MT_HOST = os.getenv("MT_HOST", "192.168.88.1")
 MT_USER = os.getenv("MT_USER", "admin")
@@ -16,6 +18,7 @@ MT_PASS = os.getenv("MT_PASS", "password")
 MT_PORT = int(os.getenv("MT_PORT", "8728"))
 
 PRINT_PIN = os.getenv("PRINT_PIN", "778899")
+RADNJE_PIN = os.getenv("RADNJE_PIN", "0623")
 
 def mt_connect():
     pool = RouterOsApiPool(MT_HOST, username=MT_USER, password=MT_PASS,
@@ -30,12 +33,48 @@ SPOTIFY_SCOPES = "streaming user-read-email user-read-private user-modify-playba
 
 
 app = Flask(__name__, static_folder="static")
+app.secret_key = os.getenv("FLASK_SECRET_KEY", secrets.token_hex(16))
 init_db()
 
 # Učitaj API ključ iz okruženja
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 # --- gore u settingsima ---
 SPOTIFY_SCOPES = "streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state playlist-read-private playlist-read-collaborative"
+
+
+RADNJE_LOGIN_HTML = """
+<!doctype html>
+<html lang="hr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Zaštićeno · Radnje</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial;background:#0b1020;color:#e8eef7;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0}
+    .card{background:#11182a;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:24px;max-width:360px;width:92%}
+    h1{font-size:1.2rem;margin:0 0 10px}
+    label{display:block;margin-bottom:8px;color:#a7b2c6}
+    input[type=password]{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.25);color:#fff;outline:none}
+    button{margin-top:12px;width:100%;padding:12px;border-radius:12px;border:0;cursor:pointer;background:#1db954;color:#062d16;font-weight:800}
+    .error{color:#ffb4b4;margin-top:10px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Unesi kod za pristup</h1>
+    <form method="post">
+      <input type="hidden" name="next" value="{{ next }}">
+      <label for="pin">Kod</label>
+      <input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="one-time-code" required>
+      <button type="submit">Otključaj</button>
+      {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    </form>
+  </div>
+</body>
+</html>
+"""
+
+
 
 
 @app.post("/api/print_auth")
@@ -137,10 +176,34 @@ def prikaz_spotify():
     return render_template('spotify.html')
 
 
+@app.route('/radnje_login', methods=['GET', 'POST'])
+def radnje_login():
+    # gdje se vratiti nakon uspješnog logina
+    nxt = request.values.get('next') or url_for('prikaz_radnja_korisnika')
+
+    if request.method == 'POST':
+        pin = (request.form.get('pin') or '').strip()
+        if hmac.compare_digest(pin, RADNJE_PIN):
+            session['radnje_ok'] = True
+            # zaštita od open-redirecta
+            dest = nxt if str(nxt).startswith('/') else url_for('prikaz_radnja_korisnika')
+            return redirect(dest)
+        return render_template_string(RADNJE_LOGIN_HTML, error="Pogrešan kod.", next=nxt), 401
+
+    # GET
+    return render_template_string(RADNJE_LOGIN_HTML, error=None, next=nxt)
+
+
 @app.route('/radnje')
 def prikaz_radnja_korisnika():
+    # ako nije autentificiran, pošalji na login i sačuvaj cijeli URL (s queryjem)
+    if not session.get('radnje_ok'):
+        full = request.full_path if request.query_string else request.path
+        return redirect(url_for('radnje_login', next=full))
+
     print("Otvaram radnje_korisnika.html")
     return render_template('radnje_korisnika.html')
+
 
 
 # 🔹 API endpoint koji poziva funkciju i vraća JSON
