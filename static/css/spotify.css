@@ -174,6 +174,7 @@ body{
 /* Red s 2 kolone: lijeva mala, desna ostatak */
 #welcomeModal .actions-row{
   display: grid;
+  grid-row: auto;
   width: 90%;
 }
 
@@ -186,12 +187,6 @@ body{
   background:var(--accent-2); color:#062d16;
 }
 
-/* Lijevi gumb – ne prelamaj tekst */
-#welcomeModal .actions-row #btnPrintUkupnoDan{
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
 
 
 
