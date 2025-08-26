@@ -174,7 +174,8 @@ body{
 /* Red s 2 kolone: lijeva mala, desna ostatak */
 #welcomeModal .actions-row{
   display: grid;
-  gap: 10px;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
   width: 90%;
 }
 
