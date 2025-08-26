@@ -174,19 +174,19 @@ body{
 /* Red s 2 kolone: lijeva mala, desna ostatak */
 #welcomeModal .actions-row{
   display: grid;
-  grid-row: auto;
-  width: 90%;
+  grid-template-columns: auto 1fr;
+  width: 88%;
 }
 
 /* Nateraj obje tipke da ISPUNE svoje ćelije i poništi “okrugle” stilove */
 #welcomeModal .actions-row .pill-btn,
 #welcomeModal .actions-row .btn-ghost{
   display: block;
+  inline-size: 100% !important;   /* = width */
   min-height: 60px;               /* ugodno za klik */
   border-radius: 12px !important; /* više nije krug */
   background:var(--accent-2); color:#062d16;
 }
-
 
 
 
