@@ -169,14 +169,31 @@ body{
 }
 
 
-/* red s 2 kolone: 10% i ostatak */
+/* Širi prvi gumb dovoljno da stane tekst, ali i dalje cilja 10% */
 .actions-row{
   display: grid;
-  grid-template-columns: minmax(70px, 10%) 1fr; /* 10% uz sigurni minimum */
-  gap: 8px; /* ili var(--gap) ako želiš */
+  grid-template-columns: max(10%, 22ch) 1fr; /* min ~22 znakova ili 10% širine, što je veće */
+  gap: 8px;
   align-items: stretch;
 }
-.actions-row > button{ width: 100%; }
+.actions-row > button{
+  width: 100%;
+  min-height: 44px;               /* touch-friendly */
+}
+
+/* ako želiš piksele umjesto ch: */
+/* .actions-row{ grid-template-columns: max(10%, 180px) 1fr; } */
+
+.actions-row #btnPrintUkupnoDan{
+  white-space: nowrap;             /* ne prelama tekst */
+  overflow: hidden;
+  text-overflow: ellipsis;         /* … ako je baš predug */
+}
+
+/* mobilno: jedan ispod drugog */
+@media (max-width:560px){
+  .actions-row{ grid-template-columns: 1fr; }
+}
 
 
 .list{
