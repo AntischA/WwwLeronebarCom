@@ -18,7 +18,7 @@ MT_PASS = os.getenv("MT_PASS", "password")
 MT_PORT = int(os.getenv("MT_PORT", "8728"))
 
 PRINT_PIN = os.getenv("PRINT_PIN", "778899")
-RADNJE_PIN = os.getenv("RADNJE_PIN", "0623")
+RADNJE_PIN = os.getenv("RADNJE_PIN", "778899")
 
 def mt_connect():
     pool = RouterOsApiPool(MT_HOST, username=MT_USER, password=MT_PASS,
