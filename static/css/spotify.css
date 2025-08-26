@@ -185,7 +185,6 @@ body{
   display: block;
   inline-size: 100% !important;   /* = width */
   max-width: none !important;
-  height: auto !important;
   min-height: 56px;               /* ugodno za klik */
   aspect-ratio: auto !important;  /* skini 1/1 “krušku” */
   border-radius: 12px !important; /* više nije krug */
