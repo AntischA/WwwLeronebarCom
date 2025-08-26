@@ -346,18 +346,6 @@ body{
   align-items:stretch;
 }
 
-/* Uskladi stilove oba gumba: zelena pozadina kao close */
-#welcomeModal .actions-row #btnPrintUkupnoDan,
-#welcomeModal .actions-row #closeWelcomeBtn{
-  background-color:#4CAF50;
-  color:#fff;
-  border:none;
-  border-radius:10px;
-  font-size:2rem;
-  height:96px;
-  cursor:pointer;
-  padding: 30px 0 30px 0;
-}
 
 /* Raspodjela širine 10% / 90% */
 #welcomeModal .actions-row #btnPrintUkupnoDan{
