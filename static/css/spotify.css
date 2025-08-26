@@ -181,8 +181,7 @@ body{
 }
 
 /* Nateraj obje tipke da ISPUNE svoje ćelije i poništi “okrugle” stilove */
-#welcomeModal .actions-row .pill-btn,
-#welcomeModal .actions-row .btn-ghost{
+#welcomeModal .actions-row .pill-btn, .btn-ghost{
   display: block;
   inline-size: 100% !important;   /* = width */
   min-height: 60px;               /* ugodno za klik */
