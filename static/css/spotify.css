@@ -221,8 +221,8 @@ body{
     display: grid;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr auto; /* nova treća vrsta za actions-row */
-    width: 90%;
-    height: 70%;
+    width: 80%;
+    height: 80%;
     gap: 20px;
     padding: 20px;
     box-sizing: border-box;
@@ -264,7 +264,7 @@ body{
 
 /* Zatvori gumb */
 #welcomeModal #closeWelcomeBtn {
-    width: 90%;
+    width: 100%;
     height: 160px; /* duplo viši */
     font-size: 2.5rem;
     background-color: #4CAF50;
@@ -366,7 +366,7 @@ body{
   display:flex; align-items:center; justify-content:center;
 }
 #welcomeModal .actions-row #closeWelcomeBtn{
-  flex:1 1 50%;
+  flex:1 1 90%;
   width:auto;              /* pregazi staro width:90% */
   margin-top:0 !important; /* pregazi staro margin-top:30px; */
   border:0;                /* pregazi btn-ghost border */
