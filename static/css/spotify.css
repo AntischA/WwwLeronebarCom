@@ -28,7 +28,6 @@ body{
   /* suženo ~20%: 80% širine prozora, max 1280px, min 320px */
   width: clamp(320px, 80vw, 1280px);
   margin: 0 auto;
-
   padding: 22px var(--gap);
   display: grid;
   grid-template-rows: auto 1fr;
@@ -382,7 +381,7 @@ body{
 
 /* Neka .btn-row ispuni visinu .controls */
 #welcomeModal .controls .btn-row{
-  font-size:1.2rem;
+  font-size:1.8rem;
   flex: 1 1 auto;
   height: 100%;
   align-items: stretch;  /* djeca (dugmad) se rastežu po visini */
