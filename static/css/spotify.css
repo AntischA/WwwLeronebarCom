@@ -357,6 +357,8 @@ body{
   border-radius:10px;
   font-size:2.2rem;
   cursor:pointer;
+          height:96px;
+
 }
 
 /* Raspodjela širine 10% / 90% */
