@@ -365,3 +365,52 @@ body{
     width: 100%;
   }
 }
+
+/* Donji red – preko cijele širine modala */
+#welcomeModal .grid-item.actions-host{
+  grid-column: 1 / -1;       /* SPAN 2 kolone */
+  background: transparent;   /* bez kartice, po želji */
+  box-shadow: none;
+  padding: 0;
+}
+
+/* Layout: lijevi ~10% (uz minimum), desni sve ostalo */
+#welcomeModal .actions-row{
+  display: grid;
+  grid-template-columns: minmax(110px, 10%) 1fr;
+  gap: 12px;
+  align-items: stretch;
+  width: 100%;
+}
+
+/* Gumbi unutar actions-row: puni svoju ćeliju i NE budu krug */
+#welcomeModal .actions-row .pill-btn,
+#welcomeModal .actions-row .btn-ghost{
+  width: 100% !important;
+  min-height: 48px;
+  border-radius: 12px !important;
+  padding: 12px 16px;
+  aspect-ratio: auto !important;   /* gasi “krug” iz globalnih stilova */
+  height: auto !important;
+}
+
+/* Po potrebi stilovi boja (možeš zadržati svoje postojeće) */
+#welcomeModal #btnPrintUkupnoDan{
+  background: #1a2747;
+  color: var(--text, #e8eef7);
+  border: 0;
+  font-weight: 800;
+}
+#welcomeModal #closeWelcomeBtn{
+  background: var(--accent, #10b981);
+  color: #062d16;
+  border: 0;
+  font-weight: 900;
+}
+
+/* Mobitel: jedan ispod drugog */
+@media (max-width: 560px){
+  #welcomeModal .actions-row{
+    grid-template-columns: 1fr;
+  }
+}
