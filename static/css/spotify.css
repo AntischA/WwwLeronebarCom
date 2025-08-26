@@ -320,6 +320,7 @@ body{
   display:flex;
   gap:12px;
   width:100%;
+    height: 100%;
   flex-wrap:wrap;            /* po želji: prelamanje u više redova */
 }
 .pill-btn{
