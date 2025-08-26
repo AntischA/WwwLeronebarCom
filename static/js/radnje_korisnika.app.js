@@ -1,3 +1,4 @@
+// radnje_kirisnika.app.js
 (() => {
   // ===== STATE =====
   const S = {
@@ -25,6 +26,114 @@
     return new Date(`${yb}-${mb.padStart(2,"0")}-${db.padStart(2,"0")}`) -
            new Date(`${ya}-${ma.padStart(2,"0")}-${da.padStart(2,"0")}`);
   };
+
+    // ===== PRINT MODE – query parami =====
+  const QP = new URLSearchParams(window.location.search);
+  const PRINT_MODE = QP.get('print');          // očekujemo 'today_total'
+  const PRINT_DATE_ISO = QP.get('date');       // npr. '2025-08-26' (opcionalno)
+
+// Normalizacija 'DD.MM.YYYY' -> 'YYYY-MM-DD'
+function toISOFromDatumKey(datumStr){
+  if (!datumStr) return null;
+  const parts = datumStr.split('.').filter(Boolean);
+  if (parts.length < 3) return null;
+  const [d, m, y] = parts;
+  const dd = String(parseInt(d, 10)).padStart(2, '0');
+  const mm = String(parseInt(m, 10)).padStart(2, '0');
+  return `${y}-${mm}-${dd}`;
+}
+
+// Nađi ključ iz S.sviDatumi koji odgovara ISO datumu
+function findDateKeyForISO(isoYMD){
+  if (!isoYMD || !Array.isArray(S.sviDatumi)) return null;
+  // direktno
+  if (S.sviDatumi.includes(isoYMD)) return isoYMD;
+  // preko normalizacije
+  for (const k of S.sviDatumi){
+    if (toISOFromDatumKey(k) === isoYMD) return k;
+  }
+  return null;
+}
+
+// Izgradi minimalnu print stranicu i pozovi print
+function printUkupnoForDateKey(datumKey){
+  // Pronađi baš 'Ukupno' widget za taj datum
+  const ukupnoEl = document.querySelector(`li[data-vrsta="Ukupno"][data-datum="${datumKey}"]`);
+  if (!ukupnoEl){
+    console.warn("Ukupno widget nije pronađen za datum:", datumKey);
+    // Fallback: ipak otvori print pa zatvori prozor – da korisnik zna da se nešto desilo
+    window.addEventListener('afterprint', () => { try{ window.close(); }catch(_){} }, { once:true });
+    setTimeout(() => window.print(), 100);
+    setTimeout(() => { try{ window.close(); }catch(_){} }, 2000);
+    return;
+  }
+
+  const clone = ukupnoEl.cloneNode(true);
+
+  // Očisti body i prikaži samo naslov + taj widget
+  document.body.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'print-wrap';
+  wrap.innerHTML = `
+    <h1 style="margin:0 0 8px;font:600 20px/1.25 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
+      Radnje korisnika — Ukupno
+    </h1>
+    <div style="margin:0 0 16px;font:500 14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
+      Datum: ${datumKey}
+    </div>
+  `;
+
+  // Malo osnovnog stila da izgleda uredno na papiru
+  clone.style.listStyle = 'none';
+  clone.style.padding = '14px 16px';
+  clone.style.border = '1px solid #d0d0d0';
+  clone.style.borderRadius = '12px';
+  clone.style.maxWidth = '420px';
+  clone.style.fontFamily = 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
+  clone.style.fontSize = '14px';
+
+  wrap.appendChild(clone);
+  document.body.appendChild(wrap);
+
+  const style = document.createElement('style');
+  style.textContent = `
+    @page { size:auto; margin:12mm; }
+    body { background:#fff; }
+    .ukupno-bold { font-weight:600; }
+    .ukupno-sub { opacity:.85; margin-bottom:4px; }
+    .ukupno-sub.lower { opacity:.8; }
+    .ukupno-bottom { margin-top:6px; font-size:18px; font-weight:700; }
+  `;
+  document.head.appendChild(style);
+
+  // Zatvori prozor kad se print završi (najpouzdanije)
+  const closeAfter = () => { try{ window.close(); }catch(_){} };
+  window.addEventListener('afterprint', closeAfter, { once:true });
+
+  // U praksi većina browsera blokira JS dok traje dijalog, ali pokušamo i timeoute radi sigurnosti:
+  setTimeout(() => window.print(), 100);
+  setTimeout(closeAfter, 2000);
+}
+
+// Ako smo u print modu, pokreni auto-print nakon što se render kompletira
+function maybeAutoPrint(){
+  if (PRINT_MODE !== 'today_total') return;
+
+  // ISO datum iz queryja ili današnji
+  const iso = PRINT_DATE_ISO || new Date().toISOString().split('T')[0];
+  const key = findDateKeyForISO(iso);
+
+  if (!key){
+    console.warn("Današnji datum nije pronađen u podacima za prikaz:", iso, S.sviDatumi);
+    // Ipak probaj otvoriti print (prazan), pa zatvori
+    window.addEventListener('afterprint', () => { try{ window.close(); }catch(_){} }, { once:true });
+    setTimeout(() => window.print(), 100);
+    setTimeout(() => { try{ window.close(); }catch(_){} }, 2000);
+    return;
+  }
+
+  printUkupnoForDateKey(key);
+}
 
   const findNaplateDay = (datum) => {
     const src = S.naplatePoSatu; if(!src) return null;
@@ -504,6 +613,8 @@ async function fetchData(){
 
   // ⬇️ sakrij kartice dok nema filtera
   applyFilters();
+  maybeAutoPrint();
+
 }
 
 

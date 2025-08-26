@@ -242,7 +242,14 @@
     </div>
   </div>
 
+<button id="btnPrintUkupnoDan" class="pill-btn" style="width:90%;margin-top:8px;">
+  🖨️ Printaj 'Ukupno' (danas)
+</button>
+
   <button id="closeWelcomeBtn" class="btn-ghost" style="width:90%;margin-top:24px;">ZATVORI</button>
+  <!-- Dugme za print 'Ukupno' današnjeg dana -->
+
+
 </div>
 
 
@@ -970,6 +977,25 @@
     }
     return [];
   }
+
+
+
+  // === PRINT 'UKUPNO' ZA DANAS (otvara /radnje u print modu) ===
+(function initPrintUkupnoButton(){
+  const btn = document.getElementById('btnPrintUkupnoDan');
+  if (!btn) return;
+
+  btn.addEventListener('click', () => {
+    // Danas kao ISO (lokalna vremenska zona browsera)
+    const todayISO = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+    // Otvaramo /radnje sa signalom da želimo auto-print Ukupno za danas
+    // Napomena: window.close() će raditi u tom prozoru jer je otvoren skriptom
+    window.open(`/radnje?print=today_total&date=${encodeURIComponent(todayISO)}`, '_blank', 'noopener');
+  });
+})();
+
+
 
   </script>
     <script src="{{ url_for('static', filename='js/modalni_kalkulator.js') }}"></script>
