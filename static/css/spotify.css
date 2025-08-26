@@ -202,19 +202,6 @@ body{
 
 .sr-only{ display:none !important; }
 
-/* Responsive */
-@media (max-width: 1100px){
-  .radios-grid{ grid-template-columns: repeat(2,1fr); }
-  .content-grid{ grid-template-columns: 1fr; }
-}
-@media (max-width: 800px){
-  .radios-grid{ grid-template-columns: 1fr; }
-}
-/* Ultra usko – dopusti prijelom */
-@media (max-width: 560px){
-  .radio-controls{ flex-wrap:wrap; }
-  .vol{ width:100%; }
-}
 
 
 /* Red s dva gumba: lijevi ~10%, desni ostatak */
