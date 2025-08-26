@@ -203,3 +203,165 @@ body{
 .sr-only{ display:none !important; }
 
 
+
+/* =========================
+   WELCOME MODAL – LAYOUT & UI
+   (scoped na #welcomeModal)
+   ========================= */
+
+#welcomeModal {
+  --g: 16px;                 /* razmak */
+  --r: 14px;                 /* radius */
+  --card-bg: var(--card, #11182a);
+  --card-soft: var(--soft, #0f1526);
+  --txt: var(--text, #e8eef7);
+  --sub: var(--sub, #a7b2c6);
+  --accent: var(--accent, #10b981);
+  --accent-2: var(--accent-2, #1db954);
+  --shadow: var(--shadow, 0 10px 30px rgba(0,0,0,.35));
+  color: var(--txt);
+}
+
+/* GRID 2×2 (na uskom 1 kolona) */
+#welcomeModal .welcome-grid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--g);
+}
+
+@media (max-width: 900px){
+  #welcomeModal .welcome-grid{
+    grid-template-columns: 1fr;
+  }
+}
+
+/* “Kartica” u gridu */
+#welcomeModal .grid-item{
+  background: linear-gradient(180deg, var(--card-bg), var(--card-soft));
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  padding: calc(var(--g) * .9);
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Naslovna “pilula” */
+#welcomeModal .pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #0f1f39;
+  color: var(--txt);
+  font-weight: 700;
+  font-size: .95rem;
+}
+#welcomeModal .pill-accent{ background: #133a2e; color:#c8ffea; }
+
+/* Veliki broj */
+#welcomeModal .big-num{
+  font-weight: 900;
+  font-size: clamp(28px, 5vw, 46px);
+  line-height: 1;
+}
+#welcomeModal .big-num span{
+  font-weight: 600;
+  font-size: .45em;
+  color: var(--sub);
+  margin-left: 6px;
+}
+
+/* Donji lijevi – veliki gumb */
+#welcomeModal .finish-btn{
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: var(--r);
+  background: var(--accent);
+  color: #062d16;
+  font-weight: 800;
+  font-size: clamp(16px, 2.4vw, 22px);
+  cursor: pointer;
+  box-shadow: 0 12px 34px rgba(16,185,129,.25);
+}
+#welcomeModal .finish-btn.two-line .line-1{ display:block; margin-bottom: 6px; }
+#welcomeModal .finish-btn.two-line .line-2{ display:block; opacity:.9; }
+
+/* Desno dolje – red malih gumba */
+#welcomeModal .controls{ width: 100%; }
+#welcomeModal .btn-row{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 560px){
+  #welcomeModal .btn-row{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Uniformni mali gumbi */
+#welcomeModal .pill-btn{
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  min-height: 44px;
+  font-weight: 800;
+  letter-spacing:.2px;
+  background: #1a2747;
+  color: var(--txt);
+  cursor: pointer;
+  /* poništi moguće globalne kružne stilove */
+  aspect-ratio: auto !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Ghost gumb */
+#welcomeModal .btn-ghost{
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  min-height: 44px;
+  font-weight: 900;
+  letter-spacing: .2px;
+  background: #2f8f4d;
+  color: #031a0f;
+  cursor: pointer;
+}
+
+/* === Donji red: Print (10%) + Zatvori (ostatak) === */
+/* Stavi ovaj .grid-item kao zadnji unutar .welcome-grid */
+#welcomeModal .actions-row{
+  display: grid;
+  grid-template-columns: minmax(92px, 10%) 1fr; /* 10% uz pametan minimum */
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* Lijevi (print) – spriječi zaobljenje u krug i da stane tekst/ikona */
+#welcomeModal #btnPrintUkupnoDan{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 12px !important;
+}
+
+/* Desni (zatvori) uzima sve preostalo */
+#welcomeModal #closeWelcomeBtn{
+  width: 100%;
+}
+
+/* Mobilno: jedan ispod drugog */
+@media (max-width: 560px){
+  #welcomeModal .actions-row{
+    grid-template-columns: 1fr;
+  }
+  #welcomeModal #btnPrintUkupnoDan,
+  #welcomeModal #closeWelcomeBtn{
+    width: 100%;
+  }
+}
