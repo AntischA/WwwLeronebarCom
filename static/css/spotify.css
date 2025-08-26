@@ -174,8 +174,8 @@ body{
 /* Red s 2 kolone: lijeva mala, desna ostatak */
 #welcomeModal .actions-row{
   display:flex;
-  flex-wrap:wrap;
   flex-direction:column;
+  flex-wrap:nowrap;
   width: 88%;
   gap: 5px;
   margin-top: 50px;
