@@ -219,8 +219,8 @@ body{
 /* Grid raspored 2x2 */
 .welcome-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr auto; /* nova treća vrsta za actions-row */
     width: 90%;
     height: 70%;
     gap: 20px;
