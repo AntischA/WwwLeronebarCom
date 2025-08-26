@@ -204,19 +204,3 @@ body{
 
 
 
-
-/* Jednaka širina svih gumba + popunjava cijeli red */
-#welcomeModal .btn-row{
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 10px;
-  align-items: stretch;
-}
-
-/* Reset mogućih naslijeđenih širina/min-widtha */
-#welcomeModal .btn-row > button{
-  width: 100% !important;
-  min-width: 0 !important;
-  flex: initial !important;      /* ako negdje ostane flex */
-  aspect-ratio: auto !important; /* da gumbi ne budu "kružići" */
-}
