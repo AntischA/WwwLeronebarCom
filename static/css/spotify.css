@@ -212,24 +212,6 @@ body{
   padding: 0;
 }
 
-/* Layout: lijevi ~10% (uz minimum), desni sve ostalo */
-#welcomeModal .actions-row{
-  display: grid;
-  grid-template-columns: minmax(110px, 10%) 1fr;
-  gap: 12px;
-  align-items: stretch;
-  width: 100%;
-}
-
-/* Gumbi unutar actions-row: puni svoju ćeliju i NE budu krug */
-#welcomeModal .actions-row .pill-btn,
-#welcomeModal .actions-row .btn-ghost{
-  width: 100% !important;
-  min-height: 48px;
-  border-radius: 12px !important;
-  aspect-ratio: auto !important;   /* gasi “krug” iz globalnih stilova */
-  height: auto !important;
-}
 
 /* Po potrebi stilovi boja (možeš zadržati svoje postojeće) */
 #welcomeModal #btnPrintUkupnoDan{
@@ -245,10 +227,5 @@ body{
   font-weight: 900;
 }
 
-/* Mobitel: jedan ispod drugog */
-@media (max-width: 560px){
-  #welcomeModal .actions-row{
-    grid-template-columns: 1fr;
-  }
-}
+
 
