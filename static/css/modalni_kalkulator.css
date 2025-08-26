@@ -124,3 +124,43 @@
   border-radius:999px; border:0; cursor:pointer;
   background:#2a3a66; color:#e8eef7; font-weight:800;
 }
+
+
+/* === Welcome modal – zadnji red (akcije) =============================== */
+.welcome-grid .grid-item .actions-row{
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  align-items: stretch;
+}
+
+/* Oba gumba: jednaka visina, ista zelena pozadina kao closeWelcomeBtn */
+#welcomeModal .actions-row #btnPrintUkupnoDan,
+#welcomeModal .actions-row #closeWelcomeBtn{
+  background-color: #4CAF50;   /* isto kao closeWelcomeBtn */
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 2rem;
+  height: 96px;                /* ugodna visina; pregazi staro 160px */
+  cursor: pointer;
+}
+
+/* Raspodjela širine: 10% i 90% */
+#welcomeModal .actions-row #btnPrintUkupnoDan{
+  flex: 0 0 10%;
+  display: flex; align-items: center; justify-content: center;
+}
+#welcomeModal .actions-row #closeWelcomeBtn{
+  flex: 1 1 90%;
+  width: auto;                 /* pregazi staro width:90% */
+}
+
+/* Hover efekt (blago posvijetliti) */
+#welcomeModal .actions-row #btnPrintUkupnoDan:hover,
+#welcomeModal .actions-row #closeWelcomeBtn:hover{
+  filter: brightness(1.05);
+}
+
+/* (Opcionalno) Pošto #closeWelcomeBtn ranije ima specifično pravilo, ovo ga ovdje
+   pregazi u kontekstu actions-row-a, pa se ne moraš vraćati gore i brisati ga. */
