@@ -358,22 +358,20 @@ body{
   cursor:pointer;
 }
 
-/* Raspodjela širine: 10% i 90% */
+/* Raspodjela širine 10% / 90% */
 #welcomeModal .actions-row #btnPrintUkupnoDan{
-  flex: 0 0 10%;
-  display: flex; align-items: center; justify-content: center;
+  flex:0 0 10%;
+  display:flex; align-items:center; justify-content:center;
 }
 #welcomeModal .actions-row #closeWelcomeBtn{
-  flex: 1 1 90%;
-  width: auto;                 /* pregazi staro width:90% */
+  flex:1 1 90%;
+  width:auto;              /* pregazi staro width:90% */
+  margin-top:0 !important; /* pregazi staro margin-top:30px; */
+  border:0;                /* pregazi btn-ghost border */
 }
 
-/* Hover efekt (blago posvijetliti) */
+/* Hover efekt */
 #welcomeModal .actions-row #btnPrintUkupnoDan:hover,
 #welcomeModal .actions-row #closeWelcomeBtn:hover{
-  filter: brightness(1.05);
+  filter:brightness(1.05);
 }
-
-/* (Opcionalno) Pošto #closeWelcomeBtn ranije ima specifično pravilo, ovo ga ovdje
-   pregazi u kontekstu actions-row-a, pa se ne moraš vraćati gore i brisati ga. */
-
