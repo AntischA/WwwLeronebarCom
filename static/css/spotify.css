@@ -344,6 +344,8 @@ body{
   gap:12px;
   width:100%;
   align-items:stretch;
+      height:96px;
+
 }
 
 /* Uskladi stilove oba gumba: zelena pozadina kao close */
@@ -361,14 +363,10 @@ body{
 #welcomeModal .actions-row #btnPrintUkupnoDan{
   flex:0 0 10%;
   display:flex; align-items:center; justify-content:center;
-  height:96px;
-  padding: 30px 0 30px 0;
 }
 #welcomeModal .actions-row #closeWelcomeBtn{
   flex:1 1 90%;
   width:auto;              /* pregazi staro width:90% */
   margin-top:0 !important; /* pregazi staro margin-top:30px; */
   border:0;                /* pregazi btn-ghost border */
-  height:96px;
-  padding: 30px 0 30px 0;
 }
