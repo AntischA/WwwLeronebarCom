@@ -31,6 +31,7 @@
   const QP = new URLSearchParams(window.location.search);
   const PRINT_MODE = QP.get('print');          // očekujemo 'today_total'
   const PRINT_DATE_ISO = QP.get('date');       // npr. '2025-08-26' (opcionalno)
+  const POS_WIDTH_MM = QP.get('pos');   // "58" | "80" | null
 
 // Normalizacija 'DD.MM.YYYY' -> 'YYYY-MM-DD'
 function toISOFromDatumKey(datumStr){
@@ -56,34 +57,57 @@ function findDateKeyForISO(isoYMD){
 }
 
 // Izgradi minimalnu print stranicu i pozovi print
-function printUkupnoForDateKey(datumKey){
-  // Pronađi baš 'Ukupno' widget za taj datum
+// Izgradi minimalnu print stranicu i pozovi print (samo 'Ukupno' za zadati datum)
+function printUkupnoForDateKey(datumKey) {
+  // 1) Pronađi 'Ukupno' widget za taj datum
   const ukupnoEl = document.querySelector(`li[data-vrsta="Ukupno"][data-datum="${datumKey}"]`);
-  if (!ukupnoEl){
-    console.warn("Ukupno widget nije pronađen za datum:", datumKey);
-    // Fallback: ipak otvori print pa zatvori prozor – da korisnik zna da se nešto desilo
-    window.addEventListener('afterprint', () => { try{ window.close(); }catch(_){} }, { once:true });
-    setTimeout(() => window.print(), 100);
-    setTimeout(() => { try{ window.close(); }catch(_){} }, 2000);
+
+  // Ako ne postoji, odštampaj kratku poruku i zatvori
+  if (!ukupnoEl) {
+    document.body.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'print-wrap';
+    wrap.innerHTML = `
+      <h1 style="margin:0 0 8px;font:600 18px/1.25 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
+        Radnje korisnika — Ukupno
+      </h1>
+      <div style="margin:0 0 12px;font:500 14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
+        Datum: ${datumKey}
+      </div>
+      <div style="font:500 14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
+        Nema podataka za odabrani dan.
+      </div>
+    `;
+    document.body.appendChild(wrap);
+
+    const styleEl = document.createElement('style');
+    const W = POS_WIDTH_MM ? `${parseInt(POS_WIDTH_MM, 10)}mm` : null;
+    styleEl.textContent = `
+      @page { ${W ? `size:${W} auto;` : `size:auto;`} margin:0; }
+      @media print {
+        html,body { ${W ? `width:${W};` : ``} margin:0!important; padding:0!important; overflow:hidden!important;
+                    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .print-wrap { ${W ? `width:calc(${W} - 6mm);` : ``} margin:0!important; padding:3mm!important;
+                      page-break-inside: avoid!important; break-inside: avoid!important;
+                      break-after: page!important; page-break-after: always!important;
+                      max-height:200mm; overflow:hidden; }
+        * { page-break-inside: avoid!important; break-inside: avoid!important; box-sizing:border-box; }
+      }
+    `;
+    document.head.appendChild(styleEl);
+
+    document.title = `Radnje korisnika – Ukupno – ${datumKey}`;
+    const closeAfter = () => { try { window.close(); } catch (_) {} };
+    window.addEventListener('afterprint', closeAfter, { once: true });
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      window.print();
+      setTimeout(closeAfter, 2000);
+    }));
     return;
   }
 
+  // 2) Kloniraj samo 'Ukupno' widget
   const clone = ukupnoEl.cloneNode(true);
-
-  // Očisti body i prikaži samo naslov + taj widget
-  document.body.innerHTML = '';
-  const wrap = document.createElement('div');
-  wrap.className = 'print-wrap';
-  wrap.innerHTML = `
-    <h1 style="margin:0 0 8px;font:600 20px/1.25 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
-      Radnje korisnika — Ukupno
-    </h1>
-    <div style="margin:0 0 16px;font:500 14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
-      Datum: ${datumKey}
-    </div>
-  `;
-
-  // Malo osnovnog stila da izgleda uredno na papiru
   clone.style.listStyle = 'none';
   clone.style.padding = '14px 16px';
   clone.style.border = '1px solid #d0d0d0';
@@ -92,28 +116,81 @@ function printUkupnoForDateKey(datumKey){
   clone.style.fontFamily = 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
   clone.style.fontSize = '14px';
 
+  // 3) Resetuj body i složi minimalan prikaz
+  document.body.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'print-wrap';
+  wrap.innerHTML = `
+    <h1 style="margin:0 0 8px;font:600 18px/1.25 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
+      Radnje korisnika — Ukupno
+    </h1>
+    <div style="margin:0 0 12px;font:500 14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
+      Datum: ${datumKey}
+    </div>
+  `;
   wrap.appendChild(clone);
   document.body.appendChild(wrap);
 
-  const style = document.createElement('style');
-  style.textContent = `
-    @page { size:auto; margin:12mm; }
-    body { background:#fff; }
-    .ukupno-bold { font-weight:600; }
-    .ukupno-sub { opacity:.85; margin-bottom:4px; }
-    .ukupno-sub.lower { opacity:.8; }
-    .ukupno-bottom { margin-top:6px; font-size:18px; font-weight:700; }
+  // 4) Print CSS (POS širina, jedna strana, “cut” na kraju)
+  const styleEl = document.createElement('style');
+  const W = POS_WIDTH_MM ? `${parseInt(POS_WIDTH_MM, 10)}mm` : null;
+  styleEl.textContent = `
+    /* === STRANICA === */
+    @page { ${W ? `size:${W} auto;` : `size:auto;`} margin:0; }
+
+    /* === PRINT REŽIM === */
+    @media print {
+      html, body {
+        ${W ? `width:${W};` : ``}
+        margin:0!important; padding:0!important; overflow:hidden!important;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      }
+      .print-wrap {
+        ${W ? `width:calc(${W} - 6mm);` : ``}
+        margin:0!important; padding:3mm!important;
+
+        /* Drži sve u jednoj “strani/tiketu” */
+        page-break-inside: avoid!important;
+        break-inside: avoid!important;
+
+        /* Signal za sečenje/cut kod većine POS drajvera */
+        break-after: page!important;           /* modern */
+        page-break-after: always!important;    /* legacy */
+
+        /* Bez beskonačnih stranica: preseci višak */
+        max-height:200mm;
+        overflow:hidden;
+      }
+      * {
+        page-break-inside: avoid!important;
+        break-inside: avoid!important;
+        box-sizing: border-box;
+      }
+
+      /* Lokalno stilizovanje widgeta */
+      .ukupno-bold { font-weight:600; }
+      .ukupno-sub { opacity:.85; margin-bottom:4px; }
+      .ukupno-sub.lower { opacity:.8; }
+      .ukupno-bottom { margin-top:6px; font-size:18px; font-weight:700; }
+    }
   `;
-  document.head.appendChild(style);
+  document.head.appendChild(styleEl);
 
-  // Zatvori prozor kad se print završi (najpouzdanije)
-  const closeAfter = () => { try{ window.close(); }catch(_){} };
-  window.addEventListener('afterprint', closeAfter, { once:true });
+  // 5) Print & auto-close (bez dupliranja poziva)
+  document.title = `Radnje korisnika – Ukupno – ${datumKey}`;
+  const closeAfter = () => { try { window.close(); } catch (_) {} };
+  window.addEventListener('afterprint', closeAfter, { once: true });
 
-  // U praksi većina browsera blokira JS dok traje dijalog, ali pokušamo i timeoute radi sigurnosti:
-  setTimeout(() => window.print(), 100);
-  setTimeout(closeAfter, 2000);
+  const doPrint = () => {
+    window.print();
+    // fallback ako afterprint ne okine
+    setTimeout(closeAfter, 2000);
+  };
+
+  // Sačekaj render + reflow
+  requestAnimationFrame(() => requestAnimationFrame(doPrint));
 }
+
 
 // Ako smo u print modu, pokreni auto-print nakon što se render kompletira
 function maybeAutoPrint(){
