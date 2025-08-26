@@ -8,11 +8,14 @@ import urllib.parse
 import requests
 from app_db import init_db, get_day, upsert_day
 from routeros_api import RouterOsApiPool
+import hmac
 
 MT_HOST = os.getenv("MT_HOST", "192.168.88.1")
 MT_USER = os.getenv("MT_USER", "admin")
 MT_PASS = os.getenv("MT_PASS", "password")
 MT_PORT = int(os.getenv("MT_PORT", "8728"))
+
+PRINT_PIN = os.getenv("PRINT_PIN", "778899")
 
 def mt_connect():
     pool = RouterOsApiPool(MT_HOST, username=MT_USER, password=MT_PASS,
@@ -34,6 +37,19 @@ GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 # --- gore u settingsima ---
 SPOTIFY_SCOPES = "streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state playlist-read-private playlist-read-collaborative"
 
+
+@app.post("/api/print_auth")
+def api_print_auth():
+    try:
+        data = request.get_json(force=True)
+    except Exception:
+        return jsonify(success=False, error="invalid json"), 400
+
+    pin = str((data or {}).get("pin", "")).strip()
+    ok = hmac.compare_digest(pin, PRINT_PIN)  # sigurna usporedba
+
+    # Ako je točan -> 200 + success=True, inače 401
+    return (jsonify(success=True), 200) if ok else (jsonify(success=False), 401)
 
 @app.route('/spotify_auth')
 def spotify_auth():

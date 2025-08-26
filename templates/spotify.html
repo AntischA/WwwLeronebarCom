@@ -281,735 +281,833 @@
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
 
   <script>
-  let player;
-  let deviceId = null;
+    let player;
+    let deviceId = null;
 
-  let currentPlaylistUri = null;
-  let currentTracks = [];
-  let displayedOrder = [];
-  let customOrder = null;
-  let customIndex = -1;
-  let currentTrackUri = null;
+    let currentPlaylistUri = null;
+    let currentTracks = [];
+    let displayedOrder = [];
+    let customOrder = null;
+    let customIndex = -1;
+    let currentTrackUri = null;
 
-  let trackUriToLi = new Map();
-  let lastPlayingEl = null;
+    let trackUriToLi = new Map();
+    let lastPlayingEl = null;
 
-  let lastProvidedToken = null;
-  let prevPaused = true;
-  let playSeq = 0;
+    let lastProvidedToken = null;
+    let prevPaused = true;
+    let playSeq = 0;
 
-  let playlistsMeta = [];
-  let playlistUriToIndex = new Map();
+    let playlistsMeta = [];
+    let playlistUriToIndex = new Map();
 
-  // === Spotify seek UI refs ===
-  const seekSlider = document.getElementById('seekSlider');
-  const spTimeCur  = document.getElementById('sp-time-cur');
-  const spTimeTot  = document.getElementById('sp-time-total');
-  let spDurMs = 0;
-  let spProgressTimer = null;
-  let userSeeking = false;
+    // === Spotify seek UI refs ===
+    const seekSlider = document.getElementById('seekSlider');
+    const spTimeCur = document.getElementById('sp-time-cur');
+    const spTimeTot = document.getElementById('sp-time-total');
+    let spDurMs = 0;
+    let spProgressTimer = null;
+    let userSeeking = false;
 
-  function fmt(ms){
-    ms = Math.max(0, Math.floor(ms||0));
-    const s = Math.floor(ms/1000);
-    const m = Math.floor(s/60);
-    const ss = String(s%60).padStart(2,'0');
-    return `${m}:${ss}`;
-  }
-  function setSeekUI(posMs, durMs){
-    if (!userSeeking) {
-      const val = (durMs>0) ? Math.round((posMs/durMs)*1000) : 0;
-      seekSlider.value = String(Math.max(0, Math.min(1000, val)));
+    function fmt(ms) {
+      ms = Math.max(0, Math.floor(ms || 0));
+      const s = Math.floor(ms / 1000);
+      const m = Math.floor(s / 60);
+      const ss = String(s % 60).padStart(2, '0');
+      return `${m}:${ss}`;
     }
-    spTimeCur.textContent = fmt(posMs);
-    spTimeTot.textContent = fmt(durMs);
-    seekSlider.disabled = !durMs;
-  }
-  function startProgress(posMs){
-    stopProgress();
-    const baseT = Date.now();
-    const baseP = posMs;
-    spProgressTimer = setInterval(()=>{
-      const now = Date.now();
-      const est = baseP + (now - baseT);
-      if (!userSeeking) setSeekUI(est, spDurMs);
-    }, 250);
-  }
-  function stopProgress(){
-    if (spProgressTimer){ clearInterval(spProgressTimer); spProgressTimer=null; }
-  }
 
-  // UI helperi – RD, Naxi, Otvoreni, Spotify
-  const cards = {
-    rd: document.getElementById('rd-card'),
-    nx: document.getElementById('nx-card'),
-    ot: document.getElementById('ot-card'),
-    nf: document.getElementById('nf-card'),
-    nm: document.getElementById('nm-card'),
-    br: document.getElementById('br-card'),
-    sp: document.getElementById('sp-card')
-  };
-  const buttons = {
-    rd: document.getElementById('rd-play'),
-    nx: document.getElementById('nx-play'),
-    ot: document.getElementById('ot-play'),
-    nf: document.getElementById('nf-play'),
-    nm: document.getElementById('nm-play'),
-    br: document.getElementById('br-play'),
-    sp: document.getElementById('playPause')
-  };
-  const audios  = {
-    rd: document.getElementById('rd-audio'),
-    nx: document.getElementById('nx-audio'),
-    ot: document.getElementById('ot-audio'),
-    nf: document.getElementById('nf-audio'),
-    nm: document.getElementById('nm-audio'),
-    br: document.getElementById('br-audio')
-  };
+    function setSeekUI(posMs, durMs) {
+      if (!userSeeking) {
+        const val = (durMs > 0) ? Math.round((posMs / durMs) * 1000) : 0;
+        seekSlider.value = String(Math.max(0, Math.min(1000, val)));
+      }
+      spTimeCur.textContent = fmt(posMs);
+      spTimeTot.textContent = fmt(durMs);
+      seekSlider.disabled = !durMs;
+    }
 
-  // Proxy za CORS (isti kao za streamove)
-  const META_PROXY = 'https://radio-proxy.maluma-d-o-o.workers.dev/?u=';
+    function startProgress(posMs) {
+      stopProgress();
+      const baseT = Date.now();
+      const baseP = posMs;
+      spProgressTimer = setInterval(() => {
+        const now = Date.now();
+        const est = baseP + (now - baseT);
+        if (!userSeeking) setSeekUI(est, spDurMs);
+      }, 250);
+    }
 
-  // Meta izvori
-  const BRAVO_META_URL = META_PROXY + encodeURIComponent('https://streaming.br.hr/stream/info/bravo_live_.txt');
-  const RD_META_URL    = META_PROXY + encodeURIComponent('https://scraper2.onlineradiobox.com/hr.radiodalmacija?l=0');
-  const OT_META_URL    = META_PROXY + encodeURIComponent('https://www.otvoreni.hr/umbraco/Surface/NowPlayingSurface/GetNowPlaying?stream=otvoreni');
+    function stopProgress() {
+      if (spProgressTimer) {
+        clearInterval(spProgressTimer);
+        spProgressTimer = null;
+      }
+    }
 
-  function setButtonLabel(btn, playing){ if(!btn) return; btn.textContent = playing ? '⏸ Pause' : '▶ Play'; }
-  function setActiveCard(name){ Object.keys(cards).forEach(k => cards[k].classList.toggle('is-active', k === name)); }
-  function pauseAllRadios(){
-    Object.values(audios).forEach(a => { try{ a.pause(); }catch(e){} });
-    setButtonLabel(buttons.rd, false);
-    setButtonLabel(buttons.nx, false);
-    setButtonLabel(buttons.ot, false);
-    setButtonLabel(buttons.nf, false);
-    setButtonLabel(buttons.nm, false);
-    setButtonLabel(buttons.br, false);
-  }
-  function anyRadioPlaying(){ return Object.values(audios).some(a => !a.paused && !a.ended); }
+    // UI helperi – RD, Naxi, Otvoreni, Spotify
+    const cards = {
+      rd: document.getElementById('rd-card'),
+      nx: document.getElementById('nx-card'),
+      ot: document.getElementById('ot-card'),
+      nf: document.getElementById('nf-card'),
+      nm: document.getElementById('nm-card'),
+      br: document.getElementById('br-card'),
+      sp: document.getElementById('sp-card')
+    };
+    const buttons = {
+      rd: document.getElementById('rd-play'),
+      nx: document.getElementById('nx-play'),
+      ot: document.getElementById('ot-play'),
+      nf: document.getElementById('nf-play'),
+      nm: document.getElementById('nm-play'),
+      br: document.getElementById('br-play'),
+      sp: document.getElementById('playPause')
+    };
+    const audios = {
+      rd: document.getElementById('rd-audio'),
+      nx: document.getElementById('nx-audio'),
+      ot: document.getElementById('ot-audio'),
+      nf: document.getElementById('nf-audio'),
+      nm: document.getElementById('nm-audio'),
+      br: document.getElementById('br-audio')
+    };
 
-  function setActivePlaylist(uri){
-    playlistsMeta.forEach(p => p.li.classList.toggle('active', p.uri === uri));
-  }
-  function playNextPlaylist(){
-    if (!playlistsMeta.length) return;
-    const i = playlistUriToIndex.has(currentPlaylistUri) ? playlistUriToIndex.get(currentPlaylistUri) : -1;
-    const next = (i + 1) % playlistsMeta.length;
-    const nextUri = playlistsMeta[next].uri;
-    playPlaylist(nextUri, true);
-  }
+    // Proxy za CORS (isti kao za streamove)
+    const META_PROXY = 'https://radio-proxy.maluma-d-o-o.workers.dev/?u=';
 
-  /* ============= SPOTIFY ============= */
-  window.onSpotifyWebPlaybackSDKReady = async () => {
-    const token = await getValidToken();
-    if (!token) return;
+    // Meta izvori
+    const BRAVO_META_URL = META_PROXY + encodeURIComponent('https://streaming.br.hr/stream/info/bravo_live_.txt');
+    const RD_META_URL = META_PROXY + encodeURIComponent('https://scraper2.onlineradiobox.com/hr.radiodalmacija?l=0');
+    const OT_META_URL = META_PROXY + encodeURIComponent('https://www.otvoreni.hr/umbraco/Surface/NowPlayingSurface/GetNowPlaying?stream=otvoreni');
 
-    player = new Spotify.Player({
-      name: 'Lerone Web Player',
-      getOAuthToken: async (cb) => {
+    function setButtonLabel(btn, playing) {
+      if (!btn) return;
+      btn.textContent = playing ? '⏸ Pause' : '▶ Play';
+    }
+
+    function setActiveCard(name) {
+      Object.keys(cards).forEach(k => cards[k].classList.toggle('is-active', k === name));
+    }
+
+    function pauseAllRadios() {
+      Object.values(audios).forEach(a => {
         try {
-          let t = await getValidToken();
-          if (!t || t === lastProvidedToken) t = await refreshAccessToken();
-          lastProvidedToken = t;
-          cb(t);
-        } catch (e) { console.error('getOAuthToken error', e); }
-      },
-      volume: 0.5
-    });
-
-    player.addListener('ready', ({ device_id }) => {
-      deviceId = device_id;
-      const spVol = document.getElementById('sp-vol');
-      if (spVol) { try { player.setVolume(spVol.valueAsNumber); } catch(e) {} }
-      loadPlaylists(); // bez autoplay
-      syncAllVolumeLabels();
-
-      // seek slider handlers
-      seekSlider.addEventListener('input', () => {
-        if (!spDurMs) return;
-        userSeeking = true;
-        const ms = (seekSlider.valueAsNumber / 1000) * spDurMs;
-        setSeekUI(ms, spDurMs); // pokaži trenutnu procjenu dok vučeš
+          a.pause();
+        } catch (e) {
+        }
       });
-      seekSlider.addEventListener('change', async () => {
-        if (!spDurMs || !player) { userSeeking = false; return; }
-        const ms = Math.floor((seekSlider.valueAsNumber / 1000) * spDurMs);
-        try {
-          await ensureDeviceReady();
-          await player.seek(ms);
-        } catch(_) {}
-        userSeeking = false;
-      });
+      setButtonLabel(buttons.rd, false);
+      setButtonLabel(buttons.nx, false);
+      setButtonLabel(buttons.ot, false);
+      setButtonLabel(buttons.nf, false);
+      setButtonLabel(buttons.nm, false);
+      setButtonLabel(buttons.br, false);
+    }
 
-      document.getElementById('playPause').addEventListener('click', async () => {
-        pauseAllRadios();
-        await ensureDeviceReady();
+    function anyRadioPlaying() {
+      return Object.values(audios).some(a => !a.paused && !a.ended);
+    }
 
-        const state = await player.getCurrentState();
-        const nothingLoaded = !state || !state.track_window || !state.track_window.current_track;
+    function setActivePlaylist(uri) {
+      playlistsMeta.forEach(p => p.li.classList.toggle('active', p.uri === uri));
+    }
 
-        if (nothingLoaded) {
-          const order = await ensureQueueLoaded();
-          if (order.length) {
-            const uris = order.map(t => t.uri);
-            const token = await getValidToken();
-            await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-              body: JSON.stringify({ uris, offset: { position: 0 }, position_ms: 0 })
-            });
+    function playNextPlaylist() {
+      if (!playlistsMeta.length) return;
+      const i = playlistUriToIndex.has(currentPlaylistUri) ? playlistUriToIndex.get(currentPlaylistUri) : -1;
+      const next = (i + 1) % playlistsMeta.length;
+      const nextUri = playlistsMeta[next].uri;
+      playPlaylist(nextUri, true);
+    }
+
+    /* ============= SPOTIFY ============= */
+    window.onSpotifyWebPlaybackSDKReady = async () => {
+      const token = await getValidToken();
+      if (!token) return;
+
+      player = new Spotify.Player({
+        name: 'Lerone Web Player',
+        getOAuthToken: async (cb) => {
+          try {
+            let t = await getValidToken();
+            if (!t || t === lastProvidedToken) t = await refreshAccessToken();
+            lastProvidedToken = t;
+            cb(t);
+          } catch (e) {
+            console.error('getOAuthToken error', e);
           }
-        } else {
-          await player.togglePlay();
+        },
+        volume: 0.5
+      });
+
+      player.addListener('ready', ({device_id}) => {
+        deviceId = device_id;
+        const spVol = document.getElementById('sp-vol');
+        if (spVol) {
+          try {
+            player.setVolume(spVol.valueAsNumber);
+          } catch (e) {
+          }
+        }
+        loadPlaylists(); // bez autoplay
+        syncAllVolumeLabels();
+
+        // seek slider handlers
+        seekSlider.addEventListener('input', () => {
+          if (!spDurMs) return;
+          userSeeking = true;
+          const ms = (seekSlider.valueAsNumber / 1000) * spDurMs;
+          setSeekUI(ms, spDurMs); // pokaži trenutnu procjenu dok vučeš
+        });
+        seekSlider.addEventListener('change', async () => {
+          if (!spDurMs || !player) {
+            userSeeking = false;
+            return;
+          }
+          const ms = Math.floor((seekSlider.valueAsNumber / 1000) * spDurMs);
+          try {
+            await ensureDeviceReady();
+            await player.seek(ms);
+          } catch (_) {
+          }
+          userSeeking = false;
+        });
+
+        document.getElementById('playPause').addEventListener('click', async () => {
+          pauseAllRadios();
+          await ensureDeviceReady();
+
+          const state = await player.getCurrentState();
+          const nothingLoaded = !state || !state.track_window || !state.track_window.current_track;
+
+          if (nothingLoaded) {
+            const order = await ensureQueueLoaded();
+            if (order.length) {
+              const uris = order.map(t => t.uri);
+              const token = await getValidToken();
+              await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+                method: "PUT",
+                headers: {"Content-Type": "application/json", "Authorization": `Bearer ${token}`},
+                body: JSON.stringify({uris, offset: {position: 0}, position_ms: 0})
+              });
+            }
+          } else {
+            await player.togglePlay();
+          }
+        });
+      });
+
+      player.addListener('authentication_error', ({message}) => console.warn('auth_error', message));
+      player.addListener('account_error', ({message}) => console.warn('account_error', message));
+      player.addListener('initialization_error', ({message}) => console.warn('init_error', message));
+      player.addListener('playback_error', ({message}) => console.warn('playback_error', message));
+
+      player.addListener('player_state_changed', state => {
+        if (!state) return;
+
+        const paused = state.paused;
+        setButtonLabel(buttons.sp, !paused);
+        if (!paused) {
+          pauseAllRadios();
+          setActiveCard('sp');
+        } else if (!anyRadioPlaying()) setActiveCard(null);
+
+        // progress & meta
+        const current = state.track_window?.current_track;
+        spDurMs = current?.duration_ms || 0;
+        setSeekUI(state.position || 0, spDurMs);
+
+        if (!paused) startProgress(state.position || 0);
+        else stopProgress();
+
+        // kraj playliste? pređi na sljedeću
+        const atQueueEnd =
+                !prevPaused && paused &&
+                state.track_window.next_tracks.length === 0 &&
+                customOrder && customOrder.length &&
+                current &&
+                current.uri === customOrder[customOrder.length - 1].uri &&
+                state.position < 1000;
+
+        prevPaused = paused;
+        if (atQueueEnd) {
+          playNextPlaylist();
+          return;
+        }
+
+        // UI "sada svira"
+        if (current) {
+          document.getElementById("trackName").textContent = current.name || '';
+          document.getElementById("artistName").textContent = (current.artists || []).map(a => a.name).join(", ");
+          document.getElementById("albumImage").src = current.album?.images?.[0]?.url || '';
+          currentTrackUri = current.uri;
+
+          const spNow = document.getElementById('sp-now');
+          if (spNow) spNow.textContent = `Sada svira: ${current.name} — ${(current.artists || []).map(a => a.name).join(", ")}`;
+
+          if (customOrder) {
+            const idx = customOrder.findIndex(t => t.uri === current.uri);
+            if (idx !== -1) customIndex = idx;
+          }
+          highlightAndCenterCurrentTrack(current.uri);
         }
       });
-    });
 
-    player.addListener('authentication_error', ({message}) => console.warn('auth_error', message));
-    player.addListener('account_error',        ({message}) => console.warn('account_error', message));
-    player.addListener('initialization_error', ({message}) => console.warn('init_error', message));
-    player.addListener('playback_error',       ({message}) => console.warn('playback_error', message));
+      player.connect();
+    };
 
-    player.addListener('player_state_changed', state => {
-      if (!state) return;
+    async function playPlaylist(uri, autoPlay = true) {
+      const seq = ++playSeq;
+      currentPlaylistUri = uri;
+      setActivePlaylist(uri);
+      pauseAllRadios();
+      setActiveCard('sp');
 
-      const paused = state.paused;
-      setButtonLabel(buttons.sp, !paused);
-      if (!paused){ pauseAllRadios(); setActiveCard('sp'); }
-      else if (!anyRadioPlaying()) setActiveCard(null);
+      const playlistId = uri.split(':').pop();
+      await loadPlaylistTracks(playlistId, seq);
+      if (seq !== playSeq) return;
 
-      // progress & meta
-      const current = state.track_window?.current_track;
-      spDurMs = current?.duration_ms || 0;
-      setSeekUI(state.position || 0, spDurMs);
+      const token = await getValidToken();
+      if (!token) return;
 
-      if (!paused) startProgress(state.position || 0);
-      else         stopProgress();
+      const uris = (customOrder && customOrder.length ? customOrder : currentTracks).map(t => t.uri);
+      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json", "Authorization": `Bearer ${token}`},
+        body: JSON.stringify({uris, offset: {position: 0}, position_ms: 0})
+      });
+    }
 
-      // kraj playliste? pređi na sljedeću
-      const atQueueEnd =
-        !prevPaused && paused &&
-        state.track_window.next_tracks.length === 0 &&
-        customOrder && customOrder.length &&
-        current &&
-        current.uri === customOrder[customOrder.length - 1].uri &&
-        state.position < 1000;
+    async function loadPlaylistTracks(playlistId, seqGuard = null) {
+      const token = await getValidToken();
+      if (!token) return;
 
-      prevPaused = paused;
-      if (atQueueEnd) { playNextPlaylist(); return; }
+      let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
+      let items = [];
 
-      // UI "sada svira"
-      if (current){
-        document.getElementById("trackName").textContent = current.name || '';
-        document.getElementById("artistName").textContent = (current.artists||[]).map(a => a.name).join(", ");
-        document.getElementById("albumImage").src = current.album?.images?.[0]?.url || '';
-        currentTrackUri = current.uri;
+      while (url) {
+        const res = await fetch(url, {headers: {"Authorization": `Bearer ${token}`}});
+        const data = await res.json();
+        if (!data || !data.items) break;
+        items = items.concat(data.items);
+        url = data.next;
+        if (seqGuard !== null && seqGuard !== playSeq) return;
+      }
 
-        const spNow = document.getElementById('sp-now');
-        if (spNow) spNow.textContent = `Sada svira: ${current.name} — ${(current.artists||[]).map(a => a.name).join(", ")}`;
+      currentTracks = items.map((it, idx) => {
+        const t = it.track;
+        if (!t) return null;
+        return {
+          name: t.name,
+          artists: (t.artists || []).map(a => a.name).join(", "),
+          uri: t.uri,
+          albumImage: (t.album && t.album.images && t.album.images.length)
+                  ? t.album.images[t.album.images.length - 1].url : "",
+          originalIndex: idx
+        };
+      }).filter(Boolean);
 
-        if (customOrder) {
-          const idx = customOrder.findIndex(t => t.uri === current.uri);
-          if (idx !== -1) customIndex = idx;
+      await shuffleTrackList();
+    }
+
+    function renderTracks(tracksArray) {
+      displayedOrder = tracksArray.slice();
+      const listEl = document.getElementById("tracksList");
+      listEl.innerHTML = "";
+      trackUriToLi.clear();
+
+      displayedOrder.forEach((item, idx) => {
+        const li = document.createElement("li");
+        li.className = "track-item";
+
+        const img = document.createElement("img");
+        img.src = item.albumImage || "";
+        img.alt = "Cover";
+        img.className = "track-thumb";
+
+        const textWrap = document.createElement("div");
+        textWrap.className = "track-text";
+        const title = document.createElement("div");
+        title.className = "track-title";
+        title.textContent = item.name;
+        const artist = document.createElement("div");
+        artist.className = "track-artist";
+        artist.textContent = item.artists;
+
+        textWrap.appendChild(title);
+        textWrap.appendChild(artist);
+        li.appendChild(img);
+        li.appendChild(textWrap);
+
+        li.onclick = () => {
+          customOrder = displayedOrder.slice();
+          playByCustomIndex(idx);
+        };
+
+        if (item.uri === currentTrackUri) {
+          li.classList.add("playing");
+          lastPlayingEl = li;
         }
-        highlightAndCenterCurrentTrack(current.uri);
-      }
-    });
 
-    player.connect();
-  };
-
-  async function playPlaylist(uri, autoPlay = true) {
-    const seq = ++playSeq;
-    currentPlaylistUri = uri;
-    setActivePlaylist(uri);
-    pauseAllRadios();
-    setActiveCard('sp');
-
-    const playlistId = uri.split(':').pop();
-    await loadPlaylistTracks(playlistId, seq);
-    if (seq !== playSeq) return;
-
-    const token = await getValidToken();
-    if (!token) return;
-
-    const uris = (customOrder && customOrder.length ? customOrder : currentTracks).map(t => t.uri);
-    await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-      body: JSON.stringify({ uris, offset: { position: 0 }, position_ms: 0 })
-    });
-  }
-
-  async function loadPlaylistTracks(playlistId, seqGuard = null) {
-    const token = await getValidToken();
-    if (!token) return;
-
-    let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
-    let items = [];
-
-    while (url) {
-      const res = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
-      const data = await res.json();
-      if (!data || !data.items) break;
-      items = items.concat(data.items);
-      url = data.next;
-      if (seqGuard !== null && seqGuard !== playSeq) return;
+        listEl.appendChild(li);
+        trackUriToLi.set(item.uri, li);
+      });
     }
 
-    currentTracks = items.map((it, idx) => {
-      const t = it.track; if (!t) return null;
-      return {
-        name: t.name,
-        artists: (t.artists || []).map(a => a.name).join(", "),
-        uri: t.uri,
-        albumImage: (t.album && t.album.images && t.album.images.length)
-          ? t.album.images[t.album.images.length - 1].url : "",
-        originalIndex: idx
-      };
-    }).filter(Boolean);
+    async function playByCustomIndex(index) {
+      if (!customOrder || index < 0 || index >= customOrder.length) return;
+      const uris = customOrder.map(t => t.uri);
+      customIndex = index;
 
-    await shuffleTrackList();
-  }
+      const token = await getValidToken();
+      if (!token) return;
 
-  function renderTracks(tracksArray) {
-    displayedOrder = tracksArray.slice();
-    const listEl = document.getElementById("tracksList");
-    listEl.innerHTML = "";
-    trackUriToLi.clear();
+      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json", "Authorization": `Bearer ${token}`},
+        body: JSON.stringify({uris, offset: {position: index}, position_ms: 0})
+      });
+    }
 
-    displayedOrder.forEach((item, idx) => {
-      const li = document.createElement("li");
-      li.className = "track-item";
-
-      const img = document.createElement("img");
-      img.src = item.albumImage || "";
-      img.alt = "Cover";
-      img.className = "track-thumb";
-
-      const textWrap = document.createElement("div");
-      textWrap.className = "track-text";
-      const title = document.createElement("div");
-      title.className = "track-title";
-      title.textContent = item.name;
-      const artist = document.createElement("div");
-      artist.className = "track-artist";
-      artist.textContent = item.artists;
-
-      textWrap.appendChild(title);
-      textWrap.appendChild(artist);
-      li.appendChild(img);
-      li.appendChild(textWrap);
-
-      li.onclick = () => {
-        customOrder = displayedOrder.slice();
-        playByCustomIndex(idx);
-      };
-
-      if (item.uri === currentTrackUri) {
-        li.classList.add("playing");
-        lastPlayingEl = li;
+    async function shuffleTrackList() {
+      const copy = currentTracks.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
       }
 
-      listEl.appendChild(li);
-      trackUriToLi.set(item.uri, li);
-    });
-  }
+      renderTracks(copy);
+      customOrder = copy.slice();
 
-  async function playByCustomIndex(index) {
-    if (!customOrder || index < 0 || index >= customOrder.length) return;
-    const uris = customOrder.map(t => t.uri);
-    customIndex = index;
+      const idx = customOrder.findIndex(t => t.uri === currentTrackUri);
+      customIndex = (idx !== -1) ? idx : 0;
 
-    const token = await getValidToken();
-    if (!token) return;
-
-    await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-      body: JSON.stringify({ uris, offset: { position: index }, position_ms: 0 })
-    });
-  }
-
-  async function shuffleTrackList() {
-    const copy = currentTracks.slice();
-    for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
+      const st = player ? await player.getCurrentState() : null;
+      if (st && !st.paused) {
+        await applyCustomQueueAtCurrentTrack({preservePosition: true});
+      }
     }
 
-    renderTracks(copy);
-    customOrder = copy.slice();
+    async function applyCustomQueueAtCurrentTrack({preservePosition = true} = {}) {
+      if (!customOrder || customIndex < 0) return;
 
-    const idx = customOrder.findIndex(t => t.uri === currentTrackUri);
-    customIndex = (idx !== -1) ? idx : 0;
+      const token = await getValidToken();
+      if (!token) return;
 
-    const st = player ? await player.getCurrentState() : null;
-    if (st && !st.paused) {
-      await applyCustomQueueAtCurrentTrack({ preservePosition: true });
-    }
-  }
+      const uris = customOrder.map(t => t.uri);
 
-  async function applyCustomQueueAtCurrentTrack({ preservePosition = true } = {}) {
-    if (!customOrder || customIndex < 0) return;
+      let position_ms = 0;
+      if (preservePosition && player) {
+        const st = await player.getCurrentState();
+        if (st) position_ms = st.position || 0;
+      }
 
-    const token = await getValidToken();
-    if (!token) return;
-
-    const uris = customOrder.map(t => t.uri);
-
-    let position_ms = 0;
-    if (preservePosition && player) {
-      const st = await player.getCurrentState();
-      if (st) position_ms = st.position || 0;
+      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json", "Authorization": `Bearer ${token}`},
+        body: JSON.stringify({uris, offset: {position: customIndex}, position_ms})
+      });
     }
 
-    await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-      body: JSON.stringify({ uris, offset: { position: customIndex }, position_ms })
-    });
-  }
+    function highlightAndCenterCurrentTrack(trackUri) {
+      if (!trackUriToLi.has(trackUri)) return;
+      if (lastPlayingEl) lastPlayingEl.classList.remove("playing");
+      const el = trackUriToLi.get(trackUri);
+      el.classList.add("playing");
+      lastPlayingEl = el;
+      el.scrollIntoView({block: "center", behavior: "smooth"});
+    }
 
-  function highlightAndCenterCurrentTrack(trackUri) {
-    if (!trackUriToLi.has(trackUri)) return;
-    if (lastPlayingEl) lastPlayingEl.classList.remove("playing");
-    const el = trackUriToLi.get(trackUri);
-    el.classList.add("playing");
-    lastPlayingEl = el;
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
-  }
+    /* ===== Radio logika + volumeni ===== */
+    function percent(val) {
+      return Math.round((val || 0) * 100) + '%';
+    }
 
-  /* ===== Radio logika + volumeni ===== */
-  function percent(val){ return Math.round((val||0)*100) + '%'; }
-  function syncLabel(rangeEl, labelEl){ if (rangeEl && labelEl){ labelEl.textContent = percent(rangeEl.valueAsNumber); } }
-  function syncAllVolumeLabels(){
-    syncLabel(document.getElementById('rd-vol'), document.getElementById('rd-vol-label'));
-    syncLabel(document.getElementById('nx-vol'), document.getElementById('nx-vol-label'));
-    syncLabel(document.getElementById('ot-vol'), document.getElementById('ot-vol-label'));
-    syncLabel(document.getElementById('nf-vol'), document.getElementById('nf-vol-label'));
-    syncLabel(document.getElementById('nm-vol'), document.getElementById('nm-vol-label'));
-    syncLabel(document.getElementById('br-vol'), document.getElementById('br-vol-label'));
-    syncLabel(document.getElementById('sp-vol'), document.getElementById('sp-vol-label'));
-  }
+    function syncLabel(rangeEl, labelEl) {
+      if (rangeEl && labelEl) {
+        labelEl.textContent = percent(rangeEl.valueAsNumber);
+      }
+    }
 
-  function makeRadio({ audioId, playId, volId, nowId, label }) {
-    const a  = document.getElementById(audioId);
-    const b  = document.getElementById(playId);
-    const vr = document.getElementById(volId);
-    const nw = document.getElementById(nowId);
-    const cardKey = (label||'').toLowerCase();
+    function syncAllVolumeLabels() {
+      syncLabel(document.getElementById('rd-vol'), document.getElementById('rd-vol-label'));
+      syncLabel(document.getElementById('nx-vol'), document.getElementById('nx-vol-label'));
+      syncLabel(document.getElementById('ot-vol'), document.getElementById('ot-vol-label'));
+      syncLabel(document.getElementById('nf-vol'), document.getElementById('nf-vol-label'));
+      syncLabel(document.getElementById('nm-vol'), document.getElementById('nm-vol-label'));
+      syncLabel(document.getElementById('br-vol'), document.getElementById('br-vol-label'));
+      syncLabel(document.getElementById('sp-vol'), document.getElementById('sp-vol-label'));
+    }
 
-    let retries = 0, maxRetries = 5;
-    const setNow = t => { if (nw) nw.textContent = t; };
+    function makeRadio({audioId, playId, volId, nowId, label}) {
+      const a = document.getElementById(audioId);
+      const b = document.getElementById(playId);
+      const vr = document.getElementById(volId);
+      const nw = document.getElementById(nowId);
+      const cardKey = (label || '').toLowerCase();
 
-    async function playOnlyThis() {
-      try {
-        Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
-        await safePauseSpotify();
+      let retries = 0, maxRetries = 5;
+      const setNow = t => {
+        if (nw) nw.textContent = t;
+      };
 
-        await new Promise(r => requestAnimationFrame(r));
-        await a.play();
+      async function playOnlyThis() {
+        try {
+          Object.values(audios).forEach(x => {
+            if (x !== a) x.pause();
+          });
+          await safePauseSpotify();
+
+          await new Promise(r => requestAnimationFrame(r));
+          await a.play();
+          setButtonLabel(b, true);
+          setActiveCard(cardKey);
+        } catch (e) {
+          if (e?.name === 'AbortError') {
+            /* ignore */
+          } else {
+            console.warn(`[${label}] play error`, e);
+          }
+        }
+      }
+
+      a.addEventListener('stalled', () => {
+        setNow('Veza je zastala… pokušavam ponovo.');
+        reconnect();
+      });
+      a.addEventListener('error', () => {
+        setNow('Greška na streamu. Pokušavam ponovo…');
+        reconnect();
+      });
+
+      async function safePauseSpotify() {
+        if (!player || !player.getCurrentState) return;
+        try {
+          const st = await player.getCurrentState();
+          if (st && !st.paused) {
+            await player.pause();
+          }
+        } catch (_) {
+        }
+      }
+
+      function reconnect() {
+        if (retries < maxRetries) {
+          retries++;
+          const delay = Math.min(1500 * retries, 7000);
+          setTimeout(() => {
+            a.load();
+            a.play().catch(() => {
+            });
+          }, delay);
+        } else {
+          setNow('Ne može se spojiti. Provjeri stream URL.');
+        }
+      }
+
+      b.addEventListener('click', () => {
+        if (a.paused) playOnlyThis(); else a.pause();
+      });
+
+      if (vr) {
+        const labelEl = document.getElementById(`${label}-vol-label`);
+        a.volume = vr.valueAsNumber;            // inicijalni volume = slider
+        syncLabel(vr, labelEl);
+        vr.addEventListener('input', () => {
+          a.volume = vr.valueAsNumber;
+          syncLabel(vr, labelEl);
+        });
+      }
+
+      a.addEventListener('playing', () => {
+        retries = 0;
         setButtonLabel(b, true);
         setActiveCard(cardKey);
-      } catch (e) {
-        if (e?.name === 'AbortError') {
-          /* ignore */
-        } else {
-          console.warn(`[${label}] play error`, e);
-        }
+        Object.values(audios).forEach(x => {
+          if (x !== a) x.pause();
+        });
+
+        Object.keys(buttons)
+                .filter(k => k !== 'sp')
+                .forEach(k => {
+                  if (buttons[k] !== b) setButtonLabel(buttons[k], false);
+                });
+        setButtonLabel(buttons.sp, false);
+      });
+
+      a.addEventListener('pause', () => {
+        setButtonLabel(b, false);
+        const otherRadioPlaying = Object.values(audios).some(x => x !== a && !x.paused && !x.ended);
+        const checkSpotify = (player && player.getCurrentState) ? player.getCurrentState() : null;
+        Promise.resolve(checkSpotify).then(st => {
+          const spIsPlaying = st ? !st.paused : false;
+          if (!otherRadioPlaying && !spIsPlaying) setActiveCard(null);
+        });
+      });
+
+      a.addEventListener('ended', () => {
+        setButtonLabel(b, false);
+        const radioJosSvira = Object.values(audios).some(x => !x.paused && !x.ended);
+        Promise.resolve(player?.getCurrentState?.()).then(st => {
+          const spIsPlaying = st ? !st.paused : false;
+          if (!radioJosSvira && !spIsPlaying) setActiveCard(null);
+        });
+      });
+
+      return {playOnlyThis, setNow, audio: a, button: b};
+    }
+
+    const RD = makeRadio({audioId: 'rd-audio', playId: 'rd-play', volId: 'rd-vol', nowId: 'rd-now', label: 'rd'});
+    const NX = makeRadio({audioId: 'nx-audio', playId: 'nx-play', volId: 'nx-vol', nowId: 'nx-now', label: 'nx'});
+    const OT = makeRadio({audioId: 'ot-audio', playId: 'ot-play', volId: 'ot-vol', nowId: 'ot-now', label: 'ot'});
+    const NF = makeRadio({audioId: 'nf-audio', playId: 'nf-play', volId: 'nf-vol', nowId: 'nf-now', label: 'nf'});
+    const NM = makeRadio({audioId: 'nm-audio', playId: 'nm-play', volId: 'nm-vol', nowId: 'nm-now', label: 'nm'});
+    const BR = makeRadio({audioId: 'br-audio', playId: 'br-play', volId: 'br-vol', nowId: 'br-now', label: 'br'});
+
+    // Spotify glasnoća + label
+    const spVol = document.getElementById('sp-vol');
+    const spVolLabel = document.getElementById('sp-vol-label');
+    if (spVol) {
+      spVol.addEventListener('input', () => {
+        if (player && player.setVolume) player.setVolume(spVol.valueAsNumber);
+        if (spVolLabel) spVolLabel.textContent = percent(spVol.valueAsNumber);
+      });
+    }
+
+    /* ====== Spotify auth helperi ====== */
+    async function refreshAccessToken() {
+      const refreshToken = localStorage.getItem("refresh_token");
+      if (!refreshToken) {
+        window.location.href = "/spotify_auth";
+        return null;
       }
-    }
 
-    a.addEventListener('stalled', () => { setNow('Veza je zastala… pokušavam ponovo.'); reconnect(); });
-    a.addEventListener('error',   () => { setNow('Greška na streamu. Pokušavam ponovo…'); reconnect(); });
-
-    async function safePauseSpotify() {
-      if (!player || !player.getCurrentState) return;
-      try {
-        const st = await player.getCurrentState();
-        if (st && !st.paused) { await player.pause(); }
-      } catch (_) {}
-    }
-
-    function reconnect() {
-      if (retries < maxRetries) {
-        retries++;
-        const delay = Math.min(1500 * retries, 7000);
-        setTimeout(() => { a.load(); a.play().catch(()=>{}); }, delay);
-      } else {
-        setNow('Ne može se spojiti. Provjeri stream URL.');
-      }
-    }
-
-    b.addEventListener('click', () => {
-      if (a.paused) playOnlyThis(); else a.pause();
-    });
-
-    if (vr){
-      const labelEl = document.getElementById(`${label}-vol-label`);
-      a.volume = vr.valueAsNumber;            // inicijalni volume = slider
-      syncLabel(vr, labelEl);
-      vr.addEventListener('input', () => {
-        a.volume = vr.valueAsNumber;
-        syncLabel(vr, labelEl);
+      const res = await fetch("/refresh_token", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({refresh_token: refreshToken})
       });
-    }
-
-    a.addEventListener('playing', () => {
-      retries = 0;
-      setButtonLabel(b, true);
-      setActiveCard(cardKey);
-      Object.values(audios).forEach(x => { if (x !== a) x.pause(); });
-
-      Object.keys(buttons)
-        .filter(k => k !== 'sp')
-        .forEach(k => { if (buttons[k] !== b) setButtonLabel(buttons[k], false); });
-      setButtonLabel(buttons.sp, false);
-    });
-
-    a.addEventListener('pause', () => {
-      setButtonLabel(b, false);
-      const otherRadioPlaying = Object.values(audios).some(x => x !== a && !x.paused && !x.ended);
-      const checkSpotify = (player && player.getCurrentState) ? player.getCurrentState() : null;
-      Promise.resolve(checkSpotify).then(st => {
-        const spIsPlaying = st ? !st.paused : false;
-        if (!otherRadioPlaying && !spIsPlaying) setActiveCard(null);
-      });
-    });
-
-    a.addEventListener('ended', () => {
-      setButtonLabel(b, false);
-      const radioJosSvira = Object.values(audios).some(x => !x.paused && !x.ended);
-      Promise.resolve(player?.getCurrentState?.()).then(st => {
-        const spIsPlaying = st ? !st.paused : false;
-        if (!radioJosSvira && !spIsPlaying) setActiveCard(null);
-      });
-    });
-
-    return { playOnlyThis, setNow, audio:a, button:b };
-  }
-
-  const RD = makeRadio({ audioId:'rd-audio', playId:'rd-play', volId:'rd-vol', nowId:'rd-now', label:'rd' });
-  const NX = makeRadio({ audioId:'nx-audio', playId:'nx-play', volId:'nx-vol', nowId:'nx-now', label:'nx' });
-  const OT = makeRadio({ audioId:'ot-audio', playId:'ot-play', volId:'ot-vol', nowId:'ot-now', label:'ot' });
-  const NF = makeRadio({ audioId:'nf-audio', playId:'nf-play', volId:'nf-vol', nowId:'nf-now', label:'nf' });
-  const NM = makeRadio({ audioId:'nm-audio', playId:'nm-play', volId:'nm-vol', nowId:'nm-now', label:'nm' });
-  const BR = makeRadio({ audioId:'br-audio', playId:'br-play', volId:'br-vol', nowId:'br-now', label:'br' });
-
-  // Spotify glasnoća + label
-  const spVol = document.getElementById('sp-vol');
-  const spVolLabel = document.getElementById('sp-vol-label');
-  if (spVol) {
-    spVol.addEventListener('input', () => {
-      if (player && player.setVolume) player.setVolume(spVol.valueAsNumber);
-      if (spVolLabel) spVolLabel.textContent = percent(spVol.valueAsNumber);
-    });
-  }
-
-  /* ====== Spotify auth helperi ====== */
-  async function refreshAccessToken() {
-    const refreshToken = localStorage.getItem("refresh_token");
-    if (!refreshToken) { window.location.href = "/spotify_auth"; return null; }
-
-    const res = await fetch("/refresh_token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: refreshToken })
-    });
-    const data = await res.json();
-
-    if (res.ok && data.access_token) {
-      localStorage.setItem("access_token", data.access_token);
-      localStorage.setItem("token_timestamp", Date.now());
-      return data.access_token;
-    } else {
-      console.error("Refresh failed", data);
-      return null;
-    }
-  }
-
-  async function getValidToken() {
-    const accessToken = localStorage.getItem("access_token");
-    const refreshToken = localStorage.getItem("refresh_token");
-    if (!refreshToken) { window.location.href = "/spotify_auth"; return null; }
-
-    const ts = parseInt(localStorage.getItem("token_timestamp") || "0", 10);
-    const maxAge = 55 * 60 * 1000;
-    if (!accessToken || (Date.now() - ts) >= maxAge) {
-      return await refreshAccessToken();
-    }
-    return accessToken;
-  }
-
-  async function loadPlaylists() {
-    const token = await getValidToken();
-    if (!token) return;
-
-    const res = await fetch("https://api.spotify.com/v1/me/playlists", {
-      headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    const data = await res.json();
-    const list = document.getElementById("playlistList");
-    list.innerHTML = "";
-
-    const sortedPlaylists = (data.items || []).sort((a, b) =>
-      a.name.localeCompare(b.name, 'hr', { sensitivity: 'base' })
-    );
-
-    playlistsMeta = [];
-    playlistUriToIndex.clear();
-
-    sortedPlaylists.forEach((pl, index) => {
-      const li = document.createElement("li");
-      li.textContent = pl.name;
-      li.style.cursor = "pointer";
-      li.onclick = () => playPlaylist(pl.uri, true);
-      list.appendChild(li);
-
-      const meta = { uri: pl.uri, id: pl.id, name: pl.name, li };
-      playlistsMeta.push(meta);
-      playlistUriToIndex.set(pl.uri, index);
-    });
-
-    if (playlistsMeta.length) {
-      currentPlaylistUri = playlistsMeta[0].uri;
-      setActivePlaylist(currentPlaylistUri);
-      await loadPlaylistTracks(playlistsMeta[0].id);
-    }
-  }
-
-  // init volumeni
-  syncAllVolumeLabels();
-
-  // ===== Now Playing (Bravo / RD / Otvoreni) =====
-  (function startNowPlaying() {
-    // Bravo (plain text)
-    let lastBravo = '';
-    async function fetchBravo() {
-      try {
-        const res = await fetch(BRAVO_META_URL, { cache: 'no-store' });
-        const text = await res.text();
-        const line = (text || '').trim().split('\n').pop() || '';
-        if (line && line !== lastBravo) {
-          const el = document.getElementById('br-now');
-          if (el) el.textContent = line;
-          lastBravo = line;
-        }
-      } catch (e) { /* ignore */ }
-    }
-    fetchBravo();
-    setInterval(fetchBravo, 15000);
-
-    // Radio Dalmacija (JSON)
-    let lastRD = '';
-    async function fetchRD() {
-      try {
-        const res = await fetch(RD_META_URL, { cache: 'no-store' });
-        const data = await res.json();
-        let title = (data && data.title) ? data.title.trim() : '';
-        if (!title) {
-          const n = (data?.iName || '').trim();
-          const a = (data?.iArtist || '').trim();
-          title = [a, n].filter(Boolean).join(' - ');
-        }
-        if (title && title !== lastRD) {
-          const el = document.getElementById('rd-now');
-          if (el) el.textContent = title;
-          lastRD = title;
-        }
-      } catch (e) { /* ignore */ }
-    }
-    fetchRD();
-    setInterval(fetchRD, 15000);
-  })();
-
-  // Otvoreni (JSON)
-  let lastOT = '';
-  async function fetchOT() {
-    try {
-      const res = await fetch(OT_META_URL, { cache: 'no-store' });
       const data = await res.json();
-      const title = [data?.artist, data?.title].filter(Boolean).join(' — ');
-      if (title && title !== lastOT) {
-        const el = document.getElementById('ot-now');
-        if (el) el.textContent = title;
-        lastOT = title;
+
+      if (res.ok && data.access_token) {
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("token_timestamp", Date.now());
+        return data.access_token;
+      } else {
+        console.error("Refresh failed", data);
+        return null;
       }
-    } catch (_) { /* ignore */ }
-  }
-  fetchOT();
-  setInterval(fetchOT, 15000);
+    }
 
-  async function transferToDevice(devId, {play=false} = {}) {
-    const token = await getValidToken();
-    if (!token || !devId) return false;
+    async function getValidToken() {
+      const accessToken = localStorage.getItem("access_token");
+      const refreshToken = localStorage.getItem("refresh_token");
+      if (!refreshToken) {
+        window.location.href = "/spotify_auth";
+        return null;
+      }
 
-    const res = await fetch("https://api.spotify.com/v1/me/player", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-      body: JSON.stringify({ device_ids: [devId], play })
+      const ts = parseInt(localStorage.getItem("token_timestamp") || "0", 10);
+      const maxAge = 55 * 60 * 1000;
+      if (!accessToken || (Date.now() - ts) >= maxAge) {
+        return await refreshAccessToken();
+      }
+      return accessToken;
+    }
+
+    async function loadPlaylists() {
+      const token = await getValidToken();
+      if (!token) return;
+
+      const res = await fetch("https://api.spotify.com/v1/me/playlists", {
+        headers: {"Authorization": `Bearer ${token}`}
+      });
+
+      const data = await res.json();
+      const list = document.getElementById("playlistList");
+      list.innerHTML = "";
+
+      const sortedPlaylists = (data.items || []).sort((a, b) =>
+              a.name.localeCompare(b.name, 'hr', {sensitivity: 'base'})
+      );
+
+      playlistsMeta = [];
+      playlistUriToIndex.clear();
+
+      sortedPlaylists.forEach((pl, index) => {
+        const li = document.createElement("li");
+        li.textContent = pl.name;
+        li.style.cursor = "pointer";
+        li.onclick = () => playPlaylist(pl.uri, true);
+        list.appendChild(li);
+
+        const meta = {uri: pl.uri, id: pl.id, name: pl.name, li};
+        playlistsMeta.push(meta);
+        playlistUriToIndex.set(pl.uri, index);
+      });
+
+      if (playlistsMeta.length) {
+        currentPlaylistUri = playlistsMeta[0].uri;
+        setActivePlaylist(currentPlaylistUri);
+        await loadPlaylistTracks(playlistsMeta[0].id);
+      }
+    }
+
+    // init volumeni
+    syncAllVolumeLabels();
+
+    // ===== Now Playing (Bravo / RD / Otvoreni) =====
+    (function startNowPlaying() {
+      // Bravo (plain text)
+      let lastBravo = '';
+
+      async function fetchBravo() {
+        try {
+          const res = await fetch(BRAVO_META_URL, {cache: 'no-store'});
+          const text = await res.text();
+          const line = (text || '').trim().split('\n').pop() || '';
+          if (line && line !== lastBravo) {
+            const el = document.getElementById('br-now');
+            if (el) el.textContent = line;
+            lastBravo = line;
+          }
+        } catch (e) { /* ignore */
+        }
+      }
+
+      fetchBravo();
+      setInterval(fetchBravo, 15000);
+
+      // Radio Dalmacija (JSON)
+      let lastRD = '';
+
+      async function fetchRD() {
+        try {
+          const res = await fetch(RD_META_URL, {cache: 'no-store'});
+          const data = await res.json();
+          let title = (data && data.title) ? data.title.trim() : '';
+          if (!title) {
+            const n = (data?.iName || '').trim();
+            const a = (data?.iArtist || '').trim();
+            title = [a, n].filter(Boolean).join(' - ');
+          }
+          if (title && title !== lastRD) {
+            const el = document.getElementById('rd-now');
+            if (el) el.textContent = title;
+            lastRD = title;
+          }
+        } catch (e) { /* ignore */
+        }
+      }
+
+      fetchRD();
+      setInterval(fetchRD, 15000);
+    })();
+
+    // Otvoreni (JSON)
+    let lastOT = '';
+
+    async function fetchOT() {
+      try {
+        const res = await fetch(OT_META_URL, {cache: 'no-store'});
+        const data = await res.json();
+        const title = [data?.artist, data?.title].filter(Boolean).join(' — ');
+        if (title && title !== lastOT) {
+          const el = document.getElementById('ot-now');
+          if (el) el.textContent = title;
+          lastOT = title;
+        }
+      } catch (_) { /* ignore */
+      }
+    }
+
+    fetchOT();
+    setInterval(fetchOT, 15000);
+
+    async function transferToDevice(devId, {play = false} = {}) {
+      const token = await getValidToken();
+      if (!token || !devId) return false;
+
+      const res = await fetch("https://api.spotify.com/v1/me/player", {
+        method: "PUT",
+        headers: {"Content-Type": "application/json", "Authorization": `Bearer ${token}`},
+        body: JSON.stringify({device_ids: [devId], play})
+      });
+      return res.ok;
+    }
+
+    async function ensureDeviceReady({play = false} = {}) {
+      for (let i = 0; i < 10 && !deviceId; i++) {
+        await new Promise(r => setTimeout(r, 150));
+      }
+      await transferToDevice(deviceId, {play});
+    }
+
+    async function ensureQueueLoaded() {
+      if (!currentPlaylistUri && playlistsMeta[0]?.uri) {
+        currentPlaylistUri = playlistsMeta[0].uri;
+        setActivePlaylist(currentPlaylistUri);
+        await loadPlaylistTracks(playlistsMeta[0].id);
+      }
+      if (customOrder?.length) return customOrder;
+      if (currentTracks?.length) {
+        customOrder = currentTracks.slice();
+        return customOrder;
+      }
+      return [];
+    }
+
+
+      (function initPrintUkupnoButton(){
+      const btn = document.getElementById('btnPrintUkupnoDan');
+      if (!btn) return;
+
+      function closeWelcomeModal(){
+      const closeBtn = document.getElementById('closeWelcomeBtn');
+      if (closeBtn) {closeBtn.click(); return;}
+      const m = document.getElementById('welcomeModal');
+      if (m) m.style.display = 'none';
+    }
+
+      btn.addEventListener('click', async () => {
+      const pin = window.prompt('Unesi lozinku (🎵):');
+      if (pin === null) { // Cancel
+      closeWelcomeModal();
+      return;
+    }
+
+      try {
+      const res = await fetch('/api/print_auth', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({pin})
     });
-    return res.ok;
-  }
 
-  async function ensureDeviceReady({play=false} = {}) {
-    for (let i = 0; i < 10 && !deviceId; i++) {
-      await new Promise(r => setTimeout(r, 150));
-    }
-    await transferToDevice(deviceId, {play});
-  }
-
-  async function ensureQueueLoaded() {
-    if (!currentPlaylistUri && playlistsMeta[0]?.uri) {
-      currentPlaylistUri = playlistsMeta[0].uri;
-      setActivePlaylist(currentPlaylistUri);
-      await loadPlaylistTracks(playlistsMeta[0].id);
-    }
-    if (customOrder?.length) return customOrder;
-    if (currentTracks?.length) {
-      customOrder = currentTracks.slice();
-      return customOrder;
-    }
-    return [];
-  }
-
-
-
-  // === PRINT 'UKUPNO' ZA DANAS (otvara /radnje u print modu) ===
-(function initPrintUkupnoButton(){
-  const btn = document.getElementById('btnPrintUkupnoDan');
-  if (!btn) return;
-
-  function closeWelcomeModal(){
-    const closeBtn = document.getElementById('closeWelcomeBtn');
-    if (closeBtn) { closeBtn.click(); return; }
-    const m = document.getElementById('welcomeModal');
-    if (m) m.style.display = 'none';
-  }
-
-  btn.addEventListener('click', () => {
-    const pwd = window.prompt('Unesi broj pjesama (🎵):');
-    if (pwd === null) {               // Cancel
-      closeWelcomeModal();
-      return;
-    }
-    if (pwd.trim() !== '778899') {    // Pogrešna lozinka
+      const ok = res.ok; // 200 ako je točno, 401 ako nije
+      if (!ok) {
       closeWelcomeModal();
       return;
     }
 
-    // Točna lozinka -> nastavi kao i do sada
-    const todayISO = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    window.open(`/radnje?print=today_total&date=${encodeURIComponent(todayISO)}`,
-                '_blank', 'noopener');
-  });
-})();
+      // Točan PIN → nastavi kao i do sada
+      const todayISO = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      window.open(
+      `/radnje?print=today_total&date=${encodeURIComponent(todayISO)}`,
+      '_blank',
+      'noopener'
+      );
+    } catch (e) {
+      // Ako API padne, ponašaj se kao da je krivo / zatvori modal
+      closeWelcomeModal();
+    }
+    });
+    })();
+
 
 
   </script>
-    <script src="{{ url_for('static', filename='js/modalni_kalkulator.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/modalni_kalkulator.js') }}"></script>
 
 </body>
 </html>
