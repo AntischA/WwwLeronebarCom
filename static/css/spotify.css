@@ -173,8 +173,8 @@ body{
 
 /* Red s 2 kolone: lijeva mala, desna ostatak */
 #welcomeModal .actions-row{
-  display: grid;
-  grid-template-columns: auto 1fr;
+  display:flex;
+  flex-direction:column;
   width: 88%;
   gap: 5px;
   margin-top: 50px;
