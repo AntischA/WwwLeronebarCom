@@ -227,7 +227,6 @@ body{
   width: 100% !important;
   min-height: 48px;
   border-radius: 12px !important;
-  padding: 12px 16px;
   aspect-ratio: auto !important;   /* gasi “krug” iz globalnih stilova */
   height: auto !important;
 }
