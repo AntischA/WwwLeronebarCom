@@ -169,31 +169,45 @@ body{
 }
 
 
-/* Širi prvi gumb dovoljno da stane tekst, ali i dalje cilja 10% */
-.actions-row{
+
+
+/* Red s 2 kolone: lijeva mala, desna ostatak */
+#welcomeModal .actions-row{
   display: grid;
-  grid-template-columns: max(10%, 22ch) 1fr; /* min ~22 znakova ili 10% širine, što je veće */
-  gap: 8px;
-  align-items: stretch;
-}
-.actions-row > button{
+  grid-template-columns: max(180px, 12%) minmax(0, 1fr);
+  gap: 12px;
   width: 100%;
-  min-height: 44px;               /* touch-friendly */
 }
 
-/* ako želiš piksele umjesto ch: */
-/* .actions-row{ grid-template-columns: max(10%, 180px) 1fr; } */
+/* Nateraj obje tipke da ISPUNE svoje ćelije i poništi “okrugle” stilove */
+#welcomeModal .actions-row .pill-btn,
+#welcomeModal .actions-row .btn-ghost{
+  display: block;
+  inline-size: 100% !important;   /* = width */
+  max-width: none !important;
+  height: auto !important;
+  min-height: 56px;               /* ugodno za klik */
+  aspect-ratio: auto !important;  /* skini 1/1 “krušku” */
+  border-radius: 12px !important; /* više nije krug */
+  padding: 14px 16px;
+  place-self: stretch;            /* rastegni u gridu */
+}
 
-.actions-row #btnPrintUkupnoDan{
-  white-space: nowrap;             /* ne prelama tekst */
+/* Lijevi gumb – ne prelamaj tekst */
+#welcomeModal .actions-row #btnPrintUkupnoDan{
+  white-space: nowrap;
+  text-overflow: ellipsis;
   overflow: hidden;
-  text-overflow: ellipsis;         /* … ako je baš predug */
 }
 
-/* mobilno: jedan ispod drugog */
+/* Mobilno: jedan ispod drugog */
 @media (max-width:560px){
-  .actions-row{ grid-template-columns: 1fr; }
+  #welcomeModal .actions-row{ grid-template-columns: 1fr; }
 }
+
+
+
+
 
 
 .list{
