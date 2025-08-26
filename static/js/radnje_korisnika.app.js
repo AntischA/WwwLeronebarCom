@@ -56,139 +56,111 @@ function findDateKeyForISO(isoYMD){
   return null;
 }
 
-// Izgradi minimalnu print stranicu i pozovi print
-// Izgradi minimalnu print stranicu i pozovi print (samo 'Ukupno' za zadati datum)
 function printUkupnoForDateKey(datumKey) {
-  // 1) Pronađi 'Ukupno' widget za taj datum
-  const ukupnoEl = document.querySelector(`li[data-vrsta="Ukupno"][data-datum="${datumKey}"]`);
+  const li = document.querySelector(`li[data-vrsta="Ukupno"][data-datum="${datumKey}"]`);
 
-  // Ako ne postoji, odštampaj kratku poruku i zatvori
-  if (!ukupnoEl) {
-    document.body.innerHTML = '';
-    const wrap = document.createElement('div');
-    wrap.className = 'print-wrap';
-    wrap.innerHTML = `
-      <h1 style="margin:0 0 8px;font:600 18px/1.25 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
-        Radnje korisnika — Ukupno
-      </h1>
-      <div style="margin:0 0 12px;font:500 14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
-        Datum: ${datumKey}
-      </div>
-      <div style="font:500 14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
-        Nema podataka za odabrani dan.
-      </div>
-    `;
-    document.body.appendChild(wrap);
+  // Helperi
+  const getTxt = (sel) => (li?.querySelector(sel)?.textContent || "").trim();
+  const sanitize = (s) => s.replace(/\s+/g, " ");
+  const W = POS_WIDTH_MM ? `${parseInt(POS_WIDTH_MM, 10)}mm` : null;
 
-    const styleEl = document.createElement('style');
-    const W = POS_WIDTH_MM ? `${parseInt(POS_WIDTH_MM, 10)}mm` : null;
-    styleEl.textContent = `
-      @page { ${W ? `size:${W} auto;` : `size:auto;`} margin:0; }
-      @media print {
-        html,body { ${W ? `width:${W};` : ``} margin:0!important; padding:0!important; overflow:hidden!important;
-                    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .print-wrap { ${W ? `width:calc(${W} - 6mm);` : ``} margin:0!important; padding:3mm!important;
-                      page-break-inside: avoid!important; break-inside: avoid!important;
-                      break-after: page!important; page-break-after: always!important;
-                      max-height:200mm; overflow:hidden; }
-        * { page-break-inside: avoid!important; break-inside: avoid!important; box-sizing:border-box; }
-      }
-    `;
-    document.head.appendChild(styleEl);
-
-    document.title = `Radnje korisnika – Ukupno – ${datumKey}`;
-    const closeAfter = () => { try { window.close(); } catch (_) {} };
-    window.addEventListener('afterprint', closeAfter, { once: true });
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      window.print();
-      setTimeout(closeAfter, 2000);
-    }));
+  // Ako nema widgeta – ispiši poruku i zatvori
+  if (!li) {
+    document.body.innerHTML = `
+      <div class="print-wrap">
+        <h1>Radnje korisnika — Ukupno</h1>
+        <div class="meta">Datum: ${datumKey}</div>
+        <div class="no-data">Nema podataka za odabrani dan.</div>
+      </div>`;
+    injectPrintStyle(W);
+    doPrintAndClose(datumKey);
     return;
   }
 
-  // 2) Kloniraj samo 'Ukupno' widget
-  const clone = ukupnoEl.cloneNode(true);
-  clone.style.listStyle = 'none';
-  clone.style.padding = '14px 16px';
-  clone.style.border = '1px solid #d0d0d0';
-  clone.style.borderRadius = '12px';
-  clone.style.maxWidth = '420px';
-  clone.style.fontFamily = 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
-  clone.style.fontSize = '14px';
+  // Izvuci vrijednosti iz DOM-a (ne oslanjamo se na vanjski CSS)
+  // očekujemo:
+  //   .ukupno-sub            → gornji
+  //   .ukupno-sub.lower      → donji
+  //   .ukupno-bottom         → ukupno (bold)
+  const upperTxt = sanitize(getTxt('.ukupno-sub:not(.lower)')) || '';
+  const lowerTxt = sanitize(getTxt('.ukupno-sub.lower')) || '';
+  const totalTxt = sanitize(getTxt('.ukupno-bottom')) || '';
 
-  // 3) Resetuj body i složi minimalan prikaz
-  document.body.innerHTML = '';
-  const wrap = document.createElement('div');
-  wrap.className = 'print-wrap';
-  wrap.innerHTML = `
-    <h1 style="margin:0 0 8px;font:600 18px/1.25 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
-      Radnje korisnika — Ukupno
-    </h1>
-    <div style="margin:0 0 12px;font:500 14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
-      Datum: ${datumKey}
+  // Fallback ako se nešto promijenilo u markupu
+  const hasData = totalTxt || upperTxt || lowerTxt;
+  const safeUpper = upperTxt || '—';
+  const safeLower = lowerTxt || '—';
+  const safeTotal = totalTxt || sanitize(li.textContent) || '—';
+
+  // Složi minimalni ticket-HTML
+  document.body.innerHTML = `
+    <div class="print-wrap">
+      <h1>Radnje korisnika — Ukupno</h1>
+      <div class="meta">Datum: ${datumKey}</div>
+
+      <div class="row">
+        <span class="label">Gornji zbroj</span>
+        <span class="val">${safeUpper}</span>
+      </div>
+      <div class="row">
+        <span class="label">Donji zbroj</span>
+        <span class="val">${safeLower}</span>
+      </div>
+      <hr>
+      <div class="row total">
+        <span class="label">UKUPNO</span>
+        <span class="val">${safeTotal}</span>
+      </div>
     </div>
   `;
-  wrap.appendChild(clone);
-  document.body.appendChild(wrap);
 
-  // 4) Print CSS (POS širina, jedna strana, “cut” na kraju)
-  const styleEl = document.createElement('style');
-  const W = POS_WIDTH_MM ? `${parseInt(POS_WIDTH_MM, 10)}mm` : null;
-  styleEl.textContent = `
-    /* === STRANICA === */
-    @page { ${W ? `size:${W} auto;` : `size:auto;`} margin:0; }
+  // Ubaci print CSS (jedna stranica, opcionalna POS širina)
+  injectPrintStyle(W);
+  doPrintAndClose(datumKey);
 
-    /* === PRINT REŽIM === */
-    @media print {
-      html, body {
-        ${W ? `width:${W};` : ``}
-        margin:0!important; padding:0!important; overflow:hidden!important;
-        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  // ------- lokalni helperi --------
+  function injectPrintStyle(Wmm) {
+    const css = `
+      @page { ${Wmm ? `size:${Wmm} auto;` : `size:auto;`} margin:0; }
+      @media print {
+        html, body {
+          ${Wmm ? `width:${Wmm};` : ``}
+          margin:0 !important; padding:0 !important; overflow:hidden !important;
+          -webkit-print-color-adjust: exact; print-color-adjust: exact;
+          font-family: system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+        }
+        .print-wrap {
+          ${Wmm ? `width:calc(${Wmm} - 6mm);` : ``}
+          margin:0 !important; padding:3mm !important;
+          page-break-inside: avoid !important; break-inside: avoid !important;
+          break-after: page !important; page-break-after: always !important;
+          max-height: 200mm; overflow: hidden;
+        }
+        h1 { margin:0 0 6px; font-size:16px; font-weight:700; }
+        .meta { margin:0 0 10px; font-size:12px; opacity:.85; }
+        .row { display:flex; justify-content:space-between; align-items:center;
+               font-size:14px; line-height:1.35; padding:2px 0; }
+        .row.total { font-weight:800; font-size:16px; padding-top:6px; }
+        hr { border:0; border-top:1px dashed #999; margin:6px 0; }
+        .label { opacity:.9; }
+        .val { font-variant-numeric: tabular-nums; }
+        .no-data { font-size:14px; }
       }
-      .print-wrap {
-        ${W ? `width:calc(${W} - 6mm);` : ``}
-        margin:0!important; padding:3mm!important;
+    `;
+    const el = document.createElement('style');
+    el.textContent = css;
+    document.head.appendChild(el);
+  }
 
-        /* Drži sve u jednoj “strani/tiketu” */
-        page-break-inside: avoid!important;
-        break-inside: avoid!important;
-
-        /* Signal za sečenje/cut kod većine POS drajvera */
-        break-after: page!important;           /* modern */
-        page-break-after: always!important;    /* legacy */
-
-        /* Bez beskonačnih stranica: preseci višak */
-        max-height:200mm;
-        overflow:hidden;
-      }
-      * {
-        page-break-inside: avoid!important;
-        break-inside: avoid!important;
-        box-sizing: border-box;
-      }
-
-      /* Lokalno stilizovanje widgeta */
-      .ukupno-bold { font-weight:600; }
-      .ukupno-sub { opacity:.85; margin-bottom:4px; }
-      .ukupno-sub.lower { opacity:.8; }
-      .ukupno-bottom { margin-top:6px; font-size:18px; font-weight:700; }
-    }
-  `;
-  document.head.appendChild(styleEl);
-
-  // 5) Print & auto-close (bez dupliranja poziva)
-  document.title = `Radnje korisnika – Ukupno – ${datumKey}`;
-  const closeAfter = () => { try { window.close(); } catch (_) {} };
-  window.addEventListener('afterprint', closeAfter, { once: true });
-
-  const doPrint = () => {
-    window.print();
-    // fallback ako afterprint ne okine
-    setTimeout(closeAfter, 2000);
-  };
-
-  // Sačekaj render + reflow
-  requestAnimationFrame(() => requestAnimationFrame(doPrint));
+  function doPrintAndClose(dKey) {
+    document.title = `Radnje korisnika – Ukupno – ${dKey}`;
+    const closeAfter = () => { try { window.close(); } catch(_) {} };
+    window.addEventListener('afterprint', closeAfter, { once:true });
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      window.print();
+      setTimeout(closeAfter, 2000); // fallback
+    }));
+  }
 }
 
 
