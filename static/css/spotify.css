@@ -339,16 +339,23 @@ body{
   align-items: stretch;
 }
 
-/* Oba gumba: jednaka visina, ista zelena pozadina kao closeWelcomeBtn */
+#welcomeModal .actions-row{
+  display:flex;
+  gap:12px;
+  width:100%;
+  align-items:stretch;
+}
+
+/* Uskladi stilove oba gumba: zelena pozadina kao close */
 #welcomeModal .actions-row #btnPrintUkupnoDan,
 #welcomeModal .actions-row #closeWelcomeBtn{
-  background-color: #4CAF50;   /* isto kao closeWelcomeBtn */
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-size: 2rem;
-  height: 96px;                /* ugodna visina; pregazi staro 160px */
-  cursor: pointer;
+  background-color:#4CAF50;
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  font-size:2rem;
+  height:96px;
+  cursor:pointer;
 }
 
 /* Raspodjela širine: 10% i 90% */
