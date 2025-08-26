@@ -982,16 +982,30 @@
   const btn = document.getElementById('btnPrintUkupnoDan');
   if (!btn) return;
 
-  btn.addEventListener('click', () => {
-    // Danas kao ISO (lokalna vremenska zona browsera)
-    const todayISO = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  function closeWelcomeModal(){
+    const closeBtn = document.getElementById('closeWelcomeBtn');
+    if (closeBtn) { closeBtn.click(); return; }
+    const m = document.getElementById('welcomeModal');
+    if (m) m.style.display = 'none';
+  }
 
-    // Otvaramo /radnje sa signalom da želimo auto-print Ukupno za danas
-    // Napomena: window.close() će raditi u tom prozoru jer je otvoren skriptom
-    window.open(`/radnje?print=today_total&date=${encodeURIComponent(todayISO)}`, '_blank', 'noopener');
+  btn.addEventListener('click', () => {
+    const pwd = window.prompt('Unesi lozinku za ispis (🎵):');
+    if (pwd === null) {               // Cancel
+      closeWelcomeModal();
+      return;
+    }
+    if (pwd.trim() !== '778899') {    // Pogrešna lozinka
+      closeWelcomeModal();
+      return;
+    }
+
+    // Točna lozinka -> nastavi kao i do sada
+    const todayISO = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    window.open(`/radnje?print=today_total&date=${encodeURIComponent(todayISO)}`,
+                '_blank', 'noopener');
   });
 })();
-
 
 
   </script>
