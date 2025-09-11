@@ -371,124 +371,161 @@
       window.addEventListener('scroll', onScroll, { passive: true });
     })();
 
-    // ======= GALERIJA (fetch random, no-store) =======
-    (function(){
-      const track = document.getElementById('galleryTrack');
-      const dotsWrap = document.getElementById('galleryDots');
-      const slider = document.getElementById('gallery');
+  // ======= GALERIJA: fetch + swipe sa axis-lock (ne blokira vertikalni scroll) =======
+  (function(){
+    const track  = document.getElementById('galleryTrack');
+    const dotsWrap = document.getElementById('galleryDots');
+    const slider = document.getElementById('gallery');
 
-      fetch('/api/galerija/slike-kafica?sort=random', { cache: 'no-store' })
-        .then(r => r.json())
-        .then(urls => {
-          if (!Array.isArray(urls) || urls.length === 0){
-            track.innerHTML = '<div class="slide"><img alt="Nema dostupnih fotografija" src="/static/slike/hero.jpeg"></div>';
-            buildDots(1); initDrag(); return;
-          }
-          urls.forEach((src, idx) => {
-            const slide = document.createElement('div');
-            slide.className = 'slide';
-            const img = document.createElement('img');
-            img.loading = 'lazy'; img.src = src;
-            img.alt = `Fotografija ${idx+1} – LERONE Bar`;
-            slide.appendChild(img);
-            track.appendChild(slide);
-          });
-          buildDots(urls.length); initDrag();
-        })
-        .catch(() => {
-          track.innerHTML = '<div class="slide"><img alt="Galerija" src="/static/slike/hero.jpeg"></div>';
-          buildDots(1); initDrag();
+    fetch('/api/galerija/slike-kafica?sort=random', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(urls => {
+        if (!Array.isArray(urls) || !urls.length) {
+          track.innerHTML = '<div class="slide"><img alt="Nema dostupnih fotografija" src="/static/slike/hero.jpeg"></div>';
+          buildDots(1); initDrag(); return;
+        }
+        urls.forEach((src, i) => {
+          const slide = document.createElement('div');
+          slide.className = 'slide';
+          const img = document.createElement('img');
+          img.loading = 'lazy'; img.src = src; img.alt = `Fotografija ${i+1} – LERONE Bar`;
+          slide.appendChild(img);
+          track.appendChild(slide);
         });
+        buildDots(urls.length); initDrag();
+      })
+      .catch(() => {
+        track.innerHTML = '<div class="slide"><img alt="Galerija" src="/static/slike/hero.jpeg"></div>';
+        buildDots(1); initDrag();
+      });
 
-      let dots = [];
-      function buildDots(count){
-        dotsWrap.innerHTML = '';
-        dots = Array.from({length: count}, (_, i) => {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.setAttribute('aria-label', `Idi na slajd ${i+1}`);
-          b.addEventListener('click', () => goTo(i));
-          dotsWrap.appendChild(b);
-          return b;
-        });
-        sync();
-      }
+    let dots = [];
+    function buildDots(n){
+      dotsWrap.innerHTML = '';
+      dots = Array.from({length:n}, (_,i)=>{
+        const b=document.createElement('button');
+        b.type='button'; b.setAttribute('aria-label', `Idi na slajd ${i+1}`);
+        b.addEventListener('click', ()=>goTo(i));
+        dotsWrap.appendChild(b); return b;
+      });
+      sync();
+    }
 
-      let index = 0, startX = 0, currentX = 0, prevTranslate = 0, isDragging = false;
-      const threshold = 50;
+    let index = 0, prevTranslate = 0;
+    function setTranslateX(x, withT=false){
+      track.style.transition = withT ? 'transform .35s ease' : 'none';
+      track.style.transform  = `translateX(${x}px)`;
+    }
+    function sync(){
+      const count = track.children.length || 1;
+      index = Math.max(0, Math.min(index, count-1));
+      dots.forEach((d,i)=>d.classList.toggle('active', i===index));
+      const x = -index * slider.clientWidth;
+      setTranslateX(x, true);
+      prevTranslate = x;
+    }
+    function goTo(i){ index = i; sync(); }
 
-      function setTranslateX(x, withTransition = false){
-        track.style.transition = withTransition ? 'transform .35s ease' : 'none';
-        track.style.transform = `translateX(${x}px)`;
-      }
-      function sync(){
-        const slidesCount = track.children.length || 1;
-        index = Math.max(0, Math.min(index, slidesCount - 1));
-        dots.forEach((d, i) => d.classList.toggle('active', i === index));
-        const x = -index * slider.clientWidth;
-        setTranslateX(x, true);
-        prevTranslate = x;
-      }
-      function goTo(i){ index = i; sync(); }
+    // ---- AXIS-LOCK DRAG ----
+    function initDrag(){
+      window.addEventListener('resize', sync);
 
-      function initDrag(){
-        window.addEventListener('resize', sync);
-        slider.addEventListener('pointerdown', onDown);
-        slider.addEventListener('pointermove', onMove);
-        slider.addEventListener('pointerup', onUp);
-        slider.addEventListener('pointercancel', onUp);
-        slider.addEventListener('pointerleave', onUp);
-        slider.addEventListener('touchmove', (e) => { if (isDragging) e.preventDefault(); }, { passive: false });
-      }
+      let pointerId = null;
+      let isPointerDown = false;
+      let isDragging = false;
+      let startX = 0, startY = 0, lastX = 0;
 
-      function onDown(e){
-        isDragging = true;
-        slider.setPointerCapture(e.pointerId);
-        startX = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
-        currentX = startX;
+      const H_THRESHOLD = 8;   // pikseli da bi se prešlo u horizontalni drag
+      const SWIPE_THRESHOLD = 50;
+
+      slider.addEventListener('pointerdown', (e)=>{
+        isPointerDown = true;
+        isDragging = false;
+        pointerId = e.pointerId;
+        startX = lastX = (e.clientX ?? 0);
+        startY = (e.clientY ?? 0);
+        // Ne hvatamo capture odmah – dozvoljavamo vertikalni scroll.
         setTranslateX(prevTranslate, false);
-      }
-      function onMove(e){
-        if (!isDragging) return;
-        currentX = e.clientX ?? e.touches?.[0]?.clientX ?? currentX;
-        const delta = currentX - startX;
-        const next = prevTranslate + delta;
+      });
 
+      slider.addEventListener('pointermove', (e)=>{
+        if (!isPointerDown) return;
+
+        const x = (e.clientX ?? lastX);
+        const y = (e.clientY ?? startY);
+        const dx = x - startX;
+        const dy = y - startY;
+
+        // odluči smjer tek kad se dovoljno pomakne
+        if (!isDragging){
+          if (Math.abs(dx) > H_THRESHOLD && Math.abs(dx) > Math.abs(dy)){
+            isDragging = true;
+            // tek sada “zaključaj” pokazivač na slider (ok i na iOS)
+            try { slider.setPointerCapture(pointerId); } catch {}
+          } else if (Math.abs(dy) > H_THRESHOLD && Math.abs(dy) > Math.abs(dx)){
+            // vertikalni scroll – ne diraj ništa
+            return;
+          } else {
+            return; // još nismo prešli prag
+          }
+        }
+
+        // Horizontalni drag aktivan → blokiraj default i pomjeraj slider
+        e.preventDefault();
+        lastX = x;
+
+        const next = prevTranslate + dx;
         const maxX = 0;
         const minX = -((track.children.length - 1) * slider.clientWidth);
         const rubber = 0.35;
-        const beyondLeft = next > maxX;
-        const beyondRight = next < minX;
-        const adjusted = beyondLeft
-          ? maxX + (next - maxX) * rubber
-          : (beyondRight ? minX + (next - minX) * rubber : next);
+        const adjusted =
+          next > maxX ? maxX + (next - maxX) * rubber :
+          next < minX ? minX + (next - minX) * rubber :
+          next;
 
         setTranslateX(adjusted, false);
-      }
-      function onUp(e){
-        if (!isDragging) return;
-        isDragging = false;
-        const endX = e.clientX ?? currentX;
-        const moved = endX - startX;
-        if (Math.abs(moved) > threshold){ index += (moved < 0 ? 1 : -1); }
-        sync();
-      }
-    })();
+      }, { passive: false });
 
-    // ======= GOOGLE MAPS =======
+      function endDrag(e){
+        if (!isPointerDown) return;
+        isPointerDown = false;
+
+        if (isDragging){
+          const endX = (e.clientX ?? lastX);
+          const moved = endX - startX;
+          if (Math.abs(moved) > SWIPE_THRESHOLD) index += (moved < 0 ? 1 : -1);
+          sync();
+        }
+        isDragging = false;
+        try { slider.releasePointerCapture(pointerId); } catch {}
+        pointerId = null;
+      }
+
+      slider.addEventListener('pointerup', endDrag);
+      slider.addEventListener('pointercancel', endDrag);
+      slider.addEventListener('pointerleave', endDrag);
+    }
+  })();
+
   </script>
 
 
 <script>
-  // Globalno (Google zove window.initMap)
+    // ======= GOOGLE MAPS =======
   window.initMap = function () {
     const leroneBar = { lat: 43.505109, lng: 16.4547333 };
 
     const map = new google.maps.Map(document.getElementById('map'), {
       center: leroneBar,
-      zoom: 15,                    // 👉 veći zoom = “bliže” (17–19 je idealno)
+      zoom: 15,
+      mapId: 'DEMO_MAP_ID',      // zameni svojim kad ga kreiraš
       mapTypeControl: false,
-      gestureHandling: 'greedy',   // ugodnije zumiranje na mobitelu (pinch/tap)
+
+      // 👉 ključne linije:
+      gestureHandling: 'cooperative', // scroll kotačić pomera stranicu; Ctrl/⌘+scroll zumira mapu
+      scrollwheel: false,             // dodatni “guard” za desktop
+      keyboardShortcuts: false,       // da strelice/+/− ne hvataju fokus mape
+
       styles: [
         { elementType: "geometry", stylers: [{ color: "#1d2c4d" }] },
         { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
@@ -498,39 +535,49 @@
       ]
     });
 
-    // Marker s novim naslovom
-    const marker = new google.maps.Marker({
-      position: leroneBar,
-      map,
-      title: "LERONE Bar & More",   // 👉 naslov/tooltip
-      animation: google.maps.Animation.DROP
+    // Advanced marker + label (ostaje isto)
+    const { AdvancedMarkerElement, PinElement } = google.maps.marker;
+    const pin = new PinElement({ background: '#ff5733', glyph: '☕', borderColor: '#fff' });
+
+    const label = document.createElement('div');
+    label.style.cssText =
+      'margin-left:8px;background:#fff;padding:6px 10px;border-radius:12px;' +
+      'box-shadow:0 2px 8px rgba(0,0,0,.2);font-weight:600;font-size:12px;white-space:nowrap;color:#111;';
+    label.textContent = 'LERONE Bar & More';
+
+    const container = document.createElement('div');
+    container.style.display = 'flex';
+    container.style.alignItems = 'center';
+    container.append(pin.element, label);
+
+    const advMarker = new AdvancedMarkerElement({
+      map, position: leroneBar, content: container, title: 'LERONE Bar & More', gmpClickable: true
     });
 
-    // Info prozor – vidi se odmah i sadrži novi tekst
     const infoWindow = new google.maps.InfoWindow({
       content: `
-        <div style="font-size:12px; font-family:Poppins, sans-serif; line-height:1.4;">
-          <h3 style="font-size:14px; margin-bottom:5px;">LERONE Bar &amp; More</h3>
+        <div style="font-size:12px;font-family:Poppins,sans-serif;line-height:1.4;">
+          <h3 style="font-size:14px;margin-bottom:5px;">LERONE Bar &amp; More</h3>
           <p style="margin:0 0 5px;"><strong>Adresa:</strong> Poljička cesta 1, Split</p>
           <p style="margin:0 0 10px;"><strong>Radno vrijeme:</strong> 07:00 – 00:00</p>
           <a href="https://www.google.com/maps/dir/?api=1&destination=43.505109,16.4547333"
              target="_blank"
-             style="display:inline-block; padding:6px 10px; background:#ff5733; color:#fff; text-decoration:none; border-radius:6px;">
+             style="display:inline-block;padding:6px 10px;background:#ff5733;color:#fff;text-decoration:none;border-radius:6px;">
              Otvori u Google Maps
           </a>
-        </div>
-      `,
+        </div>`,
       disableAutoPan: true
     });
-    infoWindow.open(map, marker);
+
+    advMarker.addListener('click', () => infoWindow.open({ map, anchor: advMarker }));
+    infoWindow.open({ map, anchor: advMarker });
   };
 </script>
 
 
 <script
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCVvOdaQHu9TfSdJs5K-4q0HrLt8TjQdh8&v=weekly&callback=initMap"
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCVvOdaQHu9TfSdJs5K-4q0HrLt8TjQdh8&v=weekly&libraries=marker&callback=initMap"
   async defer></script>
-
 
 
 </body>
