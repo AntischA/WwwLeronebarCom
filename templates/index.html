@@ -24,7 +24,11 @@
     }
 
     *{ box-sizing: border-box; }
-    html, body{ height:100%; }
+    html{ height:auto; }
+    body{
+      min-height:100%;
+      overflow-y:auto;
+    }
     /* SPRIJEČI HORIZONTALNI SKROL NA MOBU */
     html, body{ overflow-x: hidden; }
 
@@ -131,30 +135,33 @@
       color: var(--dark);
     }
 
-    .slider{
-      position: relative;
-      overflow: hidden;
-      border-radius: var(--radius);
-      background: #000;
-      box-shadow: var(--shadow);
-      touch-action: pan-y;
-      height: clamp(220px, 48vh, 520px);
-    }
-    .slider-track{
-      display: flex;
-      transition: transform .35s ease;
-      will-change: transform;
-      height: 100%;
-    }
-    .slide{
-      min-width: 100%;
-      height: 100%;
-      user-select: none;
-      -webkit-user-drag: none;
-      position: relative;
-      overflow: hidden;
-      background: #000;
-    }
+.slider{
+  position: relative;
+  border-radius: var(--radius);
+  background: #000;
+  box-shadow: var(--shadow);
+  height: clamp(220px, 48vh, 520px);
+  /* scroll container */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+}
+.slider::-webkit-scrollbar{ display:none; } /* Chrome */
+
+.slider-track{
+  display: flex;
+  height: 100%;
+}
+
+.slide{
+  min-width: 100%;
+  height: 100%;
+  scroll-snap-align: start; /* ili center */
+  position: relative;
+  background:#000;
+}
     .slide img{
       width: 100%;
       height: 100%;
@@ -216,7 +223,7 @@
     .footer-inner{
       max-width: 1100px; margin: 0 auto;
     }
-    .footer-brand{ font-size: 20px; font-weight: 600; margin: 0 0 8px; }
+    .footer-brand{ font-size: 20px; font-weight: 600; margin: 0 0 0 0; }
     .footer-meta{ color: #b9c0c6; margin: 4px 0; }
 
     /* ========== DONJA AKCIONA TRAKA (sticky/fixed + safe-area, BEZ ŠIRENJA) ========== */
@@ -317,7 +324,7 @@
       <div class="info">
         <strong style="font-size:18px;">LERONE Bar</strong>
         <p><strong>Adresa:</strong></p>
-        <p>Poljička cesta 1, Split
+        <p>Poljička cesta 1, Split</p>
         <p><strong>Radno vrijeme:</strong></p>
         <p>Ponedjeljak – Nedjelja: 07:00 – 00:00</p>
         <div class="links">
@@ -365,17 +372,19 @@
 
   <script>
     // ======= HEADER SHRINK ON SCROLL =======
-    (function(){
+    (function () {
       const header = document.getElementById('header');
       const onScroll = () => {
         if (window.pageYOffset > 10) header.classList.add('scrolled');
         else header.classList.remove('scrolled');
       };
       onScroll();
-      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('scroll', onScroll, {passive: true});
     })();
+    </script>
 
-  // ======= GALERIJA: fetch + swipe sa axis-lock (ne blokira vertikalni scroll) =======
+
+<script>
   (function(){
     const track  = document.getElementById('galleryTrack');
     const dotsWrap = document.getElementById('galleryDots');
@@ -386,7 +395,7 @@
       .then(urls => {
         if (!Array.isArray(urls) || !urls.length) {
           track.innerHTML = '<div class="slide"><img alt="Nema dostupnih fotografija" src="/static/slike/hero.jpeg"></div>';
-          buildDots(1); initDrag(); return;
+          buildDots(1); observeSlides(); return;
         }
         urls.forEach((src, i) => {
           const slide = document.createElement('div');
@@ -396,11 +405,11 @@
           slide.appendChild(img);
           track.appendChild(slide);
         });
-        buildDots(urls.length); initDrag();
+        buildDots(urls.length); observeSlides();
       })
       .catch(() => {
         track.innerHTML = '<div class="slide"><img alt="Galerija" src="/static/slike/hero.jpeg"></div>';
-        buildDots(1); initDrag();
+        buildDots(1); observeSlides();
       });
 
     let dots = [];
@@ -409,112 +418,44 @@
       dots = Array.from({length:n}, (_,i)=>{
         const b=document.createElement('button');
         b.type='button'; b.setAttribute('aria-label', `Idi na slajd ${i+1}`);
-        b.addEventListener('click', ()=>goTo(i));
+        b.addEventListener('click', ()=>{
+          const slide = track.children[i];
+          slide?.scrollIntoView({ behavior:'smooth', inline:'start', block:'nearest' });
+        });
         dotsWrap.appendChild(b); return b;
       });
-      sync();
+      if (dots[0]) dots[0].classList.add('active');
     }
 
-    let index = 0, prevTranslate = 0;
-    function setTranslateX(x, withT=false){
-      track.style.transition = withT ? 'transform .35s ease' : 'none';
-      track.style.transform  = `translateX(${x}px)`;
-    }
-    function sync(){
-      const count = track.children.length || 1;
-      index = Math.max(0, Math.min(index, count-1));
-      dots.forEach((d,i)=>d.classList.toggle('active', i===index));
-      const x = -index * slider.clientWidth;
-      setTranslateX(x, true);
-      prevTranslate = x;
-    }
-    function goTo(i){ index = i; sync(); }
-
-    // ---- AXIS-LOCK DRAG ----
-    function initDrag(){
-      window.addEventListener('resize', sync);
-
-      let pointerId = null;
-      let isPointerDown = false;
-      let isDragging = false;
-      let startX = 0, startY = 0, lastX = 0;
-
-      const H_THRESHOLD = 8;   // pikseli da bi se prešlo u horizontalni drag
-      const SWIPE_THRESHOLD = 50;
-
-      slider.addEventListener('pointerdown', (e)=>{
-        isPointerDown = true;
-        isDragging = false;
-        pointerId = e.pointerId;
-        startX = lastX = (e.clientX ?? 0);
-        startY = (e.clientY ?? 0);
-        // Ne hvatamo capture odmah – dozvoljavamo vertikalni scroll.
-        setTranslateX(prevTranslate, false);
-      });
-
-      slider.addEventListener('pointermove', (e)=>{
-        if (!isPointerDown) return;
-
-        const x = (e.clientX ?? lastX);
-        const y = (e.clientY ?? startY);
-        const dx = x - startX;
-        const dy = y - startY;
-
-        // odluči smjer tek kad se dovoljno pomakne
-        if (!isDragging){
-          if (Math.abs(dx) > H_THRESHOLD && Math.abs(dx) > Math.abs(dy)){
-            isDragging = true;
-            // tek sada “zaključaj” pokazivač na slider (ok i na iOS)
-            try { slider.setPointerCapture(pointerId); } catch {}
-          } else if (Math.abs(dy) > H_THRESHOLD && Math.abs(dy) > Math.abs(dx)){
-            // vertikalni scroll – ne diraj ništa
-            return;
-          } else {
-            return; // još nismo prešli prag
+    // Obeleži aktivni slajd prema vidljivosti
+    function observeSlides(){
+      const slides = [...track.children];
+      const io = new IntersectionObserver((entries)=>{
+        // nađi najvidljiviji
+        let maxRatio = 0, activeIndex = 0;
+        for (const e of entries){
+          if (e.intersectionRatio > maxRatio){
+            maxRatio = e.intersectionRatio;
+            activeIndex = slides.indexOf(e.target);
           }
         }
+        dots.forEach((d,i)=>d.classList.toggle('active', i===activeIndex));
+      }, { root: slider, threshold: buildThresholds() });
 
-        // Horizontalni drag aktivan → blokiraj default i pomjeraj slider
-        e.preventDefault();
-        lastX = x;
+      slides.forEach(s => io.observe(s));
+    }
 
-        const next = prevTranslate + dx;
-        const maxX = 0;
-        const minX = -((track.children.length - 1) * slider.clientWidth);
-        const rubber = 0.35;
-        const adjusted =
-          next > maxX ? maxX + (next - maxX) * rubber :
-          next < minX ? minX + (next - minX) * rubber :
-          next;
-
-        setTranslateX(adjusted, false);
-      }, { passive: false });
-
-      function endDrag(e){
-        if (!isPointerDown) return;
-        isPointerDown = false;
-
-        if (isDragging){
-          const endX = (e.clientX ?? lastX);
-          const moved = endX - startX;
-          if (Math.abs(moved) > SWIPE_THRESHOLD) index += (moved < 0 ? 1 : -1);
-          sync();
-        }
-        isDragging = false;
-        try { slider.releasePointerCapture(pointerId); } catch {}
-        pointerId = null;
-      }
-
-      slider.addEventListener('pointerup', endDrag);
-      slider.addEventListener('pointercancel', endDrag);
-      slider.addEventListener('pointerleave', endDrag);
+    function buildThresholds(){
+      // finije očitavanje vidljivosti
+      const t = [];
+      for (let i=0;i<=1;i+=0.05) t.push(i);
+      return t;
     }
   })();
+</script>
 
-  </script>
 
-
-<script>
+  <script>
     // ======= GOOGLE MAPS =======
   window.initMap = function () {
     const leroneBar = { lat: 43.505109, lng: 16.4547333 };
