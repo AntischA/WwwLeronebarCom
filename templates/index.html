@@ -352,7 +352,13 @@
       <span>Pregledaj cjenik</span>
     </a>
 
-    <a href="https://wa.me/385912224214?text=Dobar%20dan,%20želio%20bih%20dobiti%20više%20informacija%20o%20ponudi."
+<a
+  href="https://wa.me/385912224214?text=Pozdrav,%20imam%20pitanje%0A"
+  target="_blank" rel="noopener"
+  class="action-link wa" aria-label="Piši nam na WhatsApp">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="" />
+  <span>Piši nam</span>
+</a>
        target="_blank" rel="noopener" class="action-link wa" aria-label="Piši nam na WhatsApp">
       <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="" />
       <span>Piši nam</span>
@@ -548,7 +554,7 @@
     const container = document.createElement('div');
     container.style.display = 'flex';
     container.style.alignItems = 'center';
-    container.append(pin.element, label);
+    container.append(pin.element);
 
     const advMarker = new AdvancedMarkerElement({
       map, position: leroneBar, content: container, title: 'LERONE Bar & More', gmpClickable: true
