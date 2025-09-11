@@ -25,32 +25,44 @@
 
     *{ box-sizing: border-box; }
     html, body{ height:100%; }
+    /* SPRIJEČI HORIZONTALNI SKROL NA MOBU */
+    html, body{ overflow-x: hidden; }
+
     body{
       margin:0;
       font-family: 'Poppins', Arial, sans-serif;
       color: var(--text);
       background: var(--bg);
       line-height: 1.55;
-      padding-bottom: var(--action-h); /* prostor za fiksnu donju traku */
+      /* prostor za fiksnu donju traku + iOS safe-area */
     }
 
     a{ color: var(--accent); text-decoration: none; }
     a:hover{ text-decoration: underline; }
 
-    /* ========== HEADER (sticky + shrink on scroll) ========== */
+    /* ========== HEADER (sticky + shrink + safe-area) ========== */
     .main-header{
       position: sticky;
       top: 0;
       z-index: 1000;
-      background: var(--dark);
+      background: rgba(25,29,34,.98);
       display: flex;
       align-items: center;
       justify-content: center;
-      height: var(--header-h);
-      transition: height .28s ease;
+      width: 100%;
+      /* osnovna visina + safe-area na vrhu (iOS) */
+      height: calc(var(--header-h) + env(safe-area-inset-top, 0px));
+      padding-top: env(safe-area-inset-top, 0px);
+      transition: height .28s ease, background .28s ease;
       border-bottom: 1px solid rgba(255,255,255,.08);
+      backdrop-filter: saturate(120%) blur(6px);
+      box-shadow: 0 2px 10px rgba(0,0,0,.12);
     }
-    .main-header.scrolled{ height: var(--header-h-scrolled); }
+    .main-header.scrolled{
+      height: calc(var(--header-h-scrolled) + env(safe-area-inset-top, 0px));
+      background: rgba(25,29,34,.98);
+      box-shadow: 0 2px 14px rgba(0,0,0,.18);
+    }
 
     .logo{
       display:flex;
@@ -92,7 +104,7 @@
       content:"";
       position:absolute; inset:0;
       background: url('/static/slike/hero.jpeg') center/cover no-repeat;
-      filter: brightness(.7);
+      filter: brightness(.72);
       transform: scale(1.04);
     }
     .hero-inner{
@@ -101,10 +113,11 @@
       text-align: center;
       color: #fff;
       padding: 32px;
+      text-shadow: 0 2px 10px rgba(0,0,0,.35);
     }
     .hero h1{
-      margin:0 0 10px;
-      font-size: clamp(28px, 3.4vw, 44px);
+      margin:0;
+      font-size: clamp(24px, 3.4vw, 40px);
       font-weight: 600;
       letter-spacing:.3px;
     }
@@ -122,10 +135,10 @@
       position: relative;
       overflow: hidden;
       border-radius: var(--radius);
-      background: #fff;
+      background: #000;
       box-shadow: var(--shadow);
-      touch-action: pan-y; /* dozvoli vertikalni scroll, slider hvata horizontalno */
-      height: clamp(220px, 48vh, 520px); /* fiksna visina da uvek popuni bez belih margina */
+      touch-action: pan-y;
+      height: clamp(220px, 48vh, 520px);
     }
     .slider-track{
       display: flex;
@@ -140,17 +153,13 @@
       -webkit-user-drag: none;
       position: relative;
       overflow: hidden;
+      background: #000;
     }
     .slide img{
       width: 100%;
       height: 100%;
       display: block;
-
-      /* Pokrivanje bez belih traka (seče višak, ne deformiše) */
       object-fit: cover;
-
-      /* Ako baš želiš razvučeno bez ikakvog sečenja, zameni sa: */
-      /* object-fit: fill; */
     }
     .slider-dots{
       display:flex; gap:8px; justify-content:center; align-items:center;
@@ -182,7 +191,7 @@
       gap: 8px;
       color: var(--text);
     }
-    .info p{ margin:0; color: var(--muted); }
+    .info p{ margin:0; color: #4b5563; }
     .links{
       display:flex; flex-wrap: wrap; gap: 10px;
       margin-top: 6px;
@@ -210,31 +219,60 @@
     .footer-brand{ font-size: 20px; font-weight: 600; margin: 0 0 8px; }
     .footer-meta{ color: #b9c0c6; margin: 4px 0; }
 
-    /* ========== DONJA AKCIONA TRAKA (sticky/fixed) ========== */
+    /* ========== DONJA AKCIONA TRAKA (sticky/fixed + safe-area, BEZ ŠIRENJA) ========== */
     .action-bar{
       position: fixed;
-      left:0; right:0; bottom:0;
-      height: var(--action-h);
-      background: var(--dark);
+      inset: auto 0 0 0;              /* bottom:0; left/right:0 */
+      width: 100%;
+      max-width: 100vw;               /* nikad šire od viewporta */
+      height: calc(var(--action-h) + env(safe-area-inset-bottom, 0px));
+      /* safe-area padding lijevo/desno + sadržaj ne smije gurnuti širinu */
+      padding: 8px max(8px, env(safe-area-inset-right, 0px))
+               calc(env(safe-area-inset-bottom, 0px))
+               max(8px, env(safe-area-inset-left, 0px));
+      background: rgba(25,29,34,.98);
+      backdrop-filter: saturate(120%) blur(6px);
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       z-index: 1100;
       border-top: 1px solid rgba(255,255,255,.08);
+      box-shadow: 0 -2px 12px rgba(0,0,0,.14);
+      box-sizing: border-box;
+      /* klipuj sve što bi htelo da "curi" (ne dozvoli da proširi body) */
+      overflow-x: hidden;
     }
     .action-link{
       display:flex; flex-direction: column; align-items:center; justify-content:center;
       gap: 2px;
-      color: #fff; text-decoration:none; font-weight: 700; font-size: 12px;
+      color: #fff; text-decoration:none; font-weight: 700;
+      font-size: 12px; line-height: 1.05;
+      min-width: 0;                    /* važno da grid kolona može da “skrati” item */
+      padding: 0 2px;
       transition: filter .2s ease, transform .2s ease;
     }
     .action-link:hover{ filter: brightness(1.06); transform: translateY(-1px); }
-    .action-link .icon{ font-size: 22px; line-height:1; }
+    .action-link .icon{ font-size: 20px; line-height:1; }
     .action-link.call .icon{ color: var(--call); }
     .action-link.menu .icon{ color: var(--menu); }
-    .action-link.wa   .icon{ color: var(--wa);  }
-    .action-link img{ width:22px; height:22px; }
+    .action-link.wa   img{ width:20px; height:20px; display:block; }
 
-    /* ========== UTIL ========== */
+    /* tekst u donjoj traci: ne širi kolonu — skrati s elipsama ako nema mjesta */
+    .action-link span:last-child{
+      display:block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 11px;
+    }
+
+    /* ========== XS prilagodbe ========== */
+    @media (max-width: 360px){
+      .action-link .icon{ font-size: 18px; }
+      .action-link span:last-child{ font-size: 10px; }
+      .hero h1{ font-size: clamp(20px, 6vw, 28px); }
+    }
+
     @media (min-width: 900px){
       .hero{ margin: 28px auto 10px; }
     }
@@ -279,7 +317,7 @@
       <div class="info">
         <strong style="font-size:18px;">LERONE Bar</strong>
         <p><strong>Adresa:</strong> Poljička cesta 1, Split</p>
-        <p><strong>Radno vreme:</strong> Ponedjeljak – Nedjelja: 06:30 – 00:00</p>
+        <p><strong>Radno vreme:</strong> Ponedjeljak – Nedjelja: 07:00 – 00:00</p>
         <div class="links">
           <a class="chip" href="https://www.google.com/maps/dir/?api=1&destination=43.505109,16.4547333" target="_blank" rel="noopener">📍 Kako do nas</a>
           <a class="chip" href="https://www.facebook.com/caffebarlerone" target="_blank" rel="noopener">📘 Facebook</a>
@@ -325,51 +363,43 @@
     // ======= HEADER SHRINK ON SCROLL =======
     (function(){
       const header = document.getElementById('header');
-      const shrink = () => {
-        if (window.scrollY > 10) header.classList.add('scrolled');
+      const onScroll = () => {
+        if (window.pageYOffset > 10) header.classList.add('scrolled');
         else header.classList.remove('scrolled');
       };
-      shrink();
-      window.addEventListener('scroll', shrink, { passive: true });
+      onScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
     })();
 
-    // ======= GALERIJA: učitaj sve slike iz /static/slike_kafica preko API-ja =======
+    // ======= GALERIJA (fetch random, no-store) =======
     (function(){
       const track = document.getElementById('galleryTrack');
       const dotsWrap = document.getElementById('galleryDots');
       const slider = document.getElementById('gallery');
 
-      // Fetch lista slika sa servera
-      fetch('/api/galerija/slike-kafica?sort=random&seed=123')
+      fetch('/api/galerija/slike-kafica?sort=random', { cache: 'no-store' })
         .then(r => r.json())
         .then(urls => {
           if (!Array.isArray(urls) || urls.length === 0){
             track.innerHTML = '<div class="slide"><img alt="Nema dostupnih fotografija" src="/static/slike/hero.jpeg"></div>';
-            buildDots(1);
-            initDrag(1);
-            return;
+            buildDots(1); initDrag(); return;
           }
           urls.forEach((src, idx) => {
             const slide = document.createElement('div');
             slide.className = 'slide';
             const img = document.createElement('img');
-            img.loading = 'lazy';
-            img.src = src;
+            img.loading = 'lazy'; img.src = src;
             img.alt = `Fotografija ${idx+1} – LERONE Bar`;
             slide.appendChild(img);
             track.appendChild(slide);
           });
-          buildDots(urls.length);
-          initDrag(urls.length);
+          buildDots(urls.length); initDrag();
         })
         .catch(() => {
-          // Fallback
           track.innerHTML = '<div class="slide"><img alt="Galerija" src="/static/slike/hero.jpeg"></div>';
-          buildDots(1);
-          initDrag(1);
+          buildDots(1); initDrag();
         });
 
-      // Kreiraj navigacione tačkice
       let dots = [];
       function buildDots(count){
         dotsWrap.innerHTML = '';
@@ -384,11 +414,7 @@
         sync();
       }
 
-      let index = 0;
-      let startX = 0;
-      let currentX = 0;
-      let prevTranslate = 0;
-      let isDragging = false;
+      let index = 0, startX = 0, currentX = 0, prevTranslate = 0, isDragging = false;
       const threshold = 50;
 
       function setTranslateX(x, withTransition = false){
@@ -397,8 +423,7 @@
       }
       function sync(){
         const slidesCount = track.children.length || 1;
-        if (index < 0) index = 0;
-        if (index > slidesCount - 1) index = slidesCount - 1;
+        index = Math.max(0, Math.min(index, slidesCount - 1));
         dots.forEach((d, i) => d.classList.toggle('active', i === index));
         const x = -index * slider.clientWidth;
         setTranslateX(x, true);
@@ -408,16 +433,12 @@
 
       function initDrag(){
         window.addEventListener('resize', sync);
-
         slider.addEventListener('pointerdown', onDown);
         slider.addEventListener('pointermove', onMove);
         slider.addEventListener('pointerup', onUp);
         slider.addEventListener('pointercancel', onUp);
         slider.addEventListener('pointerleave', onUp);
-
-        slider.addEventListener('touchmove', (e) => {
-          if (isDragging) e.preventDefault();
-        }, { passive: false });
+        slider.addEventListener('touchmove', (e) => { if (isDragging) e.preventDefault(); }, { passive: false });
       }
 
       function onDown(e){
@@ -449,73 +470,44 @@
         isDragging = false;
         const endX = e.clientX ?? currentX;
         const moved = endX - startX;
-        if (Math.abs(moved) > threshold){
-          if (moved < 0) index++; else index--;
-        }
+        if (Math.abs(moved) > threshold){ index += (moved < 0 ? 1 : -1); }
         sync();
       }
     })();
 
     // ======= GOOGLE MAPS =======
-    function initMap(){
-      const leroneBar = { lat: 43.505109, lng: 16.4547333 };
-
-      const map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 14,
-        center: leroneBar,
-        mapTypeControl: false,
-        styles: [
-          { elementType: "geometry", stylers: [{ color: "#1d2c4d" }] },
-          { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
-          { elementType: "labels.text.stroke", stylers: [{ color: "#1a3646" }] },
-          { featureType: "road", elementType: "geometry", stylers: [{ color: "#304a7d" }] },
-          { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }
-        ]
-      });
-
-      const marker = new google.maps.Marker({
-        position: leroneBar,
-        map,
-        title: "LERONE Bar",
-        animation: google.maps.Animation.DROP
-      });
-
-      const infoWindow = new google.maps.InfoWindow({
-        content: `
-          <div style="font-size:12px; font-family:Poppins, sans-serif; line-height:1.4;">
-            <h3 style="font-size:14px; margin-bottom:5px;">LERONE Bar</h3>
-            <p style="margin:0 0 5px;">Uživajte u vrhunskoj kafi i opuštenoj atmosferi u srcu Splita.</p>
-            <p style="margin:0 0 5px;"><strong>Adresa:</strong> Poljička cesta 1, Split</p>
-            <p style="margin:0 0 10px;"><strong>Radno vreme:</strong> 06:30 - 00:00</p>
-            <a href="https://www.google.com/maps/dir/?api=1&destination=43.505109,16.4547333"
-               target="_blank"
-               style="display:inline-block; padding:6px 10px; background:#ff5733; color:#fff; text-decoration:none; border-radius:6px;">
-               Otvori u Google Maps
-            </a>
-          </div>`,
-        disableAutoPan: true
-      });
-
-      infoWindow.open(map, marker);
-      google.maps.event.addListener(infoWindow, 'closeclick', () => infoWindow.open(map, marker));
-
-      const mapControls = document.createElement("div");
-      mapControls.style.margin = "10px";
-      mapControls.innerHTML = `
-        <button data-type="roadmap" style="margin-right:6px; padding:8px 10px; font-size:12px; border-radius:8px; border:0;">Standardna</button>
-        <button data-type="satellite" style="margin-right:6px; padding:8px 10px; font-size:12px; border-radius:8px; border:0;">Satelitska</button>
-        <button data-type="terrain" style="padding:8px 10px; font-size:12px; border-radius:8px; border:0;">Terenska</button>
-      `;
-      map.controls[google.maps.ControlPosition.TOP_RIGHT].push(mapControls);
-      mapControls.addEventListener('click', (e) => {
-        if (e.target.tagName === 'BUTTON'){
-          map.setMapTypeId(e.target.getAttribute('data-type'));
-        }
-      });
-    }
   </script>
 
-  <!-- Zamijeni ključ svojim i obavezno ga ograniči na domen/URL projekta -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQxY9g9ua-uI7KzU3-dRujg2WZ_gbQ7Ts&callback=initMap" defer></script>
+
+<script>
+  // Globalno, da ga Google callback nađe:
+  window.initMap = function () {
+    const leroneBar = { lat: 43.505109, lng: 16.4547333 };
+    const el = document.getElementById('map');
+    if (!el) return;
+
+    const map = new google.maps.Map(el, {
+      zoom: 14,
+      center: leroneBar,
+      mapTypeControl: false,
+      styles: [
+        { elementType: "geometry", stylers: [{ color: "#1d2c4d" }] },
+        { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
+        { elementType: "labels.text.stroke", stylers: [{ color: "#1a3646" }] },
+        { featureType: "road", elementType: "geometry", stylers: [{ color: "#304a7d" }] },
+        { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }
+      ]
+    });
+
+    new google.maps.Marker({ position: leroneBar, map, title: "LERONE Bar" });
+  };
+</script>
+
+<script
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCVvOdaQHu9TfSdJs5K-4q0HrLt8TjQdh8&v=weekly&callback=initMap"
+  async defer></script>
+
+
+
 </body>
 </html>
