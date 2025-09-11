@@ -480,16 +480,15 @@
 
 
 <script>
-  // Globalno, da ga Google callback nađe:
+  // Globalno (Google zove window.initMap)
   window.initMap = function () {
     const leroneBar = { lat: 43.505109, lng: 16.4547333 };
-    const el = document.getElementById('map');
-    if (!el) return;
 
-    const map = new google.maps.Map(el, {
-      zoom: 14,
+    const map = new google.maps.Map(document.getElementById('map'), {
       center: leroneBar,
+      zoom: 15,                    // 👉 veći zoom = “bliže” (17–19 je idealno)
       mapTypeControl: false,
+      gestureHandling: 'greedy',   // ugodnije zumiranje na mobitelu (pinch/tap)
       styles: [
         { elementType: "geometry", stylers: [{ color: "#1d2c4d" }] },
         { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
@@ -499,9 +498,35 @@
       ]
     });
 
-    new google.maps.Marker({ position: leroneBar, map, title: "LERONE Bar" });
+    // Marker s novim naslovom
+    const marker = new google.maps.Marker({
+      position: leroneBar,
+      map,
+      title: "LERONE Bar & More",   // 👉 naslov/tooltip
+      animation: google.maps.Animation.DROP
+    });
+
+    // Info prozor – vidi se odmah i sadrži novi tekst
+    const infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div style="font-size:12px; font-family:Poppins, sans-serif; line-height:1.4;">
+          <h3 style="font-size:14px; margin-bottom:5px;">LERONE Bar &amp; More</h3>
+          <p style="margin:0 0 5px;">Vrhunska kava i opuštena atmosfera u srcu Splita.</p>
+          <p style="margin:0 0 5px;"><strong>Adresa:</strong> Poljička cesta 1, Split</p>
+          <p style="margin:0 0 10px;"><strong>Radno vrijeme:</strong> 07:00 – 00:00</p>
+          <a href="https://www.google.com/maps/dir/?api=1&destination=43.505109,16.4547333"
+             target="_blank"
+             style="display:inline-block; padding:6px 10px; background:#ff5733; color:#fff; text-decoration:none; border-radius:6px;">
+             Otvori u Google Maps
+          </a>
+        </div>
+      `,
+      disableAutoPan: true
+    });
+    infoWindow.open(map, marker);
   };
 </script>
+
 
 <script
   src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCVvOdaQHu9TfSdJs5K-4q0HrLt8TjQdh8&v=weekly&callback=initMap"
