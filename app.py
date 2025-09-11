@@ -4,6 +4,8 @@ from flask import Flask, render_template, send_from_directory, redirect, request
 import os
 from api.dohvat_radnja_korisnika import radnje_korisnika
 from api.dohvat_otkazanih_narudzbi import dohvati_ukupni_total_otkazanih_narudzbi
+from api.slike_kafica import get_slike_kafica_response
+
 import urllib.parse
 import requests
 from app_db import init_db, get_day, upsert_day
@@ -343,6 +345,16 @@ def api_grant():
         return jsonify(success=False, error=str(e)), 500
     finally:
         pool.disconnect()
+
+@app.route('/api/galerija/slike-kafica', methods=['GET'])
+def api_galerija_slike_kafica():
+    # Default: sort=random (svaki refresh drugačiji raspored)
+    sort  = request.args.get('sort', 'random')    # 'random' | 'mtime' | 'name'
+    order = request.args.get('order', 'asc')      # 'asc' | 'desc' (ignoriše se za random)
+    limit = request.args.get('limit', type=int)   # npr. 20
+    seed  = request.args.get('seed', type=int)    # npr. 123 (stabilan shuffle)
+    return get_slike_kafica_response(sort=sort, order=order, limit=limit, seed=seed)
+
 
 
 if __name__ == "__main__":

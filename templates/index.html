@@ -1,551 +1,521 @@
 <!DOCTYPE html>
 <html lang="sr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LERONE Bar</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LERONE Bar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <style>
+    :root{
+      --bg: #f8f9fa;
+      --text: #1f242b;
+      --muted: #6b7280;
+      --dark: #191d22;
+      --accent: #ff5733;
+      --call: #E85D04;
+      --menu: #0077B6;
+      --wa:   #25D366;
+      --radius: 16px;
+      --header-h: 82px;
+      --header-h-scrolled: 58px;
+      --action-h: 66px;
+      --shadow: 0 6px 24px rgba(0,0,0,.08);
+    }
 
-        html, body {
-            height: 100%;
-            overflow: hidden;
-            font-family: 'Poppins', Arial, sans-serif;
-            background-color: #f8f9fa;
-            color: #333;
-        }
+    *{ box-sizing: border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      font-family: 'Poppins', Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.55;
+      padding-bottom: var(--action-h); /* prostor za fiksnu donju traku */
+    }
 
-        .container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-        }
+    a{ color: var(--accent); text-decoration: none; }
+    a:hover{ text-decoration: underline; }
 
-.screen {
-    width: 100vw;
-    height: 100vh; /* Ovo će JS nadjačati ako je potrebno */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    color: black;
-    position: absolute;
-    top: 0;
-    transition: transform 0.5s ease-in-out;
-}
+    /* ========== HEADER (sticky + shrink on scroll) ========== */
+    .main-header{
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: var(--dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: var(--header-h);
+      transition: height .28s ease;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .main-header.scrolled{ height: var(--header-h-scrolled); }
 
-        .screen:nth-child(odd) {
-            background: white;
-        }
+    .logo{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+    }
+    .logo img{
+      height: 56px;
+      transition: transform .28s ease, height .28s ease, opacity .28s ease;
+      transform-origin: center left;
+      display:block;
+    }
+    .main-header.scrolled .logo img{
+      height: 44px;
+      transform: translateY(-1px) scale(.96);
+      opacity: .95;
+    }
 
-        .screen:nth-child(even) {
-            background: #f8f9fa;
-        }
+    /* ========== LAYOUT SECTIONS ========== */
+    .container{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 18px;
+    }
 
-        /* HEADER */
-.main-header {
-    width: 100%;
-    background: #191d22;
-    color: #191d22;
-    padding: 10px 20px;
-    display: flex;
-    justify-content: center; /* Centriranje sadržaja */
-    align-items: center;
-}
+    /* Hero */
+    .hero{
+      min-height: 66vh;
+      position: relative;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border-radius: var(--radius);
+      background: #111;
+      box-shadow: var(--shadow);
+      margin: 22px 18px 10px;
+    }
+    .hero::before{
+      content:"";
+      position:absolute; inset:0;
+      background: url('/static/slike/hero.jpeg') center/cover no-repeat;
+      filter: brightness(.7);
+      transform: scale(1.04);
+    }
+    .hero-inner{
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      color: #fff;
+      padding: 32px;
+    }
+    .hero h1{
+      margin:0 0 10px;
+      font-size: clamp(28px, 3.4vw, 44px);
+      font-weight: 600;
+      letter-spacing:.3px;
+    }
 
-.logo img {
-    margin-top: 10px;
-    height: 50px;
-}
+    /* ========== GALERIJA (swipe/drag) ========== */
+    .gallery{ margin-top: 32px; }
+    .section-title{
+      font-size: clamp(20px, 2.4vw, 28px);
+      font-weight: 600;
+      margin-bottom: 14px;
+      color: var(--dark);
+    }
 
-        .nav-icons img {
-            width: 24px;
-            height: 24px;
-        }
+    .slider{
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: var(--shadow);
+      touch-action: pan-y; /* dozvoli vertikalni scroll, slider hvata horizontalno */
+      height: clamp(220px, 48vh, 520px); /* fiksna visina da uvek popuni bez belih margina */
+    }
+    .slider-track{
+      display: flex;
+      transition: transform .35s ease;
+      will-change: transform;
+      height: 100%;
+    }
+    .slide{
+      min-width: 100%;
+      height: 100%;
+      user-select: none;
+      -webkit-user-drag: none;
+      position: relative;
+      overflow: hidden;
+    }
+    .slide img{
+      width: 100%;
+      height: 100%;
+      display: block;
 
-        /* HERO */
-        #screen1 {
-    display: flex;
-    flex-direction: column;
-    justify-content: center; /* Centriranje sadržaja */
-    align-items: center;
-    width: 100vw;
-    height: 100vh; /* Popunjava celu visinu ekrana */
-    background: #333;
-    color: white;
-}
-        .hero {
-            width: 100%;
-            height: 100%;
-            background: url('/static/slike/hero.jpeg') no-repeat center center/cover;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: white;
-        }
+      /* Pokrivanje bez belih traka (seče višak, ne deformiše) */
+      object-fit: cover;
 
-        /* GALERIJA */
-        #screen2 {
-    display: flex;
-    flex-direction: column;
-    justify-content: center; /* Centriranje sadržaja */
-    align-items: center;
-    width: 100vw;
-    height: 100vh; /* Popunjava celu visinu ekrana */
-    background: #191d22;
-    color: white;
-}
-        .gallery {
-            width: 100%;
-            text-align: center;
-        }
+      /* Ako baš želiš razvučeno bez ikakvog sečenja, zameni sa: */
+      /* object-fit: fill; */
+    }
+    .slider-dots{
+      display:flex; gap:8px; justify-content:center; align-items:center;
+      padding: 12px 0 6px;
+    }
+    .slider-dots button{
+      width: 8px; height: 8px; border-radius: 999px; border: 0;
+      background: #d1d5db; cursor:pointer;
+      transition: transform .2s ease, background .2s ease, width .2s ease;
+    }
+    .slider-dots button.active{
+      background: var(--accent);
+      width: 22px;
+    }
 
-        .gallery-slider-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            margin: 20px auto;
-            overflow: hidden;
-        }
+    /* ========== MAPA ========== */
+    .map-card{
+      margin-top: 34px;
+      background:#fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    #map{ width:100%; height: 360px; }
 
-        .gallery-slider {
-            display: flex;
-            transition: transform 0.5s ease-in-out;
-        }
+    .info{
+      padding: 16px 18px 20px;
+      display: grid;
+      gap: 8px;
+      color: var(--text);
+    }
+    .info p{ margin:0; color: var(--muted); }
+    .links{
+      display:flex; flex-wrap: wrap; gap: 10px;
+      margin-top: 6px;
+    }
+    .chip{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 8px 12px; border-radius: 999px;
+      background: #f1f5f9; color: #0f172a; font-weight: 600; font-size: 14px;
+      text-decoration: none;
+      transition: transform .15s ease, filter .15s ease;
+    }
+    .chip:hover{ transform: translateY(-1px); filter: brightness(.98); }
+    .chip img{ width:18px; height:18px; }
 
-        .gallery-item {
-            flex-shrink: 0;
-            width: 100%;
-            max-width: 800px;
-            height: auto;
-        }
+    /* ========== FOOTER ========== */
+    footer{
+      margin: 34px 0 84px; /* prostor iznad fiksne akcione trake */
+      color: #fff;
+      background: var(--dark);
+      padding: 26px 18px;
+    }
+    .footer-inner{
+      max-width: 1100px; margin: 0 auto;
+    }
+    .footer-brand{ font-size: 20px; font-weight: 600; margin: 0 0 8px; }
+    .footer-meta{ color: #b9c0c6; margin: 4px 0; }
 
-        .gallery-nav {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.5);
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            z-index: 10;
-            font-size: 1.5rem;
-        }
+    /* ========== DONJA AKCIONA TRAKA (sticky/fixed) ========== */
+    .action-bar{
+      position: fixed;
+      left:0; right:0; bottom:0;
+      height: var(--action-h);
+      background: var(--dark);
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      z-index: 1100;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+    .action-link{
+      display:flex; flex-direction: column; align-items:center; justify-content:center;
+      gap: 2px;
+      color: #fff; text-decoration:none; font-weight: 700; font-size: 12px;
+      transition: filter .2s ease, transform .2s ease;
+    }
+    .action-link:hover{ filter: brightness(1.06); transform: translateY(-1px); }
+    .action-link .icon{ font-size: 22px; line-height:1; }
+    .action-link.call .icon{ color: var(--call); }
+    .action-link.menu .icon{ color: var(--menu); }
+    .action-link.wa   .icon{ color: var(--wa);  }
+    .action-link img{ width:22px; height:22px; }
 
-        .gallery-nav.prev { left: 10px; }
-        .gallery-nav.next { right: 10px; }
-
-#screen3 {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100vw;
-    height: 100vh; /* Zauzima punu visinu ekrana */
-    background: #191d22;
-    color: white;
-    justify-content: flex-start; /* Postavlja sadržaj na vrh */
-}
-
-
-#map {
-    width: 100%; /* Mapa zauzima punu širinu */
-    height: 50vh; /* Zauzima gornju polovinu ekrana */
-}
-
-
-        /* FOOTER */
-footer {
-    background: #191d22;
-    color: white;
-    text-align: center;
-    width: 100%;
-}
-
-/* FOOTER - Centriran i popunjava celu visinu ekrana */
-#screen4 {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100vw;
-    height: 100vh;
-    background: #191d22;
-    color: white;
-}
-
-.footer-content {
-    flex: 1; /* Ostatak sadržaja ispod mape */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    max-width: 100%;
-    text-align: center;
-}
-
-.footer-bottom {
-    position: absolute;
-    bottom: 20px;
-    width: 100%;
-    text-align: center;
-}
-
-
-
-
-
-.footer-content p:last-child {
-    position: absolute;
-    bottom: 20px; /* Razmak od dna */
-    left: 0;
-    width: 100%;
-    text-align: center;
-}
-
-.footer-links {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
-}
-
-.footer-links a {
-    color: #ff5733;
-    text-decoration: none;
-    font-weight: bold;
-    font-size: 1rem;
-}
-
-.footer-links a:hover {
-    text-decoration: underline;
-}
-
-
-
-
-
-.action-buttons {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100vw; /* Zauzima celu širinu ekrana */
-    display: flex;
-}
-
-.action-buttons a {
-    flex: 1;
-    text-align: center;
-    text-decoration: none;
-    font-weight: bold;
-    font-size: 14px;
-    color: white; /* Crni tekst za dobar kontrast */
-    padding: 10px 0 10px 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 2px;
-    background-color: #191d22; /* Svijetlo siva pozadina */
-    transition: 0.3s ease-in-out;
-}
-
-/* BOJE IKONA */
-.call-button span {
-    color: #E85D04; /* Narandžasta */
-}
-
-.menu-button span {
-    color: #0077B6; /* Plava */
-}
-
-.whatsapp-button span {
-    color: #25D366; /* Zelena */
-}
-
-/* HOVER EFEKT */
-.action-buttons a:hover {
-    filter: brightness(0.95); /* Blago zatamnjenje pri hoveru */
-    transform: scale(1.02);
-}
-
-.action-buttons a span {
-    font-size: 28px; /* Povećava ikone */
-    line-height: 1; /* Sprečava dodatni prostor ispod ikone */
-}
-/* Alternativa za slike */
-.action-buttons a img {
-    width: 32px; /* Veća širina ikone */
-    height: 32px; /* Veća visina ikone */
-}
-
-    </style>
+    /* ========== UTIL ========== */
+    @media (min-width: 900px){
+      .hero{ margin: 28px auto 10px; }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .slider-track, .main-header, .logo img { transition: none !important; }
+    }
+  </style>
 </head>
 <body>
 
-<div class="container" id="scrollContainer">
-    <!-- EKRAN 1: HEADER & HERO -->
-    <div class="screen" id="screen1">
-<header class="main-header">
-    <div class="logo">
-        <a href="https://www.leronebar.com">
-            <img src="/static/slike/logo.png" alt="Logo LERONE Bar">
-        </a>
-    </div>
-</header>
-        <section class="hero"></section>
-<div class="action-buttons">
-    <a href="tel:+385912224214" class="call-button">
-        <span>📞</span><br> Nazovi nas
+  <!-- ======= HEADER (sticky + shrink) ======= -->
+  <header class="main-header" id="header">
+    <a class="logo" href="https://www.leronebar.com" aria-label="LERONE Bar početna">
+      <img src="/static/slike/logo.png" alt="Logo LERONE Bar">
     </a>
-    <a href="https://www.dotyourspot.com/Fnp253/" target="_blank" class="menu-button">
-        <span>📜</span><br> Pregledaj Cjenik
-    </a>
-<a href="https://wa.me/385912224214?text=Dobar%20dan,%20želio%20bih%20dobiti%20više%20informacija%20o%20ponudi."
-   target="_blank" class="whatsapp-button">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
-         alt="WhatsApp" width="24" height="24"><br> Piši nama
-</a>
-</div>
+  </header>
 
-
+  <!-- ======= HERO ======= -->
+  <section class="hero" role="img" aria-label="LERONE Bar – atmosfera">
+    <div class="hero-inner">
+      <h1>Vrhunska kava i opuštena atmosfera u srcu Splita</h1>
     </div>
+  </section>
 
-    <!-- EKRAN 2: GALERIJA -->
-    <div class="screen" id="screen2">
-        <section class="gallery">
-            <h2>Galerija</h2>
-            <div class="gallery-slider-wrapper">
-                <button class="gallery-nav prev">&lt;</button>
-                <div class="gallery-slider" id="gallery-slider"></div>
-                <button class="gallery-nav next">&gt;</button>
-            </div>
-        </section>
-    </div>
+  <!-- ======= CONTENT ======= -->
+  <main class="container">
 
-    <!-- EKRAN 3: MAPA -->
-    <div class="screen" id="screen3">
-    </div>
+    <!-- GALERIJA (swipe) -->
+    <section class="gallery" aria-label="Galerija fotografija">
+      <h2 class="section-title">Galerija</h2>
 
-    <!-- EKRAN 4: FOOTER -->
-<!-- EKRAN 4: FOOTER -->
-<div class="screen" id="screen4">
-    <footer>
-        <!-- Mapa zauzima gornju polovinu ekrana -->
-        <div id="map"></div>
+      <div class="slider" id="gallery" aria-roledescription="carousel">
+        <div class="slider-track" id="galleryTrack"></div>
+      </div>
 
-        <div class="footer-content">
-            <h2>LERONE Bar</h2>
-            <p><strong>Adresa:</strong> Poljička cesta 1, Split</p>
-            <p><strong>Radno vreme:</strong> Ponedjeljak - Nedjelja: 06:30 - 00:00</p>
+      <div class="slider-dots" id="galleryDots" aria-hidden="false" aria-label="Navigacija galerije"></div>
+    </section>
 
-            <div class="footer-links">
-                <a href="https://www.google.com/maps/dir/?api=1&destination=43.505109,16.4547333" target="_blank">📍 Kako do nas (Google Maps)</a>
-                <a href="https://www.facebook.com/caffebarlerone" target="_blank">📘 Facebook</a>
-                <a href="https://www.instagram.com/caffebarlerone" target="_blank">📷 Instagram</a>
-            <a href="https://chat.whatsapp.com/GanCUGGmAZ22oZ43nkZ8Jr" target="_blank" class="whatsapp-group">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
-         alt="WhatsApp Group" width="24" height="24">
-    <br> Pridruži se grupi Konobari
-</a>
-
-            </div>
-
-
-            <!-- Ovaj deo uvek ostaje na dnu -->
-            <p class="footer-bottom">&copy; 2025 LERONE Bar. Sva prava pridržana.</p>
+    <!-- MAPA + INFO -->
+    <section class="map-card" aria-label="Mapa i informacije">
+      <div id="map" role="region" aria-label="Google mapa lokacije"></div>
+      <div class="info">
+        <strong style="font-size:18px;">LERONE Bar</strong>
+        <p><strong>Adresa:</strong> Poljička cesta 1, Split</p>
+        <p><strong>Radno vreme:</strong> Ponedjeljak – Nedjelja: 06:30 – 00:00</p>
+        <div class="links">
+          <a class="chip" href="https://www.google.com/maps/dir/?api=1&destination=43.505109,16.4547333" target="_blank" rel="noopener">📍 Kako do nas</a>
+          <a class="chip" href="https://www.facebook.com/caffebarlerone" target="_blank" rel="noopener">📘 Facebook</a>
+          <a class="chip" href="https://www.instagram.com/caffebarlerone" target="_blank" rel="noopener">📷 Instagram</a>
+          <a class="chip" href="https://chat.whatsapp.com/GanCUGGmAZ22oZ43nkZ8Jr" target="_blank" rel="noopener">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="" />
+            Grupa Konobari
+          </a>
         </div>
-    </footer>
-</div>
+      </div>
+    </section>
 
-</div>
+  </main>
 
-<script>
-    let screens = document.querySelectorAll('.screen');
-    let currentIndex = 0;
-    let touchStartY = 0;
-    let touchEndY = 0;
+  <!-- ======= FOOTER ======= -->
+  <footer>
+    <div class="footer-inner">
+      <p class="footer-brand">LERONE Bar</p>
+      <p class="footer-meta">&copy; 2025 LERONE Bar. Sva prava pridržana.</p>
+    </div>
+  </footer>
 
-    document.addEventListener('wheel', function(event) {
-        if (event.deltaY > 0) {
-            scrollToNext();
-        } else if (event.deltaY < 0) {
-            scrollToPrevious();
-        }
-    });
+  <!-- ======= DONJA AKCIONA TRAKA (sticky) ======= -->
+  <nav class="action-bar" aria-label="Brze akcije">
+    <a href="tel:+385912224214" class="action-link call" aria-label="Nazovi nas">
+      <span class="icon">📞</span>
+      <span>Nazovi nas</span>
+    </a>
 
-    document.addEventListener('touchstart', function(event) {
-        touchStartY = event.touches[0].clientY;
-    });
+    <a href="https://www.dotyourspot.com/Fnp253/" target="_blank" rel="noopener" class="action-link menu" aria-label="Pregledaj cjenik">
+      <span class="icon">📜</span>
+      <span>Pregledaj cjenik</span>
+    </a>
 
-    document.addEventListener('touchend', function(event) {
-        touchEndY = event.changedTouches[0].clientY;
-        handleTouchMove();
-    });
+    <a href="https://wa.me/385912224214?text=Dobar%20dan,%20želio%20bih%20dobiti%20više%20informacija%20o%20ponudi."
+       target="_blank" rel="noopener" class="action-link wa" aria-label="Piši nam na WhatsApp">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="" />
+      <span>Piši nam</span>
+    </a>
+  </nav>
 
-    function handleTouchMove() {
-        let yDiff = touchStartY - touchEndY;
-        if (yDiff > 50) { scrollToNext(); }
-        else if (yDiff < -50) { scrollToPrevious(); }
-    }
+  <script>
+    // ======= HEADER SHRINK ON SCROLL =======
+    (function(){
+      const header = document.getElementById('header');
+      const shrink = () => {
+        if (window.scrollY > 10) header.classList.add('scrolled');
+        else header.classList.remove('scrolled');
+      };
+      shrink();
+      window.addEventListener('scroll', shrink, { passive: true });
+    })();
 
-    function scrollToNext() {
-        if (currentIndex < screens.length - 1) {
-            currentIndex++;
-            updateScreenPosition();
-        }
-    }
+    // ======= GALERIJA: učitaj sve slike iz /static/slike_kafica preko API-ja =======
+    (function(){
+      const track = document.getElementById('galleryTrack');
+      const dotsWrap = document.getElementById('galleryDots');
+      const slider = document.getElementById('gallery');
 
-    function scrollToPrevious() {
-        if (currentIndex > 0) {
-            currentIndex--;
-            updateScreenPosition();
-        }
-    }
-
-    function updateScreenPosition() {
-        screens.forEach((screen, index) => {
-            screen.style.transform = `translateY(${(index - currentIndex) * 100}vh)`;
+      // Fetch lista slika sa servera
+      fetch('/api/galerija/slike-kafica?sort=random&seed=123')
+        .then(r => r.json())
+        .then(urls => {
+          if (!Array.isArray(urls) || urls.length === 0){
+            track.innerHTML = '<div class="slide"><img alt="Nema dostupnih fotografija" src="/static/slike/hero.jpeg"></div>';
+            buildDots(1);
+            initDrag(1);
+            return;
+          }
+          urls.forEach((src, idx) => {
+            const slide = document.createElement('div');
+            slide.className = 'slide';
+            const img = document.createElement('img');
+            img.loading = 'lazy';
+            img.src = src;
+            img.alt = `Fotografija ${idx+1} – LERONE Bar`;
+            slide.appendChild(img);
+            track.appendChild(slide);
+          });
+          buildDots(urls.length);
+          initDrag(urls.length);
+        })
+        .catch(() => {
+          // Fallback
+          track.innerHTML = '<div class="slide"><img alt="Galerija" src="/static/slike/hero.jpeg"></div>';
+          buildDots(1);
+          initDrag(1);
         });
-    }
 
-    updateScreenPosition();
+      // Kreiraj navigacione tačkice
+      let dots = [];
+      function buildDots(count){
+        dotsWrap.innerHTML = '';
+        dots = Array.from({length: count}, (_, i) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.setAttribute('aria-label', `Idi na slajd ${i+1}`);
+          b.addEventListener('click', () => goTo(i));
+          dotsWrap.appendChild(b);
+          return b;
+        });
+        sync();
+      }
 
+      let index = 0;
+      let startX = 0;
+      let currentX = 0;
+      let prevTranslate = 0;
+      let isDragging = false;
+      const threshold = 50;
 
+      function setTranslateX(x, withTransition = false){
+        track.style.transition = withTransition ? 'transform .35s ease' : 'none';
+        track.style.transform = `translateX(${x}px)`;
+      }
+      function sync(){
+        const slidesCount = track.children.length || 1;
+        if (index < 0) index = 0;
+        if (index > slidesCount - 1) index = slidesCount - 1;
+        dots.forEach((d, i) => d.classList.toggle('active', i === index));
+        const x = -index * slider.clientWidth;
+        setTranslateX(x, true);
+        prevTranslate = x;
+      }
+      function goTo(i){ index = i; sync(); }
 
-      // Galerija
-document.addEventListener('DOMContentLoaded', () => {
-    const slider = document.getElementById('gallery-slider');
-    const prevButton = document.querySelector('.gallery-nav.prev');
-    const nextButton = document.querySelector('.gallery-nav.next');
-    let currentIndex = 0;
+      function initDrag(){
+        window.addEventListener('resize', sync);
 
-    const images = [];
-    for (let i = 1; i <= 10; i++) {
-        const img = new Image();
-        img.src = `/static/slike/${i}.jpg`;
-        img.className = 'gallery-item';
-        slider.appendChild(img);
-        images.push(img);
-    }
+        slider.addEventListener('pointerdown', onDown);
+        slider.addEventListener('pointermove', onMove);
+        slider.addEventListener('pointerup', onUp);
+        slider.addEventListener('pointercancel', onUp);
+        slider.addEventListener('pointerleave', onUp);
 
-    function updateSlider() {
-        const offset = -currentIndex * 100; // Pomera slike horizontalno
-        slider.style.transform = `translateX(${offset}%)`;
-    }
+        slider.addEventListener('touchmove', (e) => {
+          if (isDragging) e.preventDefault();
+        }, { passive: false });
+      }
 
-    nextButton.addEventListener('click', () => {
-        if (currentIndex < images.length - 1) {
-            currentIndex++;
-            updateSlider();
+      function onDown(e){
+        isDragging = true;
+        slider.setPointerCapture(e.pointerId);
+        startX = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+        currentX = startX;
+        setTranslateX(prevTranslate, false);
+      }
+      function onMove(e){
+        if (!isDragging) return;
+        currentX = e.clientX ?? e.touches?.[0]?.clientX ?? currentX;
+        const delta = currentX - startX;
+        const next = prevTranslate + delta;
+
+        const maxX = 0;
+        const minX = -((track.children.length - 1) * slider.clientWidth);
+        const rubber = 0.35;
+        const beyondLeft = next > maxX;
+        const beyondRight = next < minX;
+        const adjusted = beyondLeft
+          ? maxX + (next - maxX) * rubber
+          : (beyondRight ? minX + (next - minX) * rubber : next);
+
+        setTranslateX(adjusted, false);
+      }
+      function onUp(e){
+        if (!isDragging) return;
+        isDragging = false;
+        const endX = e.clientX ?? currentX;
+        const moved = endX - startX;
+        if (Math.abs(moved) > threshold){
+          if (moved < 0) index++; else index--;
         }
-    });
+        sync();
+      }
+    })();
 
-    prevButton.addEventListener('click', () => {
-        if (currentIndex > 0) {
-            currentIndex--;
-            updateSlider();
-        }
-    });
+    // ======= GOOGLE MAPS =======
+    function initMap(){
+      const leroneBar = { lat: 43.505109, lng: 16.4547333 };
 
-    updateSlider();
-});
-
-
-    // Google mapa
-function initMap() {
-    // Lokacija LERONE Bar-a
-    const leroneBar = { lat: 43.505109, lng: 16.4547333 };
-
-    // Kreiranje mape sa prilagođenim stilom
-    const map = new google.maps.Map(document.getElementById('map'), {
+      const map = new google.maps.Map(document.getElementById('map'), {
         zoom: 14,
         center: leroneBar,
-        mapTypeControl: false, // Isključuje podrazumevane kontrole izbora tipa mape
-        styles: [ // Tamna tema (možeš promeniti ili ukloniti)
-            { elementType: "geometry", stylers: [{ color: "#1d2c4d" }] },
-            { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
-            { elementType: "labels.text.stroke", stylers: [{ color: "#1a3646" }] },
-            { featureType: "road", elementType: "geometry", stylers: [{ color: "#304a7d" }] },
-            { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }
+        mapTypeControl: false,
+        styles: [
+          { elementType: "geometry", stylers: [{ color: "#1d2c4d" }] },
+          { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
+          { elementType: "labels.text.stroke", stylers: [{ color: "#1a3646" }] },
+          { featureType: "road", elementType: "geometry", stylers: [{ color: "#304a7d" }] },
+          { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }
         ]
-    });
+      });
 
-    // Marker za LERONE Bar
-    const marker = new google.maps.Marker({
+      const marker = new google.maps.Marker({
         position: leroneBar,
-        map: map,
+        map,
         title: "LERONE Bar",
         animation: google.maps.Animation.DROP
-    });
+      });
 
-    // Info prozor sa manjim fontom i bez X dugmeta
-    const infoWindow = new google.maps.InfoWindow({
+      const infoWindow = new google.maps.InfoWindow({
         content: `
-            <div style="font-size: 12px; font-family: Poppins, sans-serif; line-height: 1.4;">
-                <h3 style="font-size: 14px; margin-bottom: 5px;">LERONE Bar</h3>
-                <p style="margin-bottom: 5px;">Uživajte u vrhunskoj kafi i opuštenoj atmosferi u srcu Splita.</p>
-                <p style="margin-bottom: 5px;"><strong>Adresa:</strong> Poljička cesta 1, Split</p>
-                <p style="margin-bottom: 10px;"><strong>Radno vreme:</strong> 07:00 - 24:00</p>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=43.505109,16.4547333"
-                   target="_blank"
-                   style="display: inline-block; padding: 6px 10px; background: #ff5733; color: #fff; text-decoration: none; border-radius: 5px; font-size: 12px;">
-                   Otvori u Google Maps
-                </a>
-            </div>`,
-        disableAutoPan: true // Sprečava automatsko pomeranje mape kada se otvori infoWindow
-    });
+          <div style="font-size:12px; font-family:Poppins, sans-serif; line-height:1.4;">
+            <h3 style="font-size:14px; margin-bottom:5px;">LERONE Bar</h3>
+            <p style="margin:0 0 5px;">Uživajte u vrhunskoj kafi i opuštenoj atmosferi u srcu Splita.</p>
+            <p style="margin:0 0 5px;"><strong>Adresa:</strong> Poljička cesta 1, Split</p>
+            <p style="margin:0 0 10px;"><strong>Radno vreme:</strong> 06:30 - 00:00</p>
+            <a href="https://www.google.com/maps/dir/?api=1&destination=43.505109,16.4547333"
+               target="_blank"
+               style="display:inline-block; padding:6px 10px; background:#ff5733; color:#fff; text-decoration:none; border-radius:6px;">
+               Otvori u Google Maps
+            </a>
+          </div>`,
+        disableAutoPan: true
+      });
 
-    // Prikazujemo InfoWindow odmah prilikom učitavanja
-    infoWindow.open(map, marker);
+      infoWindow.open(map, marker);
+      google.maps.event.addListener(infoWindow, 'closeclick', () => infoWindow.open(map, marker));
 
-    // Onemogućavanje zatvaranja InfoWindow-a
-    google.maps.event.addListener(infoWindow, 'closeclick', function() {
-        infoWindow.open(map, marker); // Ponovo otvara prozor ako neko pokuša da ga zatvori
-    });
+      const mapControls = document.createElement("div");
+      mapControls.style.margin = "10px";
+      mapControls.innerHTML = `
+        <button data-type="roadmap" style="margin-right:6px; padding:8px 10px; font-size:12px; border-radius:8px; border:0;">Standardna</button>
+        <button data-type="satellite" style="margin-right:6px; padding:8px 10px; font-size:12px; border-radius:8px; border:0;">Satelitska</button>
+        <button data-type="terrain" style="padding:8px 10px; font-size:12px; border-radius:8px; border:0;">Terenska</button>
+      `;
+      map.controls[google.maps.ControlPosition.TOP_RIGHT].push(mapControls);
+      mapControls.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON'){
+          map.setMapTypeId(e.target.getAttribute('data-type'));
+        }
+      });
+    }
+  </script>
 
-    // Dugmad za promenu tipa mape
-    const mapControls = document.createElement("div");
-    mapControls.style.margin = "10px";
-    mapControls.innerHTML = `
-        <button onclick="map.setMapTypeId('roadmap')" style="margin-right:5px; padding: 8px; font-size: 12px;">Standardna</button>
-        <button onclick="map.setMapTypeId('satellite')" style="margin-right:5px; padding: 8px; font-size: 12px;">Satelitska</button>
-        <button onclick="map.setMapTypeId('terrain')" style="padding: 8px; font-size: 12px;">Terenska</button>
-    `;
-
-    // Dodaj kontrole na mapu
-    map.controls[google.maps.ControlPosition.TOP_RIGHT].push(mapControls);
-}
-
-
-function adjustScreenHeight() {
-    let screenHeight = window.innerHeight + 'px'; // Prava visina prozora
-    document.querySelectorAll('.screen').forEach(screen => {
-        screen.style.height = screenHeight;
-    });
-}
-
-// Postavi visinu prilikom učitavanja stranice
-document.addEventListener("DOMContentLoaded", adjustScreenHeight);
-
-// Ažuriraj visinu kada korisnik promeni veličinu ekrana (npr. rotacija telefona)
-window.addEventListener('resize', adjustScreenHeight);
-
-
-</script>
-
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQxY9g9ua-uI7KzU3-dRujg2WZ_gbQ7Ts&callback=initMap" defer></script>
-
-
+  <!-- Zamijeni ključ svojim i obavezno ga ograniči na domen/URL projekta -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQxY9g9ua-uI7KzU3-dRujg2WZ_gbQ7Ts&callback=initMap" defer></script>
 </body>
 </html>
