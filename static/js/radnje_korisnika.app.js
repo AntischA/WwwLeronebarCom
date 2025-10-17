@@ -1,5 +1,72 @@
 // radnje_kirisnika.app.js
 (() => {
+  // ===== FORMAT OPIS FUNKCIJA =====
+function formatOpis(opisRaw) {
+  if (!opisRaw) return "";
+
+  // 1️⃣ Ukloni riječ STAVKE i višak razmaka
+  let opis = opisRaw.replace(/STAVKE\s*/gi, "").trim();
+
+  // 2️⃣ Izdvoji stol, artikle u uglatim zagradama i ostatak
+  const stolMatch = opis.match(/^(.*?)\s*\[/);
+  const artikliMatch = opis.match(/\[(.*?)\]/);
+  const nakonZagrada = opis.split("]").pop().trim();
+
+  const stol = stolMatch ? stolMatch[1].trim() : "";
+  const artikliStr = artikliMatch ? artikliMatch[1] : "";
+
+  // 3️⃣ Split samo po zarezima van ( )
+  const artikli = [];
+  let current = "";
+  let depth = 0;
+
+  for (const ch of artikliStr) {
+    if (ch === "(") depth++;
+    if (ch === ")") depth--;
+    if (ch === "," && depth === 0) {
+      artikli.push(current.trim());
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  if (current.trim()) artikli.push(current.trim());
+
+  // 4️⃣ Parsiraj i grupiraj po imenu artikla
+  const mapa = {}; // { naziv: suma }
+
+  artikli.forEach(a => {
+    const m = a.match(/^(.+?)\(([\d,\.]+)\)$/);
+    if (m) {
+      const naziv = m[1].trim();
+      const kol = parseFloat(m[2].replace(",", "."));
+      if (!mapa[naziv]) mapa[naziv] = 0;
+      mapa[naziv] += kol;
+    } else if (a) {
+      // artikl bez količine
+      if (!mapa[a]) mapa[a] = 0;
+      mapa[a] += 1;
+    }
+  });
+
+  // 5️⃣ Sortiraj artikle po imenu i formatiraj
+  const artikliFormatted = Object.entries(mapa)
+    .sort((a, b) => a[0].localeCompare(b[0], "hr"))
+    .map(([naziv, kol]) => {
+      const prikazKol = kol % 1 === 0 ? kol.toFixed(0) : kol.toFixed(1);
+      return `<div class="opis-artikl">${naziv} × ${prikazKol}</div>`;
+    })
+    .join("");
+
+  // 6️⃣ Spoji sve dijelove
+  const lines = [];
+  if (stol) lines.push(`<div class="opis-stol">${stol}</div>`);
+  if (artikliFormatted) lines.push(artikliFormatted);
+  if (nakonZagrada) lines.push(`<div class="opis-nakon">${nakonZagrada}</div>`);
+
+  return lines.join("");
+}
+
   // ===== STATE =====
   const S = {
     potrosnjaArtikalaPoDanu: null,
@@ -667,46 +734,78 @@ async function fetchData(){
 }
 
 let liveTimer = null;
+let countdownTimer = null;
+let countdownValue = 10; // sekundi
+const REFRESH_INTERVAL = 10; // ⏱️ svakih 10 sekundi
 
-async function dohvatiPosljednjeTransakcije(){
+async function dohvatiPosljednjeTransakcije() {
   try {
     const r = await fetch("/api/posljednje_transakcije");
     const data = await r.json();
     const list = document.getElementById("live-list");
     list.innerHTML = "";
+
     if (!data.success || !data.items?.length) {
       list.innerHTML = "<li><i>Nema novih transakcija...</i></li>";
       return;
     }
-    data.items.forEach(it => {
+
+    data.items.forEach(item => {
       const li = document.createElement("li");
       li.className = "card";
+
       li.innerHTML = `
         <div class="card-header">
-          <span class="vrijeme">${it.vrijeme}</span>
-          <span class="vrsta">${it.vrsta_akcije}</span>
-          <span class="iznos">${it.iznos}</span>
+          <span class="vrijeme">${item.vrijeme}</span>
+          <span class="vrsta">${item.vrsta_akcije}</span>
+          <span class="iznos">${item.iznos}</span>
         </div>
-        <div class="card-opis">${it.opis || "-"}</div>
+        <div class="card-opis">${formatOpis(item.opis)}</div>
       `;
+
+      if (item.vrsta_akcije.includes("Otkaz")) {
+        li.style.borderLeft = "3px solid #ff3b3b";
+      } else if (item.vrsta_akcije.includes("Dodavanje")) {
+        li.style.borderLeft = "3px solid #3bff3b";
+      }
+
       list.appendChild(li);
     });
-  } catch(e) {
+  } catch (e) {
     console.error("Live fetch error:", e);
   }
 }
 
-function otvoriLiveModal(){
+function otvoriLiveModal() {
   openModal("live-modal");
   dohvatiPosljednjeTransakcije();
-  liveTimer = setInterval(dohvatiPosljednjeTransakcije, 2000); // svakih 2 sekunde
+
+  // 🕓 Pripremi odbrojavanje
+  const titleEl = document.querySelector("#live-modal h3");
+  countdownValue = REFRESH_INTERVAL;
+  if (countdownTimer) clearInterval(countdownTimer);
+  if (liveTimer) clearInterval(liveTimer);
+
+  // 🔁 interval za osvježavanje svakih 10 sekundi
+  liveTimer = setInterval(() => {
+    dohvatiPosljednjeTransakcije();
+    countdownValue = REFRESH_INTERVAL; // resetuj odbrojavanje
+  }, REFRESH_INTERVAL * 1000);
+
+  // ⏳ interval za prikaz odbrojavanja svake 1 sekundu
+  countdownTimer = setInterval(() => {
+    if (!titleEl) return;
+    countdownValue--;
+    if (countdownValue < 0) countdownValue = REFRESH_INTERVAL;
+    titleEl.innerHTML = `🔴 Posljednje transakcije <span style="font-size:0.8em;color:#aaa;">(${countdownValue}s)</span>`;
+  }, 1000);
 }
 
-function zatvoriLiveModal(){
+function zatvoriLiveModal() {
   closeModal("live-modal");
   if (liveTimer) clearInterval(liveTimer);
+  if (countdownTimer) clearInterval(countdownTimer);
 }
-
 
 
 

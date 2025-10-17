@@ -5,7 +5,7 @@ import os
 from api.dohvat_radnja_korisnika import radnje_korisnika
 from api.dohvat_otkazanih_narudzbi import dohvati_ukupni_total_otkazanih_narudzbi
 from api.slike_kafica import get_slike_kafica_response
-from api.live import bp_dohvat_radnji
+from api.dohvat_radnja_korisnika import bp_dohvat_radnji
 
 import urllib.parse
 import requests

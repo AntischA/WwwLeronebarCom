@@ -21,10 +21,10 @@
   border-radius: 12px;
   box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
   max-width: 500px;
-  width: 90%;
-  max-height: 80vh;
+  width: 95%;
+  max-height: 90vh;
   overflow-y: auto;
-  padding: 20px 16px 30px;
+  padding: 10px 16px 20px;
   position: relative;
   animation: liveFadeIn 0.3s ease-in-out;
 }
@@ -78,10 +78,37 @@
 }
 
 #live-list .card-opis {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 6px;
+  gap: 3px;
+  text-align: center;
+  color: #ddd;
+}
+
+#live-list .opis-stol {
+  font-weight: 600;
+  color: #ffecb3;
+  font-size: 14px;
+}
+
+#live-list .opis-artikl {
   font-size: 13px;
-  color: #bbb;
+  color: #fff;
+  width: fit-content;
+}
+
+#live-list .opis-nakon {
   margin-top: 4px;
-  white-space: pre-wrap;
+  color: #aaa;
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* Razmak između kartica */
+#live-list .card + .card {
+  margin-top: 12px;
 }
 
 /* Dugme za zatvaranje */
@@ -91,7 +118,7 @@
   right: 10px;
   background: transparent;
   border: none;
-  font-size: 22px;
+  font-size: 40px;
   color: #ff3b3b;
   cursor: pointer;
   transition: transform 0.2s ease;

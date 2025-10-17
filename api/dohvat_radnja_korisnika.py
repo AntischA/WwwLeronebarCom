@@ -1,12 +1,45 @@
 # api/dohvat_radnja_korisnika.py
-import datetime
 import requests
 import urllib3
 import json
 import re
 from collections import defaultdict
+from flask import Blueprint,jsonify
 
-from flask import request, jsonify
+import datetime
+
+bp_dohvat_radnji = Blueprint('bp_dohvat_radnji', __name__)
+
+@bp_dohvat_radnji.route("/api/posljednje_transakcije", methods=["GET"])
+def posljednje_transakcije():
+    """Vrati posljednjih 5 transakcija za danas, a ako nema — uzmi jučerašnji dan."""
+    today = datetime.datetime.now()
+    yesterday = today - datetime.timedelta(days=1)
+
+    for dt in [today, yesterday]:
+        date_str = dt.strftime('%d.%m.%Y')
+        result = radnje_korisnika(date_str, date_str)
+
+        if not result.get("success"):
+            continue  # ako API padne, probaj dalje
+
+        data = result.get("data_po_datumima", {}).get(date_str, [])
+        if data:
+            sorted_items = sorted(data, key=lambda x: x.get("vrijeme", ""), reverse=True)[:5]
+            return jsonify({
+                "success": True,
+                "date_used": date_str,
+                "items": sorted_items
+            })
+
+    # Ako ni danas ni jučer nema transakcija
+    return jsonify({
+        "success": True,
+        "date_used": None,
+        "items": [],
+        "message": "Nema dostupnih transakcija za danas ni jučer."
+    })
+
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
