@@ -117,14 +117,31 @@
   closeBtn  ?.addEventListener('click', () => { modalEl.style.display = 'none'; });
 
   // Otvaranje + inicijalni dohvat
-  function openWelcomeModal() {
-    modalEl.style.display = 'flex';
-    // 1) povuci već upisano iz DB
-    refreshFromDB().then(() => {
-      // 2) pa ažuriraj današnji total iz vanjskog endpointa
-      dohvatOtkazanihNarudzbiZaWelcome();
-    });
+function openWelcomeModal() {
+  modalEl.style.display = 'flex';
+  // 1) povuci već upisano iz DB
+  refreshFromDB().then(() => {
+    // 2) pa ažuriraj današnji total iz vanjskog endpointa
+    dohvatOtkazanihNarudzbiZaWelcome();
+  });
+
+  // 🔧 Auto-close nakon 5 sekundi neaktivnosti
+  let inactivityTimer;
+  const AUTO_CLOSE_MS = 5000;
+
+  function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+      modalEl.style.display = 'none';
+    }, AUTO_CLOSE_MS);
   }
+
+  // Startujemo timer čim se otvori modal
+  resetInactivityTimer();
+
+  // Ako se bilo šta klikne unutar modala — resetujemo timer
+  modalEl.addEventListener('click', resetInactivityTimer);
+}
 
   // Primjer trigera: 3 brza klika desno od .page
   (function initTripleClickRightOfPage() {
