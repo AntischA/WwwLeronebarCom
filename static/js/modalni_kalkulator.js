@@ -127,7 +127,7 @@ function openWelcomeModal() {
 
   // 🔧 Auto-close nakon 5 sekundi neaktivnosti
   let inactivityTimer;
-  const AUTO_CLOSE_MS = 5000;
+  const AUTO_CLOSE_MS = 60000; // 60 sekundi = 60.000 ms
 
   function resetInactivityTimer() {
     clearTimeout(inactivityTimer);
