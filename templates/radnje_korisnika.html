@@ -11,6 +11,116 @@
 
   <!-- Novi CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/radnje_korisnika.css') }}">
+
+    <style>
+/* === 🔴 LIVE MODAL – stil za praćenje uživo === */
+#live-modal .modal-content {
+  background: #111;              /* tamna pozadina */
+  color: #f1f1f1;                /* svijetli tekst */
+  border: 1px solid #c00;        /* crvena ivica */
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 20px 16px 30px;
+  position: relative;
+  animation: liveFadeIn 0.3s ease-in-out;
+}
+
+/* Blagi pulsirajući efekt na naslovu */
+#live-modal h3 {
+  color: #ff3b3b;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+  animation: pulse 1.5s infinite alternate;
+}
+
+/* Stil za kartice (transakcije) */
+#live-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#live-list .card {
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 3px solid #ff3b3b;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  transition: transform 0.2s ease, background 0.3s ease;
+}
+
+#live-list .card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(3px);
+}
+
+#live-list .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  color: #fff;
+}
+
+#live-list .vrsta {
+  color: #ff6b6b;
+}
+
+#live-list .iznos {
+  color: #0f0;  /* zelena za iznose */
+  font-weight: 700;
+}
+
+#live-list .card-opis {
+  font-size: 13px;
+  color: #bbb;
+  margin-top: 4px;
+  white-space: pre-wrap;
+}
+
+/* Dugme za zatvaranje */
+#live-modal .close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  color: #ff3b3b;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+#live-modal .close:hover {
+  transform: scale(1.2);
+}
+
+/* Animacije */
+@keyframes liveFadeIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+  0% { text-shadow: 0 0 6px rgba(255, 0, 0, 0.7); }
+  100% { text-shadow: 0 0 12px rgba(255, 0, 0, 1); }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  #live-modal .modal-content {
+    max-width: 95%;
+    font-size: 14px;
+  }
+}
+
+  </style>
+
 </head>
 <body>
   <header class="toolbar">
