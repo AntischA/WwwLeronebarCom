@@ -5,6 +5,7 @@ import os
 from api.dohvat_radnja_korisnika import radnje_korisnika
 from api.dohvat_otkazanih_narudzbi import dohvati_ukupni_total_otkazanih_narudzbi
 from api.slike_kafica import get_slike_kafica_response
+from api.live import bp_dohvat_radnji
 
 import urllib.parse
 import requests
@@ -35,6 +36,7 @@ SPOTIFY_SCOPES = "streaming user-read-email user-read-private user-modify-playba
 
 
 app = Flask(__name__, static_folder="static")
+app.register_blueprint(bp_dohvat_radnji)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", secrets.token_hex(16))
 init_db()
 

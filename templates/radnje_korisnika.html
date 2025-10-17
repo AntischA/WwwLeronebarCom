@@ -14,6 +14,8 @@
 </head>
 <body>
   <header class="toolbar">
+    <button id="live-button" class="btn">🔴 Live</button>
+
     <div class="range-nav">
       <button id="prev-day" class="btn">&larr; Tjedan prije</button>
       <button id="next-day" class="btn">Tjedan poslije &rarr;</button>
@@ -73,6 +75,13 @@
     </div>
   </div>
 
+<div id="live-modal" class="modal" aria-hidden="true">
+  <div class="modal-content">
+    <button class="close" data-close="live-modal" aria-label="Zatvori">&times;</button>
+    <h3>🔴 Posljednje transakcije</h3>
+    <ul id="live-list"></ul>
+  </div>
+</div>
 
 
 

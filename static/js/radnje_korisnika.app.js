@@ -666,6 +666,49 @@ async function fetchData(){
 
 }
 
+let liveTimer = null;
+
+async function dohvatiPosljednjeTransakcije(){
+  try {
+    const r = await fetch("/api/posljednje_transakcije");
+    const data = await r.json();
+    const list = document.getElementById("live-list");
+    list.innerHTML = "";
+    if (!data.success || !data.items?.length) {
+      list.innerHTML = "<li><i>Nema novih transakcija...</i></li>";
+      return;
+    }
+    data.items.forEach(it => {
+      const li = document.createElement("li");
+      li.className = "card";
+      li.innerHTML = `
+        <div class="card-header">
+          <span class="vrijeme">${it.vrijeme}</span>
+          <span class="vrsta">${it.vrsta_akcije}</span>
+          <span class="iznos">${it.iznos}</span>
+        </div>
+        <div class="card-opis">${it.opis || "-"}</div>
+      `;
+      list.appendChild(li);
+    });
+  } catch(e) {
+    console.error("Live fetch error:", e);
+  }
+}
+
+function otvoriLiveModal(){
+  openModal("live-modal");
+  dohvatiPosljednjeTransakcije();
+  liveTimer = setInterval(dohvatiPosljednjeTransakcije, 2000); // svakih 2 sekunde
+}
+
+function zatvoriLiveModal(){
+  closeModal("live-modal");
+  if (liveTimer) clearInterval(liveTimer);
+}
+
+
+
 
   // ===== INIT UI =====
   function initUI(){
@@ -702,6 +745,8 @@ async function fetchData(){
     $("#grafikon2-button").addEventListener("click", ()=> openModal("grafikon2-modal"));
   }
 
+document.getElementById("live-button").addEventListener("click", otvoriLiveModal);
+document.querySelector('[data-close="live-modal"]').addEventListener("click", zatvoriLiveModal);
 
   // START
   window.addEventListener("DOMContentLoaded", () => {
