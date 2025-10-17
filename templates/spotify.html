@@ -740,123 +740,136 @@
       syncLabel(document.getElementById('sp-vol'), document.getElementById('sp-vol-label'));
     }
 
-    function makeRadio({audioId, playId, volId, nowId, label}) {
-      const a = document.getElementById(audioId);
-      const b = document.getElementById(playId);
-      const vr = document.getElementById(volId);
-      const nw = document.getElementById(nowId);
-      const cardKey = (label || '').toLowerCase();
+function makeRadio({audioId, playId, volId, nowId, label}) {
+  const a = document.getElementById(audioId);
+  const b = document.getElementById(playId);
+  const vr = document.getElementById(volId);
+  const nw = document.getElementById(nowId);
+  const cardKey = (label || '').toLowerCase();
 
-      let retries = 0, maxRetries = 5;
-      const setNow = t => {
-        if (nw) nw.textContent = t;
-      };
+  let retries = 0, maxRetries = 5;
+  const setNow = t => {
+    if (nw) nw.textContent = t;
+  };
 
-      async function playOnlyThis() {
-        try {
-          Object.values(audios).forEach(x => {
-            if (x !== a) x.pause();
-          });
-          await safePauseSpotify();
+  async function playOnlyThis() {
+    try {
+      Object.values(audios).forEach(x => {
+        if (x !== a) x.pause();
+      });
+      await safePauseSpotify();
 
-          await new Promise(r => requestAnimationFrame(r));
-          await a.play();
-          setButtonLabel(b, true);
-          setActiveCard(cardKey);
-        } catch (e) {
-          if (e?.name === 'AbortError') {
-            /* ignore */
-          } else {
-            console.warn(`[${label}] play error`, e);
-          }
-        }
+      await new Promise(r => requestAnimationFrame(r));
+      await a.play();
+      setButtonLabel(b, true);
+      setActiveCard(cardKey);
+    } catch (e) {
+      if (e?.name === 'AbortError') {
+        /* ignore */
+      } else {
+        console.warn(`[${label}] play error`, e);
       }
-
-      a.addEventListener('stalled', () => {
-        setNow('Veza je zastala… pokušavam ponovo.');
-        reconnect();
-      });
-      a.addEventListener('error', () => {
-        setNow('Greška na streamu. Pokušavam ponovo…');
-        reconnect();
-      });
-
-      async function safePauseSpotify() {
-        if (!player || !player.getCurrentState) return;
-        try {
-          const st = await player.getCurrentState();
-          if (st && !st.paused) {
-            await player.pause();
-          }
-        } catch (_) {
-        }
-      }
-
-      function reconnect() {
-        if (retries < maxRetries) {
-          retries++;
-          const delay = Math.min(1500 * retries, 7000);
-          setTimeout(() => {
-            a.load();
-            a.play().catch(() => {
-            });
-          }, delay);
-        } else {
-          setNow('Ne može se spojiti. Provjeri stream URL.');
-        }
-      }
-
-      b.addEventListener('click', () => {
-        if (a.paused) playOnlyThis(); else a.pause();
-      });
-
-      if (vr) {
-        const labelEl = document.getElementById(`${label}-vol-label`);
-        a.volume = vr.valueAsNumber;            // inicijalni volume = slider
-        syncLabel(vr, labelEl);
-        vr.addEventListener('input', () => {
-          a.volume = vr.valueAsNumber;
-          syncLabel(vr, labelEl);
-        });
-      }
-
-      a.addEventListener('playing', () => {
-        retries = 0;
-        setButtonLabel(b, true);
-        setActiveCard(cardKey);
-        Object.values(audios).forEach(x => {
-          if (x !== a) x.pause();
-        });
-
-        Object.keys(buttons)
-                .filter(k => k !== 'sp')
-                .forEach(k => {
-                  if (buttons[k] !== b) setButtonLabel(buttons[k], false);
-                });
-        setButtonLabel(buttons.sp, false);
-      });
-
-      a.addEventListener('pause', () => {
-        setButtonLabel(b, false);
-        const otherRadioPlaying = Object.values(audios).some(x => x !== a && !x.paused && !x.ended);
-        const checkSpotify = (player && player.getCurrentState) ? player.getCurrentState() : null;
-        Promise.resolve(checkSpotify).then(st => {
-          const spIsPlaying = st ? !st.paused : false;
-          if (!otherRadioPlaying && !spIsPlaying) setActiveCard(null);
-        });
-      });
-
-      a.addEventListener('ended', () => {
-        setButtonLabel(b, false);
-        const radioJosSvira = Object.values(audios).some(x => !x.paused && !x.ended);
-        Promise.resolve(player?.getCurrentState?.()).then(st => {
-          const spIsPlaying = st ? !st.paused : false;
-          if (!radioJosSvira && !spIsPlaying) setActiveCard(null);
-        });
-      });
-
-      return {playOnlyThis, setNow, audio: a, button: b};
     }
+  }
+
+  // Reconnect ako stream zastane
+  a.addEventListener('stalled', () => {
+    setNow('Veza je zastala… pokušavam ponovo.');
+    reconnect();
+  });
+  a.addEventListener('error', () => {
+    setNow('Greška na streamu. Pokušavam ponovo…');
+    reconnect();
+  });
+
+  // 🔁 Funkcija za reconnect s cache bypass-om
+  function reconnect() {
+    if (retries < maxRetries) {
+      retries++;
+      const delay = Math.min(1500 * retries, 7000);
+      setTimeout(() => {
+        const src = a.querySelector('source').src;
+        a.src = src + '?t=' + Date.now();
+        a.play().catch(() => {});
+      }, delay);
+    } else {
+      setNow('Ne može se spojiti. Provjeri stream URL.');
+    }
+  }
+
+  // 🔧 Auto-reconnect svakih 3h + jitter 0–5 min
+  const AUTO_RECONNECT_INTERVAL = 3 * 60 * 60 * 1000;
+  const jitter = Math.random() * 5 * 60 * 1000; // 0–5 min
+  const autoReconnectTimer = setTimeout(() => {
+    setInterval(() => {
+      if (!a.paused) {
+        console.log(`[${label}] Periodic reconnect (auto-refresh after 3h)`);
+        const src = a.querySelector('source').src;
+        a.src = src + '?t=' + Date.now();
+        a.play().catch(() => {});
+      }
+    }, AUTO_RECONNECT_INTERVAL);
+  }, jitter);
+
+  // 🔒 Očisti tajmer ako se stranica zatvori
+  window.addEventListener('beforeunload', () => clearTimeout(autoReconnectTimer));
+
+  // Volume slider
+  if (vr) {
+    const labelEl = document.getElementById(`${label}-vol-label`);
+    a.volume = vr.valueAsNumber;
+    syncLabel(vr, labelEl);
+    vr.addEventListener('input', () => {
+      a.volume = vr.valueAsNumber;
+      syncLabel(vr, labelEl);
+    });
+  }
+
+  // Event: kad stream krene
+  a.addEventListener('playing', () => {
+    retries = 0;
+    setButtonLabel(b, true);
+    setActiveCard(cardKey);
+    Object.values(audios).forEach(x => {
+      if (x !== a) x.pause();
+    });
+
+    Object.keys(buttons)
+      .filter(k => k !== 'sp')
+      .forEach(k => {
+        if (buttons[k] !== b) setButtonLabel(buttons[k], false);
+      });
+    setButtonLabel(buttons.sp, false);
+  });
+
+  // Event: kad se pauzira
+  a.addEventListener('pause', () => {
+    setButtonLabel(b, false);
+    const otherRadioPlaying = Object.values(audios).some(x => x !== a && !x.paused && !x.ended);
+    const checkSpotify = (player && player.getCurrentState) ? player.getCurrentState() : null;
+    Promise.resolve(checkSpotify).then(st => {
+      const spIsPlaying = st ? !st.paused : false;
+      if (!otherRadioPlaying && !spIsPlaying) setActiveCard(null);
+    });
+  });
+
+  // Event: kad završi stream
+  a.addEventListener('ended', () => {
+    setButtonLabel(b, false);
+    const radioJosSvira = Object.values(audios).some(x => !x.paused && !x.ended);
+    Promise.resolve(player?.getCurrentState?.()).then(st => {
+      const spIsPlaying = st ? !st.paused : false;
+      if (!radioJosSvira && !spIsPlaying) setActiveCard(null);
+    });
+  });
+
+  // Dugme za play/pause
+  b.addEventListener('click', () => {
+    if (a.paused) playOnlyThis(); else a.pause();
+  });
+
+  return { playOnlyThis, setNow, audio: a, button: b };
+}
 
     const RD = makeRadio({audioId: 'rd-audio', playId: 'rd-play', volId: 'rd-vol', nowId: 'rd-now', label: 'rd'});
     const NX = makeRadio({audioId: 'nx-audio', playId: 'nx-play', volId: 'nx-vol', nowId: 'nx-now', label: 'nx'});
